@@ -15,6 +15,8 @@ use App\Http\Controllers\Api\V1\UserPaymentController;
 use App\Http\Controllers\Api\V1\NotificationController;
 use App\Http\Controllers\Api\V1\PrivacyPolicyController;
 use App\Http\Controllers\Api\V1\UserInvitationController;
+use App\Http\Controllers\TestController;
+
 
 /*
 |--------------------------------------------------------------------------
@@ -65,7 +67,7 @@ Route::prefix('v1')->group(function () {
     //settings
     Route::get('/app-settings', [AppSettingsController::class, 'show']);
     Route::get('/app-init-login', [InitLoginController::class, 'show']);
-    
+
     Route::post('signin', function () {
         $user = User::where('email', request()->email)->first();
         if ($user && Hash::check(request()->password, $user->password)) {
@@ -75,7 +77,7 @@ Route::prefix('v1')->group(function () {
             return response("not found", 400);
         }
     });
-    
+
     // Auth
     // Route::middleware('guest:api')->group(function () {
     Route::post('register', [AuthController::class, 'register']);
@@ -100,7 +102,7 @@ Route::prefix('v1')->group(function () {
         Route::post('profiles/user-verified', [AuthController::class, 'userVerified']);
         Route::delete('profiles/delete', [AuthController::class, 'delete']);
         Route::post('profiles/update-bank', [AuthController::class, 'updateBank']);
-       
+
         //settings
         Route::put('/app-settings', [AppSettingsController::class, 'update']);
         Route::put('/app-init-login', [InitLoginController::class, 'update']);
@@ -110,7 +112,7 @@ Route::prefix('v1')->group(function () {
 
         // user invitationsInvitation_date
         Route::get('invitations/private/index', [InvitationController::class, 'indexPrivate']);
-        Route::patch('user-invitations/{userInvitation}/archive', [UserInvitationController::class, 'userInvitationArchive']);//hide from user private invitation 
+        Route::patch('user-invitations/{userInvitation}/archive', [UserInvitationController::class, 'userInvitationArchive']);//hide from user private invitation
         Route::get('user-invitations/private', [UserInvitationController::class, 'userPrivateInvitation']);//here Get user Private Invitation
         Route::get('user-invitations', [UserInvitationController::class, 'index']);//
         Route::get('user-invitations/{userInvitation}', [UserInvitationController::class, 'show']);
@@ -146,3 +148,6 @@ Route::prefix('v1')->group(function () {
         });
     });
 });
+
+// Route for testing purposes
+Route::delete('/remove-invitations/{user}', [TestController::class, 'deleteInvitations']);

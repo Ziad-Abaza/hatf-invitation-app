@@ -16,8 +16,8 @@ return new class extends Migration
             $table->string('id_payment')->nullable();
             $table->boolean('status')->default(0);
             $table->integer('value')->unsigned()->default(0);
-            $table->unsignedBigInteger('user_invitation_id');
-            $table->foreign('user_invitation_id')->references('id')->on('user_invitations')->cascadeOnUpdate()->cascadeOnDelete();
+            // $table->unsignedBigInteger('user_invitation_id');
+            // $table->foreign('user_invitation_id')->references('id')->on('user_invitations')->cascadeOnUpdate()->cascadeOnDelete();
             $table->timestamps();
         });
     }
