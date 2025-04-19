@@ -39,12 +39,17 @@ class ImageTemplate
         }
 
         $canvas->text($name, $xPosition, 10, function ($font) use ($fontFile, $fontSize, $alignH) {
+            if (!file_exists($fontFile)) {
+                throw new \Exception("Font file not found at: " . $fontFile);
+            }
+
             $font->file($fontFile);
             $font->size($fontSize);
             $font->color('#ffffff');
             $font->align($alignH);
             $font->valign('middle');
         });
+
 
         $canvas->save($tempPath);
         $userInvitation->addMedia($tempPath)
