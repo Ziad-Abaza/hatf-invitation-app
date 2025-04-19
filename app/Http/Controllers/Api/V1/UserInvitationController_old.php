@@ -67,6 +67,152 @@ class UserInvitationController extends Controller
         $userInvitation = UserInvitationResource::make($userInvitation);
         return successResponseDataWithMessage($userInvitation);
     }
+
+    // public function addInviteUsers(InviteRequest $request, UserInvitation $userInvitation)
+    // {
+
+
+    //     //make sure user invitation belongs to auth user token
+    //     if ($userInvitation->user_id !== auth('api')->id()) {
+    //         return  errorResponse(
+    //             "رقم هذه الدعوة خطأ منفضلك ادخل رقم دعوة صحيحة قمة بانشائها من قبل",
+    //             422
+    //         );
+    //     }
+
+    //     //chick if success payment  
+
+    //     if ($userInvitation->is_active == 0) return errorResponse('لم يتم الدفع بعد');
+
+    //     //incase private invitation chick if pass created at or not 
+
+    //     // if ($userInvitation->invitation->max_date !== "unlimited") {
+
+    //     //     $userInvitationDate = Carbon::parse($userInvitation->created_at);
+
+    //     //     // Define expiration date based on max_date
+    //     //     switch ($userInvitation->invitation->max_date) {
+    //     //         case 'day':
+    //     //             $MaxUserInvitationDate = $userInvitationDate->copy()->addDay(); // Add 1 day
+    //     //             break;
+
+    //     //         case 'month':
+    //     //             $MaxUserInvitationDate = $userInvitationDate->copy()->addMonth(); // Add 1 month
+    //     //             break;
+
+    //     //         case 'year':
+    //     //             $MaxUserInvitationDate = $userInvitationDate->copy()->addYear(); // Add 1 year
+    //     //             break;
+
+    //     //         default:
+    //     //             // Handle unexpected cases
+    //     //             return errorResponse(['message' => 'Invalid max_date value.'], 422);
+    //     //     }
+
+    //     //     // Check if current date exceeds the allowed invitation date
+    //     //     if ($MaxUserInvitationDate->lt(Carbon::now())) {
+    //     //         return errorResponse(
+    //     //             "تخطية ".''.
+    //     //                     $MaxUserInvitationDate->format('Y-m-d').
+    //     //                     " من الدعوات المسموح بها منذ بداية الباقة في " .
+    //     //                     Carbon::parse($userInvitation->invitation->created_at)->format('Y-m-d') . ".",
+    //     //             422
+    //     //         );
+    //     //     }
+    //     // }
+
+    //     // Ensure the number of invitations doesn't exceed allowed limit
+    //     $totalAllowedInvitations = $userInvitation->number_invitees;
+    //     $currentInviteCount = InvitedUsers::where("user_invitations_id", $userInvitation->id)->count();
+
+    //     if ($totalAllowedInvitations <= $currentInviteCount) {
+    //         return response()->json([
+    //             'message' => 'فشل ارسال الدعاوى',
+    //             'data' => $userInvitation,
+    //             'error' => "الدعاوى المرسلة " . $currentInviteCount . " تساوى عدد الدعاوى التي تم شرائها " . $totalAllowedInvitations
+    //         ], 400);
+    //     }
+    //     // Limit the number of loops to avoid exceeding the allowed number of invites
+    //     $remainingInvitations = $totalAllowedInvitations - $currentInviteCount;
+    //     $totalRequests = count($request->name);
+
+    //     for ($index = 0; $index < min($remainingInvitations, $totalRequests); $index++) {
+    //         if (!isset($request->name[$index], $request->phone[$index], $request->code[$index], $request->qr[$index])) {
+    //             continue; // Skip if any required field is missing
+    //         }
+
+    //         $name = $request->name[$index];
+
+    //         // Add media to the user's media collection
+    //         $media = $userInvitation->addMedia($request->qr[$index])->toMediaCollection('default');
+
+    //         // Create a new InvitedUsers record
+    //         $invitedUsers = InvitedUsers::create([
+    //             'name'                => $name,
+    //             'phone'               => $request->phone[$index],
+    //             'code'                => $request->code[$index],
+    //             'qr'                  => $media->file_name,
+    //             'user_invitations_id' => $userInvitation->id,
+    //         ]);
+
+    //         // Send WhatsApp messages
+    //         sendWhatsappImage($invitedUsers->phone, $userInvitation->getFirstMedia('default')->getPath());
+    //         sendWhatsappImage($invitedUsers->phone, $media->getUrl(), 'بطاقة دخول صالحة لمرة واحدة');
+
+    //         // Update the user invitation's number of invitees
+    //         // $userInvitation->update(['number_invitees' => $userInvitation->number_invitees + 1]);
+    //         $userInvitation->refresh();
+    //     }
+
+
+    //     //success message via with $userInvitation  
+
+    //     $userInvitation->clearMediaCollection('default');
+
+    //     return response()->json([
+    //         'message' => 'تم ارسال الدعاوى بنجاح',
+    //         'data' => $userInvitation,
+    //         'error' => ($userInvitation->number_invitees < count($request->name ?? '')) ? 
+    //         "الدعاوى المرسلة". count($request->name)."أكبر من عدد الدعاوى التي تم شرائها" . $userInvitation->number_of_users ."لذلك تم ارسال" . $userInvitation->number_of_users : null
+    //     ], 200);
+
+    // }
+
+
+
+
+
+    // public function addInviteUsers(InviteRequest $request, UserInvitation $userInvitation)//old
+    // {
+    //     if ($userInvitation->user_id != auth('api')->id())
+    //         return errorResponse('You do not have access', 403);
+
+    //     foreach ($request->name as $index => $name) {
+    //         $imageName = date('Y-m-d') . '_' . uniqid() . '.' . $request->qr[$index]->extension();
+    //         $request->qr[$index]->storeAs('public/images/qr', $imageName);
+
+    //         $invitedUsers = InvitedUsers::create([
+    //             'name'                => $name,
+    //             'phone'               => $request->phone[$index],
+    //             'code'                => $request->code[$index],
+    //             'qr'                  => $imageName,
+    //             'user_invitations_id' => $userInvitation->id,
+    //         ]);
+
+
+    //         sendWhatsappImage($invitedUsers->phone, $userInvitation->getFirstMedia('default')->getPath());
+    //         sendWhatsappImage($invitedUsers->phone, storage_path('app/public/images/qr/' . $imageName), 'بطاقة دخول صالحة لمرة واحدة');
+
+    //         $userInvitation->update(['number_invitees' => $userInvitation->number_invitees + 1]);
+    //         $userInvitation->refresh();
+    //     }
+
+    //     $userInvitation->clearMediaCollection('default');
+    //     return successResponseDataWithMessage($userInvitation);
+    // }
+
+
+
     public function addInviteUsers(InviteRequest $request, UserInvitation $userInvitation)
     {
 
@@ -93,6 +239,26 @@ class UserInvitationController extends Controller
                 'error' => "الدعاوى المرسلة " . $currentInviteCount . " تساوى عدد الدعاوى التي تم شرائها " . $totalAllowedInvitations
             ], 400);
         }
+
+        // foreach ($request->name as $index => $name) {
+        //     $imageName = date('Y-m-d') . '_' . uniqid() . '.' . $request->qr[$index]->extension();
+        //     $request->qr[$index]->storeAs('public/images/qr', $imageName);
+
+        //     $invitedUsers = InvitedUsers::create([
+        //         'name'                => $name,
+        //         'phone'               => $request->phone[$index],
+        //         'code'                => $request->code[$index],
+        //         'qr'                  => $imageName,
+        //         'user_invitations_id' => $userInvitation->id,
+        //     ]);
+
+
+        //     sendWhatsappImage($invitedUsers->phone, $userInvitation->getFirstMedia('default')->getPath());
+        //     sendWhatsappImage($invitedUsers->phone, storage_path('app/public/images/qr/' . $imageName), 'بطاقة دخول صالحة لمرة واحدة');
+
+        //     $userInvitation->update(['number_invitees' => $userInvitation->number_invitees + 1]);
+        //     $userInvitation->refresh();
+        // }
 
         foreach ($request->name as $index => $name) {
 
@@ -167,198 +333,6 @@ class UserInvitationController extends Controller
         return successResponseDataWithMessage($userInvitation);
     }
 
-    /*
-
-use Illuminate\Support\Facades\Log;
-
-public function addInviteUsers(InviteRequest $request, UserInvitation $userInvitation)
-{
-    // تسجيل معلومات الطلب الأولية
-    Log::info('بدء عملية إضافة دعوات', [
-        'user_id' => auth('api')->id(),
-        'user_invitation_id' => $userInvitation->id,
-        'total_requested' => count($request->name)
-    ]);
-
-    // التحقق من الصلاحية
-    if ($userInvitation->user_id != auth('api')->id()) {
-        Log::warning('محاولة دخول غير مصرح بها', [
-            'user_id' => auth('api')->id(),
-            'target_user_invitation_id' => $userInvitation->id
-        ]);
-        return errorResponse('غير مصرح لك', 403);
-    }
-
-    // التحقق من حالة الدفع
-    if ($userInvitation->userPackage->payment->status == 0 || $userInvitation->is_active == 0) {
-        Log::warning('محاولة إضافة دعوات قبل إكمال الدفع', [
-            'user_invitation_id' => $userInvitation->id,
-            'payment_status' => $userInvitation->userPackage->payment->status,
-            'is_active' => $userInvitation->is_active
-        ]);
-        return errorResponse('لم يتم الدفع بعد', 400);
-    }
-
-    // التحقق من الحد الأقصى للدعوات
-    $totalAllowed = $userInvitation->number_invitees;
-    $currentCount = InvitedUsers::where('user_invitations_id', $userInvitation->id)->count();
-    $remaining = $totalAllowed - $currentCount;
-
-    if ($remaining <= 0) {
-        Log::warning('تجاوز الحد الأقصى للدعوات', [
-            'user_invitation_id' => $userInvitation->id,
-            'total_allowed' => $totalAllowed,
-            'current_count' => $currentCount
-        ]);
-        return errorResponse('تم الوصول للحد الأقصى للدعوات');
-    }
-
-    $batchSize = min($remaining, count($request->name));
-    $data = [];
-    $whatsappMessages = [];
-
-    for ($i = 0; $i < $batchSize; $i++) {
-        try {
-            $name = $request->name[$i];
-            $phone = $request->phone[$i];
-            $code = $request->code[$i];
-            $qr = $request->qr[$i];
-
-            // معالجة الصورة مع تسجيل أي أخطاء
-            $imageName = ImageTemplate::process($qr, $name, $userInvitation);
-            Log::info('تمت معالجة الصورة بنجاح', [
-                'image_name' => $imageName,
-                'user_invitation_id' => $userInvitation->id
-            ]);
-
-            // جمع بيانات الدعوات
-            $data[] = [
-                'name' => $name,
-                'phone' => $phone,
-                'code' => $code,
-                'qr' => $imageName,
-                'user_invitations_id' => $userInvitation->id,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ];
-
-            // جمع بيانات الإشعارات
-            $whatsappMessages[] = [
-                'phone' => $phone,
-                'qrUrl' => $userInvitation->getFirstMediaUrl('qr'),
-                'userInvitationUrl' => $userInvitation->getFirstMediaUrl('userInvitation'),
-                'inviterPhone' => $userInvitation->user->phone ?? 'غير متوفر',
-                'invitationName' => $userInvitation->name ?? 'غير متوفر',
-                'userName' => $userInvitation->user->name ?? 'غير متوفر',
-                'date' => $userInvitation->invitation_date ?? 'غير متوفر',
-                'time' => $userInvitation->invitation_time ?? 'غير متوفر',
-            ];
-
-        } catch (\Exception $e) {
-            Log::error('فشل في معالجة الدعوة الفردية', [
-                'index' => $i,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-            continue; // تخطي الدعوة الفاشلة
-        }
-    }
-
-    // إدراج الدعوات دفعة واحدة مع التسجيل
-    try {
-        InvitedUsers::insert($data);
-        Log::info('تم إدراج الدعوات دفعة واحدة', [
-            'count' => count($data),
-            'user_invitation_id' => $userInvitation->id
-        ]);
-    } catch (\Exception $e) {
-        Log::error('فشل في إدراج الدعوات', [
-            'error' => $e->getMessage(),
-            'data' => $data
-        ]);
-        return errorResponse('حدث خطأ أثناء حفظ الدعوات');
-    }
-
-    // تحديث العداد مع التسجيل
-    try {
-        $userInvitation->update([
-            'number_invitees' => $currentCount + $batchSize
-        ]);
-        Log::info('تم تحديث العداد بنجاح', [
-            'new_count' => $currentCount + $batchSize,
-            'user_invitation_id' => $userInvitation->id
-        ]);
-    } catch (\Exception $e) {
-        Log::error('فشل في تحديث العداد', [
-            'error' => $e->getMessage(),
-            'user_invitation_id' => $userInvitation->id
-        ]);
-    }
-
-    // إرسال الإشعارات مع التسجيل
-    foreach ($whatsappMessages as $message) {
-        try {
-            $qrSent = sendWhatsappImage(
-                $message['phone'],
-                $message['qrUrl'],
-                $message['inviterPhone'],
-                $message['invitationName'],
-                $message['userName'],
-                $message['date'],
-                $message['time']
-            );
-            Log::info('تم إرسال الإشعار (QR)', [
-                'phone' => $message['phone'],
-                'status' => $qrSent ? 'success' : 'failed'
-            ]);
-
-            if ($message['userInvitationUrl']) {
-                $userInvitationSent = sendWhatsappImage(
-                    $message['phone'],
-                    $message['userInvitationUrl'],
-                    $message['inviterPhone'],
-                    $message['invitationName'],
-                    $message['userName'],
-                    $message['date'],
-                    $message['time']
-                );
-                Log::info('تم إرسال الإشعار (User Invitation)', [
-                    'phone' => $message['phone'],
-                    'status' => $userInvitationSent ? 'success' : 'failed'
-                ]);
-            }
-
-        } catch (\Exception $e) {
-            Log::error('فشل في إرسال الإشعارات', [
-                'phone' => $message['phone'],
-                'error' => $e->getMessage()
-            ]);
-        }
-    }
-
-    // حذف الملفات المؤقتة مع التسجيل
-    try {
-        $userInvitation->clearMediaCollection('default');
-        Log::info('تم حذف الملفات المؤقتة بنجاح', [
-            'user_invitation_id' => $userInvitation->id
-        ]);
-    } catch (\Exception $e) {
-        Log::error('فشل في حذف الملفات المؤقتة', [
-            'error' => $e->getMessage(),
-            'user_invitation_id' => $userInvitation->id
-        ]);
-    }
-
-    Log::info('اكتملت عملية إضافة الدعوات بنجاح', [
-        'user_invitation_id' => $userInvitation->id,
-        'total_processed' => $batchSize
-    ]);
-
-    return successResponse('تم إرسال الدعوات بنجاح');
-}
-
-*/
-
     public function addInviteUsersP(InviteRequestP $request, UserPackage $userPackage)
     {
 
@@ -368,7 +342,7 @@ public function addInviteUsers(InviteRequest $request, UserInvitation $userInvit
             return response()->json(['message' => 'not paymnet'], 400);
         }
 
-        //incase private invitation chick if pass created at or not
+        //incase private invitation chick if pass created at or not 
         try {
             PaymentUserInvitation::chickExpirartionPrivateInvitation($userPackage->id);
         } catch (\Throwable $th) {
@@ -471,10 +445,13 @@ public function addInviteUsers(InviteRequest $request, UserInvitation $userInvit
                     ]
                 ]
             );
-
+            
+            // sendWhatsappImage($invitedUsers->phone, storage_path('app/public/images/qr/' . $imageName), 'بطاقة دخول صالحة لمرة واحدة');
+            // Update the user invitation's number of invitees
+            // $userInvitation->update(['number_invitees' => $userInvitation->number_invitees + 1]);
             $userInvitation->refresh();
         }
-        //success message via with $userInvitation
+        //success message via with $userInvitation  
         $userInvitation->clearMediaCollection('default');
         return response()->json([
             'message' => 'تم ارسال الدعاوى بنجاح',
