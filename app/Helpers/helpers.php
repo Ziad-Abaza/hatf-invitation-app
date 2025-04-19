@@ -56,7 +56,7 @@ if (! function_exists('sendWhatsappImage')) {
             $token = "EABIy7zT1dfYBOxGm8szUdvkFVeKCXEGx1CblxZBiR6gLgWatJntsBhZA650xXEYqiFDgCeiGsLbKfBfOHzv0zVlESk35WrpySMQZAwZAXlVOAZBSAcw98msi83y0VDpE6w5FiTtncoFG0eRPxHDGeZC4jeNz0MQMGH10nISmjUpqJ6kiCHYOOzXdRSTWestlzXeYgRztaWa2BZB11prnW3JalVt6menqxuHe3ihARj4ZCdA6jhqnMPOpSZB0WMk0G";
             $sender_id = "595577366971724";
             $url = "https://api.karzoun.app/CloudApi.php";
-                    Log::info('File URL before check type: ', [ 'fileUrl' => $fileUrl]);
+                    Log::info('File URL before:', [ 'fileUrl' => $fileUrl]);
                     $isPdf = strpos($fileUrl, '.pdf') !== false;
 
                     $response = Http::get($url, [
