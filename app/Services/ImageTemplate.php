@@ -27,7 +27,7 @@ class ImageTemplate
 
         $isArabic = (bool) preg_match('/\p{Arabic}/u', $name);
         if ($isArabic) {
-            $fontFile  = public_path('fonts/Lateef.ttf');
+            $fontFile  = public_path('front/Lateef.ttf');
             $fontSize  =  22;
             $alignH    = 'right';
             $xPosition = $originalWidth - 10;
