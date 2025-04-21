@@ -79,7 +79,12 @@ if (! function_exists('sendWhatsappQR')) {
 
             if ($response->successful()) {
                 $responseData = $response->json();
-                return isset($responseData['message_status']) && $responseData['message_status'] === 'accepted';
+                if (isset($responseData['message_status']) && $responseData['message_status'] === 'accepted') {
+                    return true;
+                } else {
+                    Log::error('استجابة API غير متوقعة:', ['response' => $responseData]);
+                    return false;
+                }
             }
 
             return false;
