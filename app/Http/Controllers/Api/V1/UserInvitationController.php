@@ -107,9 +107,15 @@ class UserInvitationController extends Controller
                 'qr'                  => $imageName,
                 'user_invitations_id' => $userInvitation->id,
             ]);
+            // Log the media URL for debugging
+            Log::info('Media URL Check:', [
+                'url' => $userInvitation->getFirstMediaUrl('userInvitation')
+            ]);
+
+            // Check if the media URL is valid before sending
             if ($userInvitation->getFirstMediaUrl('userInvitation')) {
                 // Ensure the path is valid and the file exists
-                    sendWhatsappImage(
+                sendWhatsappImage(
                         $invitedUsers->phone,
                         $userInvitation->getFirstMediaUrl('userInvitation'),
                         $userInvitation->user->phone ?? 'غير متوفر',

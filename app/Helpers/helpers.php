@@ -100,11 +100,21 @@ if (! function_exists('sendWhatsappImage')) {
             $token = "EABIy7zT1dfYBOxGm8szUdvkFVeKCXEGx1CblxZBiR6gLgWatJntsBhZA650xXEYqiFDgCeiGsLbKfBfOHzv0zVlESk35WrpySMQZAwZAXlVOAZBSAcw98msi83y0VDpE6w5FiTtncoFG0eRPxHDGeZC4jeNz0MQMGH10nISmjUpqJ6kiCHYOOzXdRSTWestlzXeYgRztaWa2BZB11prnW3JalVt6menqxuHe3ihARj4ZCdA6jhqnMPOpSZB0WMk0G";
             $sender_id = "595577366971724";
             $url = "https://api.karzoun.app/CloudApi.php";
+
+            // Log the parameters for debugging
+            Log::info('sendWhatsappImage called', [
+                'phone' => $phone,
+                'fileUrl' => $fileUrl,
+                'qr' => $qr
+            ]);
+
+            // Check if the QR code is provided and send it
             if (!empty($qr)) {
                 $qrSent = sendWhatsappQR($phone, $qr);
                 Log::info('QR sent result:', ['success' => $qrSent]);
             }
 
+                    // Send the image or PDF
                     $isPdf = strpos($fileUrl, '.pdf') !== false;
 
                     $response = Http::get($url, [
@@ -120,6 +130,7 @@ if (! function_exists('sendWhatsappImage')) {
                         $isPdf ? 'pdf' : 'image' => $fileUrl,
                     ]);
 
+            // Log the response for debugging
             Log::info('WhatsApp API Response', [
                 'status_code' => $response->status(),
                 'response_body' => $response->body(),
@@ -135,11 +146,13 @@ if (! function_exists('sendWhatsappImage')) {
                     $time,
                 ],
             ]);
+            // Check if the response is JSON
             if ($response->successful()) {
                 $responseData = $response->json();
                 return isset($responseData['status']) && $responseData['status'] === 'success';
             }
 
+            // If the response is not successful, log the error
             return false;
         } catch (\Exception $e) {
             Log::error('Exception in sendWhatsappImage', [
