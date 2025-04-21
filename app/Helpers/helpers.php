@@ -151,20 +151,20 @@ if (! function_exists('sendWhatsappImage')) {
                     $time,
                 ],
             ]);
-            
+
             // Check if the response is JSON
+            $responseData = $response->json();
             if ($response->successful()) {
-                $responseData = $response->json();
-                if (isset($responseData['message_status']) && $responseData['message_status'] === 'accepted') {
+                // if (isset($responseData['message_status']) && $responseData['message_status'] === 'accepted') {
                     return true;
                 } else {
                     Log::error('استجابة API غير متوقعة:', ['response' => $responseData]);
                     return false;
                 }
-            }
+            // }
 
             // If the response is not successful, log the error
-            return false;
+            // return false;
         } catch (\Exception $e) {
             Log::error('Exception in sendWhatsappImage', [
                 'error' => $e->getMessage(),
