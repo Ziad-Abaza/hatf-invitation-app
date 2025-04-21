@@ -63,6 +63,7 @@ use App\Http\Controllers\TestController;
 //     return true;
 // });
 
+
 Route::prefix('v1')->group(function () {
     //settings
     Route::get('/app-settings', [AppSettingsController::class, 'show']);
