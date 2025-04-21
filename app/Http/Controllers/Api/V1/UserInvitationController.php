@@ -67,6 +67,7 @@ class UserInvitationController extends Controller
         $userInvitation = UserInvitationResource::make($userInvitation);
         return successResponseDataWithMessage($userInvitation);
     }
+ /*
     public function addInviteUsers(InviteRequest $request, UserInvitation $userInvitation)
     {
 
@@ -132,8 +133,6 @@ class UserInvitationController extends Controller
                     );
             }
 
-
-
             Log::info(
                 'WhatsApp message sent successfully',
                 [
@@ -167,9 +166,7 @@ class UserInvitationController extends Controller
         return successResponseDataWithMessage($userInvitation);
     }
 
-    /*
-
-use Illuminate\Support\Facades\Log;
+    */
 
 public function addInviteUsers(InviteRequest $request, UserInvitation $userInvitation)
 {
@@ -357,7 +354,7 @@ public function addInviteUsers(InviteRequest $request, UserInvitation $userInvit
     return successResponse('تم إرسال الدعوات بنجاح');
 }
 
-*/
+
 
     public function addInviteUsersP(InviteRequestP $request, UserPackage $userPackage)
     {
