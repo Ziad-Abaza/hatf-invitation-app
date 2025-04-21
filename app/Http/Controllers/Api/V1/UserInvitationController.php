@@ -84,39 +84,52 @@ class UserInvitationController extends Controller
         }
 
         // Ensure the number of invitations doesn't exceed allowed limit
-        $totalAllowedInvitations = $userInvitation->number_invitees;
-        $currentInviteCount = InvitedUsers::where("user_invitations_id", $userInvitation->id)->count();
-        if ($totalAllowedInvitations <= $currentInviteCount) {
-            return response()->json([
-                'message' => 'فشل ارسال الدعاوى',
-                'data' => $userInvitation,
-                'error' => "الدعاوى المرسلة " . $currentInviteCount . " تساوى عدد الدعاوى التي تم شرائها " . $totalAllowedInvitations
-            ], 400);
+        $totalAllowed = $userInvitation->number_invitees;
+        $currentCount = InvitedUsers::where('user_invitations_id', $userInvitation->id)
+            ->where('send_status', 'sent')
+            ->count();
+        $remaining = $totalAllowed - $currentCount;
+
+        if ($remaining <= 0) {
+            return errorResponse('تم الوصول للحد الأقصى للدعوات');
         }
 
-        foreach ($request->name as $index => $name) {
+        $batchSize = min($remaining, count($request->name));
+        $sendResults = [];
+        $successfulSends = 0;
+        for ($i = 0; $i < $batchSize; $i++) {
+            try {
+                // check if the required fields are set
+                if (!isset($request->name[$i], $request->phone[$i], $request->code[$i], $request->qr[$i])) {
+                    $sendResults[] = [
+                        'index' => $i,
+                        'phone' => $request->phone[$i] ?? 'N/A',
+                        'success' => false,
+                        'error' => 'بيانات ناقصة'
+                    ];
+                    continue;
+                }
 
+                // process the QR code and generate the image name
+                $imageName = ImageTemplate::process($request->qr[$i], $request->name[$i], $userInvitation);
+                 //create the invited user
+                $invitedUser = InvitedUsers::create([
+                    'name' => $request->name[$i],
+                    'phone' => $request->phone[$i],
+                    'code' => $request->code[$i],
+                    'qr' => $imageName,
+                    'user_invitations_id' => $userInvitation->id,
+                    'send_status' => 'pending'
+                ]);
 
-            $imageName = ImageTemplate::process($request->qr[$index], $name,$userInvitation);
+                // retry to send the message with a maximum of 3 attempts
+                $maxRetries = 3;
+                $retryCount = 0;
+                $sent = false;
 
-
-            $invitedUsers = InvitedUsers::create([
-                'name'                => $name,
-                'phone'               => $request->phone[$index],
-                'code'                => $request->code[$index],
-                'qr'                  => $imageName,
-                'user_invitations_id' => $userInvitation->id,
-            ]);
-            // Log the media URL for debugging
-            Log::info('Media URL Check:', [
-                'url' => $userInvitation->getFirstMediaUrl('userInvitation')
-            ]);
-
-            // Check if the media URL is valid before sending
-            if ($userInvitation->getFirstMediaUrl('userInvitation')) {
-                // Ensure the path is valid and the file exists
-                sendWhatsappImage(
-                        $invitedUsers->phone,
+                while ($retryCount < $maxRetries && !$sent) {
+                    $sent = sendWhatsappImage(
+                        $invitedUser->phone,
                         $userInvitation->getFirstMediaUrl('userInvitation'),
                         $userInvitation->user->phone ?? 'غير متوفر',
                         $userInvitation->name ?? 'غير متوفر',
@@ -125,32 +138,58 @@ class UserInvitationController extends Controller
                         $userInvitation->invitation_time ?? 'غير متوفر',
                         $userInvitation->getFirstMediaUrl('qr')
                     );
+
+                    if (!$sent) {
+                        $retryCount++;
+                        sleep(1); // resend after 1 second
+                        Log::info('Retrying to send WhatsApp message', [
+                            'attempt' => $retryCount,
+                            'phone' => $invitedUser->phone
+                        ]);
+                    }
+                }
+
+                if ($sent) {
+                    $invitedUser->update(['send_status' => 'sent']);
+                    $successfulSends++;
+                    $sendResults[] = [
+                        'index' => $i,
+                        'phone' => $invitedUser->phone,
+                        'success' => true
+                    ];
+                } else {
+                    $invitedUser->update([
+                        'status' => 'failed',
+                        'error_message' => 'فشل الإرسال بعد ' . $maxRetries . ' محاولات'
+                    ]);
+                    $sendResults[] = [
+                        'index' => $i,
+                        'phone' => $invitedUser->phone,
+                        'success' => false,
+                        'error' => 'فشل الإرسال'
+                    ];
+                }
+            } catch (\Exception $e) {
+                $sendResults[] = [
+                    'index' => $i,
+                    'phone' => $request->phone[$i] ?? 'N/A',
+                    'success' => false,
+                    'error' => $e->getMessage()
+                ];
             }
-
-
-
-            Log::info(
-                'WhatsApp message sent successfully',
-                [
-                    'default' => [
-                        $invitedUsers->phone,
-                        $userInvitation->getFirstMediaUrl('userInvitation'),
-                        $userInvitation->user->phone ?? 'غير متوفر',
-                        $userInvitation->name ?? 'غير متوفر',
-                        $userInvitation->user->name ?? 'غير متوفر',
-                        $userInvitation->invitation_date ?? 'غير متوفر',
-                        $userInvitation->invitation_time ?? 'غير متوفر',
-                        $userInvitation->getFirstMediaUrl('qr'),
-                    ]
-                ]
-            );
-
-            $userInvitation->update(['number_invitees' => $userInvitation->number_invitees + 1]);
-            $userInvitation->refresh();
         }
 
-        $userInvitation->clearMediaCollection('default');
-        return successResponseDataWithMessage($userInvitation);
+        $userInvitation->update([
+            'number_invitees' => $currentCount + $successfulSends
+        ]);
+
+        return response()->json([
+            'message' => 'تمت معالجة الدعوات',
+            'total' => $batchSize,
+            'successful' => $successfulSends,
+            'failed' => $batchSize - $successfulSends,
+            'results' => $sendResults
+        ]);
     }
 
     public function addInviteUsersP(InviteRequestP $request, UserPackage $userPackage)

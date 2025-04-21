@@ -15,6 +15,8 @@ class InvitedUsers extends Model
         'code',
         'qr',
         'status',
+        'send_status',
+        'error_message',
         'user_invitations_id',
         'note'
     ];
