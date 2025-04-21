@@ -17,53 +17,6 @@ use App\Http\Controllers\Api\V1\PrivacyPolicyController;
 use App\Http\Controllers\Api\V1\UserInvitationController;
 use App\Http\Controllers\TestController;
 
-
-/*
-|--------------------------------------------------------------------------
-| API Routes
-|--------------------------------------------------------------------------
-|
-| Here is where you can register API routes for your application. These
-| routes are loaded by the RouteServiceProvider and all of them will
-| be assigned to the "api" middleware group. Make something great!
-|
-*/
-
-// Route::get('test', function () {
-//     // Http::asForm()
-//     //     ->withBasicAuth('ACb62a55caab978c833432c7a0941d0cc4', '701a26932308d8afdfc7107baa1bbf07')
-//     //     ->post('https://api.twilio.com/2010-04-01/Accounts/ACb62a55caab978c833432c7a0941d0cc4/Messages.json', [
-//     //         'To' => 'whatsapp: 966530333218',
-//     //         'From' => 'whatsapp: 14155238886',
-//     //         'Body' => 'Your appointment is coming up on July 21 at 3PM',
-//     //     ]);
-
-//     // $http =  Http::asForm()
-//     //     ->withBasicAuth('ACb62a55caab978c833432c7a0941d0cc4', '701a26932308d8afdfc7107baa1bbf07')
-//     //     ->post('https://api.twilio.com/2010-04-01/Accounts/ACb62a55caab978c833432c7a0941d0cc4/Messages.json', [
-//     //         'To' => 'whatsapp:+966530333218',
-//     //         'From' => 'whatsapp:+14155238886',
-//     //         'Body' => 'Your Twilio code is 1238432',
-//     //     ]);
-
-//     $http = Http::asForm()
-//         ->withBasicAuth('ACcc94b7f22d60f3ff894db87b9ed35006', '84594ce420a1b884e92ad32cca02b187')
-//         ->post('https://api.twilio.com/2010-04-01/Accounts/ACcc94b7f22d60f3ff894db87b9ed35006/Messages.json', [
-//             'To' => 'whatsapp:+201019056183',
-//             'From' => 'whatsapp:+14155238886',
-//             'Body' => 'Your appointment is coming up on July 21 at 3PM',
-//         ]);
-
-//     return dd($http->json(), $http->status());
-
-//     if ($http->status() != 200 || $http->status() != 201) {
-//         return false;
-//     }
-
-//     return true;
-// });
-
-
 Route::prefix('v1')->group(function () {
     //settings
     Route::get('/app-settings', [AppSettingsController::class, 'show']);
