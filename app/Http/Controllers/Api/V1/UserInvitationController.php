@@ -67,7 +67,6 @@ class UserInvitationController extends Controller
         $userInvitation = UserInvitationResource::make($userInvitation);
         return successResponseDataWithMessage($userInvitation);
     }
- /*
     public function addInviteUsers(InviteRequest $request, UserInvitation $userInvitation)
     {
 
@@ -133,6 +132,8 @@ class UserInvitationController extends Controller
                     );
             }
 
+
+
             Log::info(
                 'WhatsApp message sent successfully',
                 [
@@ -165,200 +166,6 @@ class UserInvitationController extends Controller
         $userInvitation->clearMediaCollection('default');
         return successResponseDataWithMessage($userInvitation);
     }
-
-    */
-
-public function addInviteUsers(InviteRequest $request, UserInvitation $userInvitation)
-{
-    // تسجيل معلومات الطلب الأولية
-    Log::info('بدء عملية إضافة دعوات', [
-        'user_id' => auth('api')->id(),
-        'user_invitation_id' => $userInvitation->id,
-        'total_requested' => count($request->name)
-    ]);
-
-    // التحقق من الصلاحية
-    if ($userInvitation->user_id != auth('api')->id()) {
-        Log::warning('محاولة دخول غير مصرح بها', [
-            'user_id' => auth('api')->id(),
-            'target_user_invitation_id' => $userInvitation->id
-        ]);
-        return errorResponse('غير مصرح لك', 403);
-    }
-
-    // التحقق من حالة الدفع
-    if ($userInvitation->userPackage->payment->status == 0 || $userInvitation->is_active == 0) {
-        Log::warning('محاولة إضافة دعوات قبل إكمال الدفع', [
-            'user_invitation_id' => $userInvitation->id,
-            'payment_status' => $userInvitation->userPackage->payment->status,
-            'is_active' => $userInvitation->is_active
-        ]);
-        return errorResponse('لم يتم الدفع بعد', 400);
-    }
-
-    // التحقق من الحد الأقصى للدعوات
-    $totalAllowed = $userInvitation->number_invitees;
-    $currentCount = InvitedUsers::where('user_invitations_id', $userInvitation->id)->count();
-    $remaining = $totalAllowed - $currentCount;
-
-    if ($remaining <= 0) {
-        Log::warning('تجاوز الحد الأقصى للدعوات', [
-            'user_invitation_id' => $userInvitation->id,
-            'total_allowed' => $totalAllowed,
-            'current_count' => $currentCount
-        ]);
-        return errorResponse('تم الوصول للحد الأقصى للدعوات');
-    }
-
-    $batchSize = min($remaining, count($request->name));
-    $data = [];
-    $whatsappMessages = [];
-
-    for ($i = 0; $i < $batchSize; $i++) {
-        try {
-            $name = $request->name[$i];
-            $phone = $request->phone[$i];
-            $code = $request->code[$i];
-            $qr = $request->qr[$i];
-
-            // معالجة الصورة مع تسجيل أي أخطاء
-            $imageName = ImageTemplate::process($qr, $name, $userInvitation);
-            Log::info('تمت معالجة الصورة بنجاح', [
-                'image_name' => $imageName,
-                'user_invitation_id' => $userInvitation->id
-            ]);
-
-            // جمع بيانات الدعوات
-            $data[] = [
-                'name' => $name,
-                'phone' => $phone,
-                'code' => $code,
-                'qr' => $imageName,
-                'user_invitations_id' => $userInvitation->id,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ];
-
-            // جمع بيانات الإشعارات
-            $whatsappMessages[] = [
-                'phone' => $phone,
-                'qrUrl' => $userInvitation->getFirstMediaUrl('qr'),
-                'userInvitationUrl' => $userInvitation->getFirstMediaUrl('userInvitation'),
-                'inviterPhone' => $userInvitation->user->phone ?? 'غير متوفر',
-                'invitationName' => $userInvitation->name ?? 'غير متوفر',
-                'userName' => $userInvitation->user->name ?? 'غير متوفر',
-                'date' => $userInvitation->invitation_date ?? 'غير متوفر',
-                'time' => $userInvitation->invitation_time ?? 'غير متوفر',
-            ];
-
-        } catch (\Exception $e) {
-            Log::error('فشل في معالجة الدعوة الفردية', [
-                'index' => $i,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-            continue; // تخطي الدعوة الفاشلة
-        }
-    }
-
-    // إدراج الدعوات دفعة واحدة مع التسجيل
-    try {
-        InvitedUsers::insert($data);
-        Log::info('تم إدراج الدعوات دفعة واحدة', [
-            'count' => count($data),
-            'user_invitation_id' => $userInvitation->id
-        ]);
-    } catch (\Exception $e) {
-        Log::error('فشل في إدراج الدعوات', [
-            'error' => $e->getMessage(),
-            'data' => $data
-        ]);
-        return errorResponse('حدث خطأ أثناء حفظ الدعوات');
-    }
-
-    // تحديث العداد مع التسجيل
-    try {
-        $userInvitation->update([
-            'number_invitees' => $currentCount + $batchSize
-        ]);
-        Log::info('تم تحديث العداد بنجاح', [
-            'new_count' => $currentCount + $batchSize,
-            'user_invitation_id' => $userInvitation->id
-        ]);
-    } catch (\Exception $e) {
-        Log::error('فشل في تحديث العداد', [
-            'error' => $e->getMessage(),
-            'user_invitation_id' => $userInvitation->id
-        ]);
-    }
-
-    // إرسال الإشعارات مع التسجيل
-    foreach ($whatsappMessages as $message) {
-        try {
-            $qrSent = sendWhatsappImage(
-                $message['phone'],
-                $message['qrUrl'],
-                $message['inviterPhone'],
-                $message['invitationName'],
-                $message['userName'],
-                $message['date'],
-                $message['time']
-            );
-            Log::info('تم إرسال الإشعار (QR)', [
-                'phone' => $message['phone'],
-                'status' => $qrSent ? 'success' : 'failed',
-                'response' => $qrSent,
-                'data' => $message
-            ]);
-
-            if ($message['userInvitationUrl']) {
-                $userInvitationSent = sendWhatsappImage(
-                    $message['phone'],
-                    $message['userInvitationUrl'],
-                    $message['inviterPhone'],
-                    $message['invitationName'],
-                    $message['userName'],
-                    $message['date'],
-                    $message['time']
-                );
-                Log::info('تم إرسال الإشعار (User Invitation)', [
-                    'phone' => $message['phone'],
-                    'status' => $userInvitationSent ? 'success' : 'failed',
-                    'response' => $userInvitationSent,
-                    'data' => $message
-                ]);
-            }
-
-        } catch (\Exception $e) {
-            Log::error('فشل في إرسال الإشعارات', [
-                'phone' => $message['phone'],
-                'error' => $e->getMessage()
-            ]);
-        }
-    }
-
-    // حذف الملفات المؤقتة مع التسجيل
-    try {
-        $userInvitation->clearMediaCollection('default');
-        Log::info('تم حذف الملفات المؤقتة بنجاح', [
-            'user_invitation_id' => $userInvitation->id
-        ]);
-    } catch (\Exception $e) {
-        Log::error('فشل في حذف الملفات المؤقتة', [
-            'error' => $e->getMessage(),
-            'user_invitation_id' => $userInvitation->id
-        ]);
-    }
-
-    Log::info('اكتملت عملية إضافة الدعوات بنجاح', [
-        'user_invitation_id' => $userInvitation->id,
-        'total_processed' => $batchSize
-    ]);
-
-    return successResponse('تم إرسال الدعوات بنجاح');
-}
-
-
 
     public function addInviteUsersP(InviteRequestP $request, UserPackage $userPackage)
     {
