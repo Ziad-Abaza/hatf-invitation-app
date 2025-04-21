@@ -72,7 +72,10 @@ if (! function_exists('sendWhatsappImage')) {
                         $isPdf ? 'pdf' : 'image' => $fileUrl,
                     ]);
 
-            Log::info('Preparing WhatsApp Message', [
+            Log::info('WhatsApp API Response', [
+                'status_code' => $response->status(),
+                'response_body' => $response->body(),
+                'response_json' => $response->json(),
                 'template' => $isPdf ? 'buy_the_invitation_pdf' : 'single_entry_card_new',
                 'phone' => $phone,
                 'fileUrl' => $fileUrl,
@@ -84,6 +87,19 @@ if (! function_exists('sendWhatsappImage')) {
                     $time,
                 ],
             ]);
+
+            // Log::info('Preparing WhatsApp Message', [
+            //     'template' => $isPdf ? 'buy_the_invitation_pdf' : 'single_entry_card_new',
+            //     'phone' => $phone,
+            //     'fileUrl' => $fileUrl,
+            //     'params' => [
+            //         $invitationName,
+            //         $userName,
+            //         $inviterPhone,
+            //         $date,
+            //         $time,
+            //     ],
+            // ]);
 
             if ($response->successful()) {
                 $responseData = $response->json();

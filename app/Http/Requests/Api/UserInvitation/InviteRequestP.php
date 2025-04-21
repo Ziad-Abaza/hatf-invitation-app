@@ -30,7 +30,6 @@ class InviteRequestP extends BaseFormRequest
             'file'                   => 'nullable|file|max:15000',
             // 'image'                   => 'nullable|file|max:15000',
 
-
             'phone'   => 'required|array',
             'name'    => 'required|array',
             'code'    => 'required|array',
