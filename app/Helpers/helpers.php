@@ -64,7 +64,6 @@ if (! function_exists('sendWhatsappQR')) {
                 'sender_id' => $sender_id,
                 'phone' => $phone,
                 'template' => 'buy_the_invitation_image',
-                'image'   => $qrImageUrl,
                 'param_1'   => $qrImageUrl,
             ]);
 
