@@ -49,14 +49,61 @@ if (!function_exists('getIamgesMediaUrl')) {
     }
 }
 
-if (! function_exists('sendWhatsappImage')) {
-    function sendWhatsappImage($phone, $fileUrl, $inviterPhone, $invitationName, $userName, $date, $time): bool
+if (! function_exists('sendWhatsappQR')) {
+    function sendWhatsappQR($phone, $qrImageUrl): bool
     {
         try {
             $token = "EABIy7zT1dfYBOxGm8szUdvkFVeKCXEGx1CblxZBiR6gLgWatJntsBhZA650xXEYqiFDgCeiGsLbKfBfOHzv0zVlESk35WrpySMQZAwZAXlVOAZBSAcw98msi83y0VDpE6w5FiTtncoFG0eRPxHDGeZC4jeNz0MQMGH10nISmjUpqJ6kiCHYOOzXdRSTWestlzXeYgRztaWa2BZB11prnW3JalVt6menqxuHe3ihARj4ZCdA6jhqnMPOpSZB0WMk0G";
             $sender_id = "595577366971724";
             $url = "https://api.karzoun.app/CloudApi.php";
-                    Log::info('File URL before:', [ 'fileUrl' => $fileUrl]);
+
+            Log::info('QR Image URL before sending:', ['qrImageUrl' => $qrImageUrl]);
+
+            $response = Http::get($url, [
+                'token' => $token,
+                'sender_id' => $sender_id,
+                'phone' => $phone,
+                'template' => 'buy_the_invitation_image',
+                'image'   => $qrImageUrl,
+            ]);
+
+            Log::info('QR WhatsApp API Response', [
+                'status_code' => $response->status(),
+                'response_body' => $response->body(),
+                'response_json' => $response->json(),
+                'template' => 'buy_the_invitation_image',
+                'phone' => $phone,
+                'qrImageUrl' => $qrImageUrl,
+            ]);
+
+            if ($response->successful()) {
+                $responseData = $response->json();
+                return isset($responseData['status']) && $responseData['status'] === 'success';
+            }
+
+            return false;
+        } catch (\Exception $e) {
+            Log::error('Exception in sendWhatsappQR', [
+                'error' => $e->getMessage(),
+            ]);
+            return false;
+        }
+    }
+}
+
+
+if (! function_exists('sendWhatsappImage')) {
+    function sendWhatsappImage($phone, $fileUrl, $inviterPhone, $invitationName, $userName, $date, $time, $qr = null): bool
+    {
+        try {
+            $token = "EABIy7zT1dfYBOxGm8szUdvkFVeKCXEGx1CblxZBiR6gLgWatJntsBhZA650xXEYqiFDgCeiGsLbKfBfOHzv0zVlESk35WrpySMQZAwZAXlVOAZBSAcw98msi83y0VDpE6w5FiTtncoFG0eRPxHDGeZC4jeNz0MQMGH10nISmjUpqJ6kiCHYOOzXdRSTWestlzXeYgRztaWa2BZB11prnW3JalVt6menqxuHe3ihARj4ZCdA6jhqnMPOpSZB0WMk0G";
+            $sender_id = "595577366971724";
+            $url = "https://api.karzoun.app/CloudApi.php";
+            if (!empty($qr)) {
+                $qrSent = sendWhatsappQR($phone, $qr);
+                Log::info('QR sent result:', ['success' => $qrSent]);
+            }
+            
                     $isPdf = strpos($fileUrl, '.pdf') !== false;
 
                     $response = Http::get($url, [
@@ -87,20 +134,6 @@ if (! function_exists('sendWhatsappImage')) {
                     $time,
                 ],
             ]);
-
-            // Log::info('Preparing WhatsApp Message', [
-            //     'template' => $isPdf ? 'buy_the_invitation_pdf' : 'single_entry_card_new',
-            //     'phone' => $phone,
-            //     'fileUrl' => $fileUrl,
-            //     'params' => [
-            //         $invitationName,
-            //         $userName,
-            //         $inviterPhone,
-            //         $date,
-            //         $time,
-            //     ],
-            // ]);
-
             if ($response->successful()) {
                 $responseData = $response->json();
                 return isset($responseData['status']) && $responseData['status'] === 'success';

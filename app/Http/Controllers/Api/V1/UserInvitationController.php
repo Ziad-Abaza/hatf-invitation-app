@@ -107,18 +107,6 @@ class UserInvitationController extends Controller
                 'qr'                  => $imageName,
                 'user_invitations_id' => $userInvitation->id,
             ]);
-
-
-            sendWhatsappImage(
-                $invitedUsers->phone,
-                $userInvitation->getFirstMediaUrl('qr'),
-                $userInvitation->user->phone ?? 'غير متوفر',
-                $userInvitation->name ?? 'غير متوفر',
-                $userInvitation->user->name ?? 'غير متوفر',
-                $userInvitation->invitation_date ?? 'غير متوفر',
-                $userInvitation->invitation_time ?? 'غير متوفر'
-            );
-
             if ($userInvitation->getFirstMediaUrl('userInvitation')) {
                 // Ensure the path is valid and the file exists
                     sendWhatsappImage(
@@ -128,7 +116,8 @@ class UserInvitationController extends Controller
                         $userInvitation->name ?? 'غير متوفر',
                         $userInvitation->user->name ?? 'غير متوفر',
                         $userInvitation->invitation_date ?? 'غير متوفر',
-                        $userInvitation->invitation_time ?? 'غير متوفر'
+                        $userInvitation->invitation_time ?? 'غير متوفر',
+                        $userInvitation->getFirstMediaUrl('qr')
                     );
             }
 
@@ -144,17 +133,8 @@ class UserInvitationController extends Controller
                         $userInvitation->name ?? 'غير متوفر',
                         $userInvitation->user->name ?? 'غير متوفر',
                         $userInvitation->invitation_date ?? 'غير متوفر',
-                        $userInvitation->invitation_time ?? 'غير متوفر'
-                    ],
-                    'qr' => [
-                        $invitedUsers->phone,
+                        $userInvitation->invitation_time ?? 'غير متوفر',
                         $userInvitation->getFirstMediaUrl('qr'),
-                        $userInvitation->user->phone ?? 'غير متوفر',
-                        $userInvitation->name ?? 'غير متوفر',
-                        $userInvitation->user->name ?? 'غير متوفر',
-                        $userInvitation->invitation_date ?? 'غير متوفر',
-                        $userInvitation->invitation_time ?? 'غير متوفر'
-
                     ]
                 ]
             );
@@ -244,16 +224,8 @@ class UserInvitationController extends Controller
                 $userInvitation->name ?? 'غير متوفر',
                 $userInvitation->user->name ?? 'غير متوفر',
                 $userInvitation->invitation_date ?? 'غير متوفر',
-                $userInvitation->invitation_time ?? 'غير متوفر'
-            );
-            sendWhatsappImage(
-                $invitedUsers->phone,
-                $userInvitation->getFirstMediaUrl('qr') ,
-                $userInvitation->user->phone ?? 'غير متوفر',
-                $userInvitation->name ?? 'غير متوفر',
-                $userInvitation->user->name ?? 'غير متوفر',
-                $userInvitation->invitation_date ?? 'غير متوفر',
-                $userInvitation->invitation_time ?? 'غير متوفر'
+                $userInvitation->invitation_time ?? 'غير متوفر',
+                $userInvitation->getFirstMediaUrl('qr')
             );
 
             Log::info(
@@ -266,16 +238,8 @@ class UserInvitationController extends Controller
                         $userInvitation->name ?? 'غير متوفر',
                         $userInvitation->user->name ?? 'غير متوفر',
                         $userInvitation->invitation_date ?? 'غير متوفر',
-                        $userInvitation->invitation_time ?? 'غير متوفر'
-                    ],
-                    'qr' => [
-                        $invitedUsers->phone,
-                        $userInvitation->getFirstMediaUrl('qr') ,
-                        $userInvitation->user->phone ?? 'غير متوفر',
-                        $userInvitation->name ?? 'غير متوفر',
-                        $userInvitation->user->name ?? 'غير متوفر',
-                        $userInvitation->invitation_date ?? 'غير متوفر',
-                        $userInvitation->invitation_time ?? 'غير متوفر'
+                        $userInvitation->invitation_time ?? 'غير متوفر',
+                        $userInvitation->getFirstMediaUrl('qr')
                     ]
                 ]
             );
