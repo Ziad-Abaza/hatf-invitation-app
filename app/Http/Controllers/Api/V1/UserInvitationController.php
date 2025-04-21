@@ -116,8 +116,7 @@ class UserInvitationController extends Controller
                 $userInvitation->name ?? 'غير متوفر',
                 $userInvitation->user->name ?? 'غير متوفر',
                 $userInvitation->invitation_date ?? 'غير متوفر',
-                $userInvitation->invitation_time ?? 'غير متوفر',
-                false
+                $userInvitation->invitation_time ?? 'غير متوفر'
             );
 
             if ($userInvitation->getFirstMediaUrl('userInvitation')) {
@@ -129,8 +128,7 @@ class UserInvitationController extends Controller
                         $userInvitation->name ?? 'غير متوفر',
                         $userInvitation->user->name ?? 'غير متوفر',
                         $userInvitation->invitation_date ?? 'غير متوفر',
-                        $userInvitation->invitation_time ?? 'غير متوفر',
-                        true
+                        $userInvitation->invitation_time ?? 'غير متوفر'
                     );
             }
 
@@ -156,6 +154,7 @@ class UserInvitationController extends Controller
                         $userInvitation->user->name ?? 'غير متوفر',
                         $userInvitation->invitation_date ?? 'غير متوفر',
                         $userInvitation->invitation_time ?? 'غير متوفر'
+
                     ]
                 ]
             );

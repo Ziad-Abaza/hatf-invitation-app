@@ -50,7 +50,7 @@ if (!function_exists('getIamgesMediaUrl')) {
 }
 
 if (! function_exists('sendWhatsappImage')) {
-    function sendWhatsappImage($phone, $fileUrl, $inviterPhone, $invitationName, $userName, $date, $time, $includeData = true): bool
+    function sendWhatsappImage($phone, $fileUrl, $inviterPhone, $invitationName, $userName, $date, $time): bool
     {
         try {
             $token = "EABIy7zT1dfYBOxGm8szUdvkFVeKCXEGx1CblxZBiR6gLgWatJntsBhZA650xXEYqiFDgCeiGsLbKfBfOHzv0zVlESk35WrpySMQZAwZAXlVOAZBSAcw98msi83y0VDpE6w5FiTtncoFG0eRPxHDGeZC4jeNz0MQMGH10nISmjUpqJ6kiCHYOOzXdRSTWestlzXeYgRztaWa2BZB11prnW3JalVt6menqxuHe3ihARj4ZCdA6jhqnMPOpSZB0WMk0G";
@@ -59,7 +59,18 @@ if (! function_exists('sendWhatsappImage')) {
                     Log::info('File URL before:', [ 'fileUrl' => $fileUrl]);
                     $isPdf = strpos($fileUrl, '.pdf') !== false;
 
-
+                    $response = Http::get($url, [
+                        'token' => $token,
+                        'sender_id' => $sender_id,
+                        'phone' => $phone,
+                        'template' => $isPdf ? 'buy_the_invitation_pdf' : 'single_entry_card_new',
+                        'param_1' => $invitationName,
+                        'param_2' => $userName,
+                        'param_3' => $inviterPhone,
+                        'param_4' => $date,
+                        'param_5' => $time,
+                        $isPdf ? 'pdf' : 'image' => $fileUrl,
+                    ]);
 
             Log::info('Preparing WhatsApp Message', [
                 'template' => $isPdf ? 'buy_the_invitation_pdf' : 'single_entry_card_new',
@@ -73,28 +84,6 @@ if (! function_exists('sendWhatsappImage')) {
                     $time,
                 ],
             ]);
-            if($includeData){
-                $response = Http::get($url, [
-                    'token' => $token,
-                    'sender_id' => $sender_id,
-                    'phone' => $phone,
-                    'template' => $isPdf ? 'buy_the_invitation_pdf' : 'single_entry_card_new',
-                    'param_1' => $invitationName,
-                    'param_2' => $userName,
-                    'param_3' => $inviterPhone,
-                    'param_4' => $date,
-                    'param_5' => $time,
-                    $isPdf ? 'pdf' : 'image' => $fileUrl,
-                ]);
-            }else{
-                $response = Http::get($url, [
-                    'token' => $token,
-                    'sender_id' => $sender_id,
-                    'phone' => $phone,
-                    'template' => $isPdf ? 'buy_the_invitation_pdf' : 'single_entry_card_new',
-                    $isPdf ? 'pdf' : 'image' => $fileUrl,
-                ]);
-            }
 
             if ($response->successful()) {
                 $responseData = $response->json();
