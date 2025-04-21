@@ -66,6 +66,11 @@ if (! function_exists('sendWhatsappQR')) {
                 'template' => 'buy_the_invitation_image',
                 'image'   => $qrImageUrl,
                 'file'   => $qrImageUrl,
+                'param_1' => 'Invitation Name',
+                'param_2' => 'User Name',
+                'param_3' => 'Inviter Phone',
+                'param_4' => 'Date',
+                'param_5' => 'Time',
             ]);
 
             Log::info('QR WhatsApp API Response', [
