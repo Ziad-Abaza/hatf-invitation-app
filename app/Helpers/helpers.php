@@ -65,6 +65,7 @@ if (! function_exists('sendWhatsappQR')) {
                 'phone' => $phone,
                 'template' => 'buy_the_invitation_image',
                 'image'   => $qrImageUrl,
+                'file'   => $qrImageUrl,
             ]);
 
             Log::info('QR WhatsApp API Response', [
@@ -103,7 +104,7 @@ if (! function_exists('sendWhatsappImage')) {
                 $qrSent = sendWhatsappQR($phone, $qr);
                 Log::info('QR sent result:', ['success' => $qrSent]);
             }
-            
+
                     $isPdf = strpos($fileUrl, '.pdf') !== false;
 
                     $response = Http::get($url, [
