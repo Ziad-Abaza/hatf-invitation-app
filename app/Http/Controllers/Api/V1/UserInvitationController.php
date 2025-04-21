@@ -56,7 +56,6 @@ class UserInvitationController extends Controller
             'invitation_id'            => $invitation->getKey(),
             'invitation_date'          => $request->invitation_date,
             'invitation_time'          => $request->invitation_time,
-            'user_package_id'          => 82,
         ]);
 
         $userInvitation->addMedia($request->file('file'))->toMediaCollection('default');
