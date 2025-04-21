@@ -45,7 +45,7 @@ class UserInvitationController extends Controller
     {
         $invitation = Invitation::find($request->invitation_id);
         $user = auth('api')->user();
-        $userPackage = $user->userPackages()->latest()->first();
+        $userPackage = $user->userPackage()->latest()->first();
 
         if (auth()->user()->subscription !== 'vip' && $invitation->max_date !== 'unlimited') {
             return errorResponse('غير مصرح بشراء هذه الباقة', 404);
