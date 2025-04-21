@@ -44,6 +44,8 @@ class UserInvitationController extends Controller
     public function create(StoreRequest $request)
     {
         $invitation = Invitation::find($request->invitation_id);
+        $user = auth('api')->user();
+        $userPackage = $user->userPackages()->latest()->first();
 
         if (auth()->user()->subscription !== 'vip' && $invitation->max_date !== 'unlimited') {
             return errorResponse('غير مصرح بشراء هذه الباقة', 404);
@@ -56,6 +58,7 @@ class UserInvitationController extends Controller
             'invitation_id'            => $invitation->getKey(),
             'invitation_date'          => $request->invitation_date,
             'invitation_time'          => $request->invitation_time,
+            'user_package_id'    => $userPackage?->id,
         ]);
 
         $userInvitation->addMedia($request->file('file'))->toMediaCollection('default');
