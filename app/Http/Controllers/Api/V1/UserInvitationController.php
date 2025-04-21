@@ -159,7 +159,7 @@ class UserInvitationController extends Controller
                     ];
                 } else {
                     $invitedUser->update([
-                        'status' => 'failed',
+                        'send_status' => 'failed',
                         'error_message' => 'فشل الإرسال بعد ' . $maxRetries . ' محاولات'
                     ]);
                     $sendResults[] = [

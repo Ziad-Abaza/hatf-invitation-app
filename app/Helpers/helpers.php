@@ -84,7 +84,7 @@ if (! function_exists('sendWhatsappQR')) {
 
             if ($response->successful()) {
                 $responseData = $response->json();
-                return isset($responseData['status']) && $responseData['status'] === 'success';
+                return isset($responseData['message_status']) && $responseData['message_status'] === 'accepted';
             }
 
             return false;
@@ -154,7 +154,7 @@ if (! function_exists('sendWhatsappImage')) {
             // Check if the response is JSON
             if ($response->successful()) {
                 $responseData = $response->json();
-                return isset($responseData['status']) && $responseData['status'] === 'success';
+                return isset($responseData['message_status']) && $responseData['message_status'] === 'accepted';
             }
 
             // If the response is not successful, log the error
