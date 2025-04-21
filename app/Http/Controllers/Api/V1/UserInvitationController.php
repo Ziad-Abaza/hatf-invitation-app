@@ -306,7 +306,9 @@ public function addInviteUsers(InviteRequest $request, UserInvitation $userInvit
             );
             Log::info('تم إرسال الإشعار (QR)', [
                 'phone' => $message['phone'],
-                'status' => $qrSent ? 'success' : 'failed'
+                'status' => $qrSent ? 'success' : 'failed',
+                'response' => $qrSent,
+                'data' => $message
             ]);
 
             if ($message['userInvitationUrl']) {
@@ -321,7 +323,9 @@ public function addInviteUsers(InviteRequest $request, UserInvitation $userInvit
                 );
                 Log::info('تم إرسال الإشعار (User Invitation)', [
                     'phone' => $message['phone'],
-                    'status' => $userInvitationSent ? 'success' : 'failed'
+                    'status' => $userInvitationSent ? 'success' : 'failed',
+                    'response' => $userInvitationSent,
+                    'data' => $message
                 ]);
             }
 
