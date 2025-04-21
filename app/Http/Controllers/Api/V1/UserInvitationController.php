@@ -69,21 +69,21 @@ class UserInvitationController extends Controller
     }
     public function addInviteUsers(InviteRequest $request, UserInvitation $userInvitation)
     {
-
+        // التحقق من الصلاحيات
         if ($userInvitation->user_id != auth('api')->id()) {
-            return errorResponse('You do not have access', 403);
+            return errorResponse('غير مصرح لك', 403);
         }
 
-
+        // التحقق من حالة الدفع
         if ($userInvitation->userPackage->payment->status == 0) {
-            return response()->json(['message' => 'not paymnet'], 400);
+            return response()->json(['message' => 'لم يتم الدفع بعد'], 400);
         }
 
         if ($userInvitation->is_active == 0) {
-            return errorResponse('لم يتم الدفع بعد');
+            return errorResponse('لم يتم تفعيل الدعوة');
         }
 
-        // Ensure the number of invitations doesn't exceed allowed limit
+        // التحقق من الحد الأقصى للدعوات
         $totalAllowed = $userInvitation->number_invitees;
         $currentCount = InvitedUsers::where('user_invitations_id', $userInvitation->id)
             ->where('send_status', 'sent')
@@ -97,10 +97,14 @@ class UserInvitationController extends Controller
         $batchSize = min($remaining, count($request->name));
         $sendResults = [];
         $successfulSends = 0;
-        for ($i = 0; $i < $batchSize; $i++) {
+
+        foreach ($request->name as $i => $name) {
             try {
-                // check if the required fields are set
-                if (!isset($request->name[$i], $request->phone[$i], $request->code[$i], $request->qr[$i])) {
+                // التحقق من وجود البيانات المطلوبة
+                if (
+                    !isset($request->name[$i], $request->phone[$i], $request->code[$i], $request->qr[$i]) ||
+                    empty($request->name[$i]) || empty($request->phone[$i]) || empty($request->code[$i]) || empty($request->qr[$i])
+                ) {
                     $sendResults[] = [
                         'index' => $i,
                         'phone' => $request->phone[$i] ?? 'N/A',
@@ -110,9 +114,10 @@ class UserInvitationController extends Controller
                     continue;
                 }
 
-                // process the QR code and generate the image name
+                // معالجة QR ومعاينة الصورة
                 $imageName = ImageTemplate::process($request->qr[$i], $request->name[$i], $userInvitation);
-                 //create the invited user
+
+                // إنشاء دعوة جديدة
                 $invitedUser = InvitedUsers::create([
                     'name' => $request->name[$i],
                     'phone' => $request->phone[$i],
@@ -122,7 +127,7 @@ class UserInvitationController extends Controller
                     'send_status' => 'pending'
                 ]);
 
-                // retry to send the message with a maximum of 3 attempts
+                // محاولة الإرسال مع آلية إعادة المحاولة
                 $maxRetries = 3;
                 $retryCount = 0;
                 $sent = false;
@@ -141,14 +146,15 @@ class UserInvitationController extends Controller
 
                     if (!$sent) {
                         $retryCount++;
-                        sleep(1); // resend after 1 second
-                        Log::info('Retrying to send WhatsApp message', [
+                        sleep(1); // انتظار قبل إعادة المحاولة
+                        Log::info('إعادة محاولة إرسال الرسالة:', [
                             'attempt' => $retryCount,
                             'phone' => $invitedUser->phone
                         ]);
                     }
                 }
 
+                // تحديث حالة الإرسال بناءً على النتيجة
                 if ($sent) {
                     $invitedUser->update(['send_status' => 'sent']);
                     $successfulSends++;
@@ -179,10 +185,12 @@ class UserInvitationController extends Controller
             }
         }
 
+        // تحديث عدد الدعوات المرسلة بنجاح
         $userInvitation->update([
             'number_invitees' => $currentCount + $successfulSends
         ]);
 
+        // إرجاع النتائج النهائية
         return response()->json([
             'message' => 'تمت معالجة الدعوات',
             'total' => $batchSize,
