@@ -179,10 +179,16 @@ class UserInvitationController extends Controller
             }
         }
 
-        $userInvitation->update([
-            'number_invitees' => $currentCount + $successfulSends
-        ]);
+        // $userInvitation->update([
+        //     'number_invitees' => $currentCount + $successfulSends
+        // ]);
+        $finalCount = InvitedUsers::where('user_invitations_id', $userInvitation->id)
+            ->where('send_status', 'sent')
+            ->count();
 
+        $userInvitation->update([
+            'number_invitees' => $finalCount
+        ]);
         return response()->json([
             'message' => 'تمت معالجة الدعوات',
             'total' => $batchSize,
