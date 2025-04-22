@@ -351,48 +351,57 @@ class UserInvitationController extends Controller
 
     public function checkInvitationStatus(UserInvitation $userInvitation)
     {
-        // التحقق من صلاحية الدعوة
+        // التحقق من صلاحية الوصول
         if ($userInvitation->user_id != auth('api')->id()) {
             return errorResponse('You do not have access', 403);
         }
 
-        // جلب عدد الدعوات المرسلة بنجاح والفاشلة
-        $sentCount = InvitedUsers::where('user_invitations_id', $userInvitation->id)
-            ->where('send_status', 'sent')
-            ->count();
-        $failedCount = InvitedUsers::where('user_invitations_id', $userInvitation->id)
-            ->where('send_status', 'failed')
-            ->count();
+        // جلب جميع الدعوات المرتبطة بالدعوة الرئيسية
+        $invitedUsers = InvitedUsers::where('user_invitations_id', $userInvitation->id)->get();
 
-        // حساب العدد المتبقي من الدعوات
-        $remaining = $userInvitation->number_invitees - $sentCount;
+        // تصنيف الدعوات بناءً على الحالة
+        $sent = [];
+        $failed = [];
+        $pending = [];
 
-        // جلب بيانات الدعوة الأساسية
-        $invitationData = [
-            'id' => $userInvitation->id,
-            'name' => $userInvitation->name,
-            'number_invitees' => $userInvitation->number_invitees,
-            'invitation_date' => $userInvitation->invitation_date,
-            'invitation_time' => $userInvitation->invitation_time,
-            'is_active' => $userInvitation->is_active,
-            'state' => $userInvitation->state == UserInvitation::AVAILABLE ? 'Available' : 'Full',
-            'media' => [
-                'userInvitation' => $userInvitation->getFirstMediaUrl('userInvitation'),
-                'qr' => $userInvitation->getFirstMediaUrl('qr'),
-            ],
-            'user' => [
-                'name' => $userInvitation->user->name ?? 'غير متوفر',
-                'phone' => $userInvitation->user->phone ?? 'غير متوفر',
-            ],
-        ];
+        foreach ($invitedUsers as $user) {
+            $details = [
+                'name' => $user->name,
+                'phone' => $user->phone,
+                'code' => $user->code,
+                'qr' => $user->qr,
+            ];
 
-        // إرجاع البيانات النهائية
+            if ($user->send_status === 'sent') {
+                $sent[] = $details;
+            } elseif ($user->send_status === 'failed') {
+                $failed[] = array_merge($details, [
+                    'error_message' => $user->error_message ?? 'No error message available',
+                ]);
+            } else {
+                $pending[] = $details;
+            }
+        }
+
+        // إرجاع البيانات المفصلة
         return response()->json([
-            'invitation' => $invitationData,
-            'status' => [
-                'sent' => $sentCount,
-                'failed' => $failedCount,
-                'remaining' => $remaining,
+            'invitation_details' => [
+                'id' => $userInvitation->id,
+                'name' => $userInvitation->name,
+                'number_invitees' => $userInvitation->number_invitees,
+                'invitation_date' => $userInvitation->invitation_date,
+                'invitation_time' => $userInvitation->invitation_time,
+            ],
+            'summary' => [
+                'total_sent' => count($sent),
+                'total_failed' => count($failed),
+                'total_pending' => count($pending),
+                'remaining' => $userInvitation->number_invitees - count($sent),
+            ],
+            'details' => [
+                'sent' => $sent,
+                'failed' => $failed,
+                'pending' => $pending,
             ],
         ]);
     }
