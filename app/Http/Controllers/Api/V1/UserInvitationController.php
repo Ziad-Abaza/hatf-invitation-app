@@ -351,15 +351,15 @@ class UserInvitationController extends Controller
 
     public function checkInvitationStatus(UserInvitation $userInvitation)
     {
-        // التحقق من صلاحية الوصول
+        // check if the user has access to the invitation
         if ($userInvitation->user_id != auth('api')->id()) {
             return errorResponse('You do not have access', 403);
         }
 
-        // جلب جميع الدعوات المرتبطة بالدعوة الرئيسية
+        // Retrieve the invited users associated with the invitation
         $invitedUsers = InvitedUsers::where('user_invitations_id', $userInvitation->id)->get();
 
-        // تصنيف الدعوات بناءً على الحالة
+        // Check if there are any invited users
         $sent = [];
         $failed = [];
         $pending = [];
@@ -383,13 +383,7 @@ class UserInvitationController extends Controller
             }
         }
 
-        // حساب عدد الدعوات المتبقية
-        $totalSent = count($sent);
-        $totalFailed = count($failed);
-        $totalPending = count($pending);
-        $remaining = $userInvitation->number_invitees - $totalSent;
-
-        // إرجاع البيانات المفصلة
+        // Return the response with the summary and details
         return response()->json([
             'invitation_details' => [
                 'id' => $userInvitation->id,
@@ -399,16 +393,15 @@ class UserInvitationController extends Controller
                 'invitation_time' => $userInvitation->invitation_time,
             ],
             'summary' => [
-                'total_sent' => $totalSent,
-                'total_failed' => $totalFailed,
-                'total_pending' => $totalPending,
-                'remaining' => $remaining,
+                'total_sent' => count($sent),
+                'total_failed' => count($failed),
+                'total_pending' => count($pending),
+                'remaining' => $userInvitation->number_invitees - count($sent),
             ],
             'details' => [
                 'sent' => $sent,
                 'failed' => $failed,
                 'pending' => $pending,
-                'remaining' => $remaining, // إضافة remaining هنا
             ],
         ]);
     }
