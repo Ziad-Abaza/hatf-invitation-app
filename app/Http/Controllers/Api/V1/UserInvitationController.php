@@ -56,7 +56,6 @@ class UserInvitationController extends Controller
             'invitation_id'            => $invitation->getKey(),
             'invitation_date'          => $request->invitation_date,
             'invitation_time'          => $request->invitation_time,
-            'user_package_id'          => 82,
         ]);
 
         $userInvitation->addMedia($request->file('file'))->toMediaCollection('default');
@@ -327,9 +326,10 @@ class UserInvitationController extends Controller
         }
 
         // Update the number of successfully sent invitations
-        $userInvitation->update([
-            'number_invitees' =>($currentInviteCount + $successfulSends)
-        ]);
+        // $userInvitation->update([
+        //     'number_invitees' =>($currentInviteCount + $successfulSends)
+        // ]);
+        $userInvitation->refresh();
 
         // Return the final results
         return response()->json([
