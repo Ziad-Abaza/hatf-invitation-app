@@ -188,7 +188,7 @@ class UserInvitationController extends Controller
         log::Info('Final Count', ['finalCount' => $finalCount]);
 
         $userInvitation->update([
-            'number_invitees' => $finalCount
+            'number_invitees' => $totalAllowed - $finalCount
         ]);
         return response()->json([
             'message' => 'تمت معالجة الدعوات',
