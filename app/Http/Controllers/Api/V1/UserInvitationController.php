@@ -383,6 +383,12 @@ class UserInvitationController extends Controller
             }
         }
 
+        // حساب عدد الدعوات المتبقية
+        $totalSent = count($sent);
+        $totalFailed = count($failed);
+        $totalPending = count($pending);
+        $remaining = $userInvitation->number_invitees - $totalSent;
+
         // إرجاع البيانات المفصلة
         return response()->json([
             'invitation_details' => [
@@ -393,15 +399,16 @@ class UserInvitationController extends Controller
                 'invitation_time' => $userInvitation->invitation_time,
             ],
             'summary' => [
-                'total_sent' => count($sent),
-                'total_failed' => count($failed),
-                'total_pending' => count($pending),
-                'remaining' => $userInvitation->number_invitees - count($sent),
+                'total_sent' => $totalSent,
+                'total_failed' => $totalFailed,
+                'total_pending' => $totalPending,
+                'remaining' => $remaining,
             ],
             'details' => [
                 'sent' => $sent,
                 'failed' => $failed,
                 'pending' => $pending,
+                'remaining' => $remaining, // إضافة remaining هنا
             ],
         ]);
     }
