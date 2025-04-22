@@ -182,13 +182,9 @@ class UserInvitationController extends Controller
         // $userInvitation->update([
         //     'number_invitees' => $currentCount + $successfulSends
         // ]);
-        $finalCount = InvitedUsers::where('user_invitations_id', $userInvitation->id)
-            ->where('send_status', 'sent')
-            ->count();
-        log::Info('Final Count', ['finalCount' => $finalCount]);
 
         $userInvitation->update([
-            'number_invitees' => $totalAllowed - $successfulSends
+            'number_invitees' => $currentCount + $successfulSends
         ]);
         return response()->json([
             'message' => 'تمت معالجة الدعوات',
@@ -234,7 +230,7 @@ class UserInvitationController extends Controller
 
         // Ensure the number of invitations does not exceed the allowed limit
         $totalAllowedInvitations = $userInvitation->number_invitees;
-        $currentInviteCount = InvitedUsers::where("user_invitations_id", $userInvitation->id)->count();
+        $currentInviteCount = InvitedUsers::where("user_invitations_id", $userInvitation->id)->where('send_status', 'sent')->count();
         $remainingInvitations = $totalAllowedInvitations - $currentInviteCount;
 
         if ($remainingInvitations <= 0) {
