@@ -179,7 +179,7 @@ class UserInvitationController extends Controller
             }
         }
 
-        $userInvitation->update(['number_invitees' => $userInvitation->number_invitees + 1]);
+        $userInvitation->update(['number_invitees' => $userInvitation->number_invitees + $successfulSends]);
         $userInvitation->refresh();
 
         return response()->json([
