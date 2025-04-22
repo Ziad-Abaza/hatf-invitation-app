@@ -20,7 +20,6 @@ use App\Http\Requests\Api\UserInvitation\InviteRequestP;
 use App\Http\Resources\UserInvitation\UserInvitationResource;
 use App\Http\Resources\UserInvitation\UserPrivateInvitationResource;
 use App\Http\Requests\Api\UserInvitation\PaymentUserInvitationRequest;
-use App\Jobs\SendInvitationJob;
 
 
 
@@ -70,76 +69,127 @@ class UserInvitationController extends Controller
     }
     public function addInviteUsers(InviteRequest $request, UserInvitation $userInvitation)
     {
-        // التحقق من الصلاحيات
+
         if ($userInvitation->user_id != auth('api')->id()) {
-            return errorResponse('غير مصرح لك', 403);
+            return errorResponse('You do not have access', 403);
         }
 
-        // التحقق من حالة الدفع
         if ($userInvitation->userPackage->payment->status == 0) {
-            return response()->json(['message' => 'لم يتم الدفع'], 400);
+            return response()->json(['message' => 'not paymnet'], 400);
         }
 
         if ($userInvitation->is_active == 0) {
-            return errorResponse('لم يتم تفعيل الدعوة');
+            return errorResponse('لم يتم الدفع بعد');
         }
 
-        // حساب الدعوات المتبقية
+        // Ensure the number of invitations doesn't exceed allowed limit
         $totalAllowed = $userInvitation->number_invitees;
         $currentCount = InvitedUsers::where('user_invitations_id', $userInvitation->id)
-            ->where('send_status', 'sent')
+            ->where('send_status', 'send')
             ->count();
         $remaining = $totalAllowed - $currentCount;
 
-        if ($remaining <= 0) {
+        if ($totalAllowed <= $currentCount) {
             return errorResponse('تم الوصول للحد الأقصى للدعوات');
         }
 
         $batchSize = min($remaining, count($request->name));
-        $invitedUserIds = [];
-
-        foreach ($request->name as $index => $name) {
+        $sendResults = [];
+        $successfulSends = 0;
+        for ($i = 0; $i < $batchSize; $i++) {
             try {
-                // التحقق من وجود الحقول المطلوبة
-                if (!isset($request->name[$index], $request->phone[$index], $request->code[$index], $request->qr[$index])) {
-                    Log::warning('Missing data for invitation at index: ' . $index);
+                // check if the required fields are set
+                if (!isset($request->name[$i], $request->phone[$i], $request->code[$i], $request->qr[$i])) {
+                    $sendResults[] = [
+                        'index' => $i,
+                        'phone' => $request->phone[$i] ?? 'N/A',
+                        'success' => false,
+                        'error' => 'بيانات ناقصة'
+                    ];
                     continue;
                 }
 
-                // معالجة QR وإنشاء الدعوة
-                $imageName = ImageTemplate::process($request->qr[$index], $request->name[$index], $userInvitation);
-
-                // إنشاء دعوة جديدة
+                // process the QR code and generate the image name
+                $imageName = ImageTemplate::process($request->qr[$i], $request->name[$i], $userInvitation);
+                 //create the invited user
                 $invitedUser = InvitedUsers::create([
-                    'name' => $request->name[$index],
-                    'phone' => $request->phone[$index],
-                    'code' => $request->code[$index],
+                    'name' => $request->name[$i],
+                    'phone' => $request->phone[$i],
+                    'code' => $request->code[$i],
                     'qr' => $imageName,
                     'user_invitations_id' => $userInvitation->id,
                     'send_status' => 'pending'
                 ]);
 
-                $invitedUserIds[] = $invitedUser->id;
+                // retry to send the message with a maximum of 3 attempts
+                $maxRetries = 3;
+                $retryCount = 0;
+                $sent = false;
+
+                while ($retryCount < $maxRetries && !$sent) {
+                    $sent = sendWhatsappImage(
+                        $invitedUser->phone,
+                        $userInvitation->getFirstMediaUrl('userInvitation'),
+                        $userInvitation->user->phone ?? 'غير متوفر',
+                        $userInvitation->name ?? 'غير متوفر',
+                        $userInvitation->user->name ?? 'غير متوفر',
+                        $userInvitation->invitation_date ?? 'غير متوفر',
+                        $userInvitation->invitation_time ?? 'غير متوفر',
+                        $userInvitation->getFirstMediaUrl('qr')
+                    );
+
+                    if (!$sent) {
+                        $retryCount++;
+                        sleep(1); // resend after 1 second
+                        Log::info('Retrying to send WhatsApp message', [
+                            'attempt' => $retryCount,
+                            'phone' => $invitedUser->phone
+                        ]);
+                    }
+                }
+
+                if ($sent) {
+                    $invitedUser->update(['send_status' => 'sent']);
+                    $successfulSends++;
+                    $sendResults[] = [
+                        'index' => $i,
+                        'phone' => $invitedUser->phone,
+                        'success' => true
+                    ];
+                } else {
+                    $invitedUser->update([
+                        'send_status' => 'failed',
+                        'error_message' => 'فشل الإرسال بعد ' . $maxRetries . ' محاولات'
+                    ]);
+                    $sendResults[] = [
+                        'index' => $i,
+                        'phone' => $invitedUser->phone,
+                        'success' => false,
+                        'error' => 'فشل الإرسال'
+                    ];
+                }
             } catch (\Exception $e) {
-                Log::error('Error creating invited user: ' . $e->getMessage());
+                $sendResults[] = [
+                    'index' => $i,
+                    'phone' => $request->phone[$i] ?? 'N/A',
+                    'success' => false,
+                    'error' => $e->getMessage()
+                ];
             }
         }
 
-        // إرسال المهام إلى الـ Queue
-        foreach ($invitedUserIds as $userId) {
-            $invitedUser = InvitedUsers::find($userId);
-            dispatch(new SendInvitationJob(
-                $invitedUser,
-                $userInvitation->getFirstMediaUrl('userInvitation'),
-                $userInvitation
-            ))->onQueue('high');
-        }
+        $userInvitation->update(['number_invitees' => $userInvitation->number_invitees + $successfulSends]);
+        $userInvitation->refresh();
 
         return response()->json([
-            'message' => 'جارٍ معالجة الدعوات في الخلفية...',
-            'total_queued' => count($invitedUserIds)
+            'message' => 'تمت معالجة الدعوات',
+            'total' => $batchSize,
+            'successful' => $successfulSends,
+            'failed' => $batchSize - $successfulSends,
+            'results' => $sendResults
         ]);
     }
+
     public function addInviteUsersP(InviteRequestP $request, UserPackage $userPackage)
     {
         // Check payment status
