@@ -351,6 +351,12 @@ class UserInvitationController extends Controller
 
     public function checkInvitationStatus(UserInvitation $userInvitation)
     {
+        // التحقق من صلاحية الدعوة
+        if ($userInvitation->user_id != auth('api')->id()) {
+            return errorResponse('You do not have access', 403);
+        }
+
+        // جلب عدد الدعوات المرسلة بنجاح والفاشلة
         $sentCount = InvitedUsers::where('user_invitations_id', $userInvitation->id)
             ->where('send_status', 'sent')
             ->count();
@@ -358,10 +364,36 @@ class UserInvitationController extends Controller
             ->where('send_status', 'failed')
             ->count();
 
+        // حساب العدد المتبقي من الدعوات
+        $remaining = $userInvitation->number_invitees - $sentCount;
+
+        // جلب بيانات الدعوة الأساسية
+        $invitationData = [
+            'id' => $userInvitation->id,
+            'name' => $userInvitation->name,
+            'number_invitees' => $userInvitation->number_invitees,
+            'invitation_date' => $userInvitation->invitation_date,
+            'invitation_time' => $userInvitation->invitation_time,
+            'is_active' => $userInvitation->is_active,
+            'state' => $userInvitation->state == UserInvitation::AVAILABLE ? 'Available' : 'Full',
+            'media' => [
+                'userInvitation' => $userInvitation->getFirstMediaUrl('userInvitation'),
+                'qr' => $userInvitation->getFirstMediaUrl('qr'),
+            ],
+            'user' => [
+                'name' => $userInvitation->user->name ?? 'غير متوفر',
+                'phone' => $userInvitation->user->phone ?? 'غير متوفر',
+            ],
+        ];
+
+        // إرجاع البيانات النهائية
         return response()->json([
-            'sent' => $sentCount,
-            'failed' => $failedCount,
-            'remaining' => $userInvitation->number_invitees - $sentCount
+            'invitation' => $invitationData,
+            'status' => [
+                'sent' => $sentCount,
+                'failed' => $failedCount,
+                'remaining' => $remaining,
+            ],
         ]);
     }
 }
