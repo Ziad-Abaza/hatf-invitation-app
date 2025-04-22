@@ -70,28 +70,26 @@ class UserInvitationController extends Controller
     }
     public function addInviteUsers(InviteRequest $request, UserInvitation $userInvitation)
     {
-        // التحقق من الصلاحيات
         if ($userInvitation->user_id != auth('api')->id()) {
-            return errorResponse('غير مصرح لك', 403);
+            return errorResponse('You do not have access', 403);
         }
 
-        // التحقق من حالة الدفع
         if ($userInvitation->userPackage->payment->status == 0) {
-            return response()->json(['message' => 'لم يتم الدفع'], 400);
+            return response()->json(['message' => 'not paymnet'], 400);
         }
 
         if ($userInvitation->is_active == 0) {
-            return errorResponse('لم يتم تفعيل الدعوة');
+            return errorResponse('لم يتم الدفع بعد');
         }
 
-        // حساب الدعوات المتبقية
+        // Ensure the number of invitations doesn't exceed allowed limit
         $totalAllowed = $userInvitation->number_invitees;
         $currentCount = InvitedUsers::where('user_invitations_id', $userInvitation->id)
-            ->where('send_status', 'sent')
+            ->where('send_status', 'send')
             ->count();
         $remaining = $totalAllowed - $currentCount;
 
-        if ($remaining <= 0) {
+        if ($totalAllowed <= $currentCount) {
             return errorResponse('تم الوصول للحد الأقصى للدعوات');
         }
 
@@ -100,16 +98,16 @@ class UserInvitationController extends Controller
 
         foreach ($request->name as $index => $name) {
             try {
-                // التحقق من وجود الحقول المطلوبة
+                // Check if all required fields are set
                 if (!isset($request->name[$index], $request->phone[$index], $request->code[$index], $request->qr[$index])) {
                     Log::warning('Missing data for invitation at index: ' . $index);
                     continue;
                 }
 
-                // معالجة QR وإنشاء الدعوة
+                // Process QR and preview the image
                 $imageName = ImageTemplate::process($request->qr[$index], $request->name[$index], $userInvitation);
 
-                // إنشاء دعوة جديدة
+                // Create a new invited user record
                 $invitedUser = InvitedUsers::create([
                     'name' => $request->name[$index],
                     'phone' => $request->phone[$index],
@@ -119,13 +117,14 @@ class UserInvitationController extends Controller
                     'send_status' => 'pending'
                 ]);
 
+                // Retry sending the message
                 $invitedUserIds[] = $invitedUser->id;
             } catch (\Exception $e) {
                 Log::error('Error creating invited user: ' . $e->getMessage());
             }
         }
 
-        // إرسال المهام إلى الـ Queue
+        // Check if there are any invited users to process
         foreach ($invitedUserIds as $userId) {
             $invitedUser = InvitedUsers::find($userId);
             dispatch(new SendInvitationJob(
@@ -135,6 +134,7 @@ class UserInvitationController extends Controller
             ))->onQueue('high');
         }
 
+        // Update the number of successfully sent invitations
         return response()->json([
             'message' => 'جارٍ معالجة الدعوات في الخلفية...',
             'total_queued' => count($invitedUserIds)

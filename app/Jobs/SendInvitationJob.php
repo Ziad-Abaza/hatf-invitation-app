@@ -40,7 +40,7 @@ class SendInvitationJob implements ShouldQueue
 
             if ($sent) {
                 $this->invitedUser->update(['send_status' => 'sent']);
-                $this->userInvitation->decrement('number_invitees'); 
+                $this->userInvitation->increment('number_invitees');
             } else {
                 $this->invitedUser->update([
                     'send_status' => 'failed',
