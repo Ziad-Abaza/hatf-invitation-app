@@ -65,7 +65,7 @@ if (! function_exists('sendWhatsappQR')) {
                 'phone' => $phone,
                 'template' => 'buy_the_invitation_image',
                 'image'   => $qrImageUrl,
-                'param_1' => 'يرجى الحتفاظ على هذه الصورة لاظهارها عند الدخول',
+                'param_1' => '✨ يرجى الاحتفاظ بهذه الصورة 😊 ونأمل لك وقتًا ممتعًا! 🌟',
             ]);
 
             Log::info('QR WhatsApp API Response', [
