@@ -90,7 +90,7 @@ class UserInvitationController extends Controller
             ->count();
         $remaining = $totalAllowed - $currentCount;
 
-        if ($remaining <= 0) {
+        if ($totalAllowed <= $currentCount) {
             return errorResponse('تم الوصول للحد الأقصى للدعوات');
         }
 
@@ -233,7 +233,7 @@ class UserInvitationController extends Controller
         $currentInviteCount = InvitedUsers::where("user_invitations_id", $userInvitation->id)->where('send_status', 'sent')->count();
         $remainingInvitations = $totalAllowedInvitations - $currentInviteCount;
 
-        if ($remainingInvitations <= 0) {
+        if ($totalAllowedInvitations <= $currentInviteCount) {
             return response()->json([
                 'message' => 'فشل إرسال الدعوات',
                 'data' => $userInvitation,
