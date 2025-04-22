@@ -72,7 +72,9 @@ Route::prefix('v1')->group(function () {
         Route::get('user-invitations/{userInvitation}', [UserInvitationController::class, 'show']);
         Route::post('user-invitations', [UserInvitationController::class, 'create']);
         Route::post('user-invitation/{userInvitation}/invite-users', [UserInvitationController::class, 'addInviteUsers']);//3
-        Route::post('user-invitation/{userPackage}/invite-users-private', [UserInvitationController::class, 'addInviteUsersP']);//3//
+        Route::post('user-invitation/{userPackage}/invite-users-private', [UserInvitationController::class, 'addInviteUsersP']); //3//
+
+        Route::get('user-invitation/{userInvitation}/check-status', [UserInvitationController::class, 'checkInvitationStatus']);
 
         Route::post('user-invitation/{userInvitation}/scan-qr', [UserInvitationController::class, 'scanQr']);
         Route::post('user-invitations/{paymentUserInvitation}/success-payment', [UserInvitationController::class, 'successPaymentUserInvitation']);

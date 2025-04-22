@@ -347,4 +347,21 @@ class UserInvitationController extends Controller
 
         return successResponseDataWithMessage('تم حذف بنجاح', 200);
     }
+
+
+    public function checkInvitationStatus(UserInvitation $userInvitation)
+    {
+        $sentCount = InvitedUsers::where('user_invitations_id', $userInvitation->id)
+            ->where('send_status', 'sent')
+            ->count();
+        $failedCount = InvitedUsers::where('user_invitations_id', $userInvitation->id)
+            ->where('send_status', 'failed')
+            ->count();
+
+        return response()->json([
+            'sent' => $sentCount,
+            'failed' => $failedCount,
+            'remaining' => $userInvitation->number_invitees - $sentCount
+        ]);
+    }
 }
