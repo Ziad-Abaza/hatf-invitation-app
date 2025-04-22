@@ -185,6 +185,7 @@ class UserInvitationController extends Controller
         $finalCount = InvitedUsers::where('user_invitations_id', $userInvitation->id)
             ->where('send_status', 'sent')
             ->count();
+        log::Info('Final Count', ['finalCount' => $finalCount]);
 
         $userInvitation->update([
             'number_invitees' => $finalCount
