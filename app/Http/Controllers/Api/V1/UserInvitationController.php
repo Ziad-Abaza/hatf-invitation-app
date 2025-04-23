@@ -144,19 +144,19 @@ class UserInvitationController extends Controller
     }
     public function addInviteUsersP(InviteRequestP $request, UserPackage $userPackage)
     {
-        // التحقق من حالة الدفع
+        // Check payment status
         if ($userPackage->payment->status == 0) {
             return response()->json(['message' => 'لم يتم الدفع'], 400);
         }
 
-        // التحقق من صلاحية الباقة الخاصة (تاريخ انتهاء الصلاحية)
+        // Check the validity of the private package (expiration date)
         try {
             PaymentUserInvitation::chickExpirartionPrivateInvitation($userPackage->id);
         } catch (\Throwable $th) {
             throw $th;
         }
 
-        // إنشاء دعوة جديدة
+        // Create a new invitation
         $user = auth('api')->user();
         $userInvitation = UserInvitation::create([
             'state'           => UserInvitation::AVAILABLE,
@@ -170,63 +170,77 @@ class UserInvitationController extends Controller
             'is_active'       => 1
         ]);
 
-        // إضافة ملف الوسائط (مثل صورة أو ملف PDF)
+        // Add media file (e.g., image or PDF)
         if ($request->hasFile('file')) {
             $userInvitation->addMedia($request->file('file'))->toMediaCollection('userInvitation');
         }
 
-        // التحقق من عدد الدعوات المسموح بها
-        $totalAllowedInvitations = $userInvitation->number_invitees;
-        $currentInviteCount = InvitedUsers::where("user_invitations_id", $userInvitation->id)->count();
-        $remainingInvitations = $totalAllowedInvitations - $currentInviteCount;
-
-        if ($remainingInvitations <= 0) {
+        // Ensure the number of invitations does not exceed the allowed limit
+        $totalAllowed = $userInvitation->number_invitees;
+        $currentCount = InvitedUsers::where('user_invitations_id', $userInvitation->id)
+            ->where('send_status', 'sent')
+            ->count();
+        $remaining = $totalAllowed - $currentCount;
+        if ($totalAllowed <= $currentCount) {
             return response()->json([
                 'message' => 'فشل إرسال الدعوات',
                 'data' => $userInvitation,
-                'error' => "الدعوات المرسلة " . $currentInviteCount . " تساوي عدد الدعوات التي تم شراؤها " . $totalAllowedInvitations
+                'error' => "الدعوات المرسلة " . $currentCount . " تساوي عدد الدعوات التي تم شراؤها " . $totalAllowed
             ], 400);
         }
 
-        // تحديد عدد الدعوات المطلوب إرسالها
-        $totalRequests = count($request->name);
-        $batchSize = min($remainingInvitations, $totalRequests);
+        // Limit the number of invitations to send
+        $batchSize = min($remaining, count($request->name));
+        $sendResults = [];
 
-        $errors = [];
+        foreach ($request->name as $index => $name) {
+            try {
+                // Check if all required fields are set
+                if (!isset($request->name[$index], $request->phone[$index], $request->code[$index], $request->qr[$index])) {
+                    $sendResults[] = [
+                        'index' => $index,
+                        'phone' => $request->phone[$index] ?? 'N/A',
+                        'success' => false,
+                        'error' => 'بيانات ناقصة'
+                    ];
+                    continue;
+                }
 
-        for ($index = 0; $index < $batchSize; $index++) {
-            // التحقق من وجود جميع الحقول المطلوبة
-            if (!isset($request->name[$index], $request->phone[$index], $request->code[$index], $request->qr[$index])) {
-                $errors[] = [
+                // Process QR and preview the image
+                $imageName = ImageTemplate::process($request->qr[$index], $request->name[$index], $userInvitation);
+                $invitedUser = InvitedUsers::create([
+                    'name' => $request->name[$index],
+                    'phone' => $request->phone[$index],
+                    'code' => $request->code[$index],
+                    'qr' => $imageName,
+                    'user_invitations_id' => $userInvitation->id,
+                    'send_status' => 'pending'
+                ]);
+
+                dispatch(new SendPrivateInvitationJob($invitedUser, $userInvitation))
+                    ->onQueue('high') // define the queue name
+                    ->delay(now()->addSeconds(1)); // delay the job by 1 second
+
+                $sendResults[] = [
+                    'index' => $index,
+                    'phone' => $invitedUser->phone,
+                    'success' => true
+                ];
+            } catch (\Exception $e) {
+                $sendResults[] = [
                     'index' => $index,
                     'phone' => $request->phone[$index] ?? 'N/A',
                     'success' => false,
-                    'error' => 'بيانات ناقصة'
+                    'error' => $e->getMessage()
                 ];
-                continue;
             }
-
-            // إرسال المهمة إلى الـ Queue
-            dispatch(new SendPrivateInvitationJob([
-                'name' => $request->name[$index],
-                'phone' => $request->phone[$index],
-                'code' => $request->code[$index],
-                'qr' => $request->qr[$index],
-            ], $userInvitation))->onQueue('high');
         }
 
-        // إذا كانت هناك أخطاء في البيانات، يتم إرجاع الخطأ دون إرسال أي دعوة
-        if (!empty($errors)) {
-            return response()->json([
-                'message' => 'فشل إرسال بعض الدعوات بسبب بيانات ناقصة',
-                'errors' => $errors
-            ], 400);
-        }
-
-        // إرجاع رد فوري بأن الدعوات قيد الإرسال
+        // Return the final results
         return response()->json([
-            'message' => 'الدعوات قيد الإرسال في الخلفية...',
-            'total_queued' => $batchSize
+            'message' => 'جارٍ معالجة الدعوات في الخلفية...',
+            'total_queued' => $batchSize,
+            'results' => $sendResults
         ]);
     }
 

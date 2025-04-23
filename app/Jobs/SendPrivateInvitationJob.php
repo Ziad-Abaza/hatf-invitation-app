@@ -7,47 +7,41 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
-use App\Models\InvitedUsers;
 use Illuminate\Support\Facades\Log;
-use App\Services\ImageTemplate;
+use App\Models\UserInvitation;
+use App\Models\InvitedUsers;
 
 class SendPrivateInvitationJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    protected $data;
+    protected $invitedUser;
     protected $userInvitation;
 
-    public function __construct(array $data, $userInvitation)
+    /**
+     * Create a new job instance.
+     */
+    public function __construct(InvitedUsers $invitedUser, UserInvitation $userInvitation)
     {
-        $this->data = $data;
+        $this->invitedUser = $invitedUser;
         $this->userInvitation = $userInvitation;
     }
 
-    public function handle()
+    /**
+     * Execute the job.
+     */
+    public function handle(): void
     {
         try {
-            // معالجة QR
-            $imageName = ImageTemplate::process($this->data['qr'], $this->data['name'], $this->userInvitation);
-
-            // إنشاء دعوة جديدة
-            $invitedUser = InvitedUsers::create([
-                'name' => $this->data['name'],
-                'phone' => $this->data['phone'],
-                'code' => $this->data['code'],
-                'qr' => $imageName,
-                'user_invitations_id' => $this->userInvitation->id,
-                'send_status' => 'pending'
-            ]);
-
-            // إعادة المحاولة لإرسال الرسالة (3 محاولات كحد أقصى)
+            // set_time_limit(0); // Remove time limit for long-running jobs
             $maxRetries = 3;
             $retryCount = 0;
             $sent = false;
 
+            // Attempt to send the message with retries
             while ($retryCount < $maxRetries && !$sent) {
                 $sent = sendWhatsappImage(
-                    $invitedUser->phone,
+                    $this->invitedUser->phone,
                     $this->userInvitation->getFirstMediaUrl('userInvitation'),
                     $this->userInvitation->user->phone ?? 'غير متوفر',
                     $this->userInvitation->name ?? 'غير متوفر',
@@ -57,24 +51,32 @@ class SendPrivateInvitationJob implements ShouldQueue
                     $this->userInvitation->getFirstMediaUrl('qr')
                 );
 
+
                 if (!$sent) {
                     $retryCount++;
-                    sleep(1); // انتظار قبل إعادة المحاولة
-                    Log::info('Retrying to send message:', ['attempt' => $retryCount, 'phone' => $invitedUser->phone]);
+                    sleep(1); // Wait for a second before retrying
+                    Log::info('Retry sending message:', [
+                        'attempt' => $retryCount,
+                        'phone' => $this->invitedUser->phone
+                    ]);
                 }
             }
 
-            // تحديث حالة الإرسال بناءً على النتيجة
             if ($sent) {
-                $invitedUser->update(['send_status' => 'sent']);
+                $this->invitedUser->update(['send_status' => 'sent']);
+                $this->userInvitation->decrement('number_invitees'); // Decrement the number of invitees
             } else {
-                $invitedUser->update([
+                $this->invitedUser->update([
                     'send_status' => 'failed',
                     'error_message' => 'Failed after ' . $maxRetries . ' attempts'
                 ]);
             }
         } catch (\Exception $e) {
             Log::error('Error in SendPrivateInvitationJob:', ['error' => $e->getMessage()]);
+            $this->invitedUser->update([
+                'send_status' => 'failed',
+                'error_message' => $e->getMessage()
+            ]);
         }
     }
 }
