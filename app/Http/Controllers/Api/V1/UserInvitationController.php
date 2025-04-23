@@ -176,8 +176,7 @@ class UserInvitationController extends Controller
 
         // Ensure the number of invitations does not exceed the allowed limit
         $totalAllowedInvitations = $userInvitation->number_invitees;
-        $currentInviteCount = InvitedUsers::where("user_invitations_id", $userInvitation->id)
-        ->where('send_status', 'send')->count();
+        $currentInviteCount = InvitedUsers::where("user_invitations_id", $userInvitation->id)->count();
         $remainingInvitations = $totalAllowedInvitations - $currentInviteCount;
 
         if ($totalAllowedInvitations <= $currentInviteCount) {
