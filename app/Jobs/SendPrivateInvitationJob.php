@@ -3,50 +3,44 @@
 namespace App\Jobs;
 
 use Illuminate\Bus\Queueable;
-use Illuminate\Queue\SerializesModels;
-use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
-use App\Models\UserInvitation;
+use Illuminate\Foundation\Bus\Dispatchable;
+use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Queue\SerializesModels;
 use App\Models\InvitedUsers;
 use Illuminate\Support\Facades\Log;
-use App\Services\ImageTemplate; // Adjust the namespace if the class exists elsewhere
+use App\Services\ImageTemplate;
 
 class SendPrivateInvitationJob implements ShouldQueue
 {
-    use InteractsWithQueue, Queueable, SerializesModels;
+    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
+    protected $data;
     protected $userInvitation;
-    protected $name;
-    protected $phone;
-    protected $code;
-    protected $qr;
 
-    public function __construct(UserInvitation $userInvitation, $name, $phone, $code, $qr)
+    public function __construct(array $data, $userInvitation)
     {
+        $this->data = $data;
         $this->userInvitation = $userInvitation;
-        $this->name = $name;
-        $this->phone = $phone;
-        $this->code = $code;
-        $this->qr = $qr;
     }
 
     public function handle()
     {
         try {
             // معالجة QR
-            $imageName = ImageTemplate::process($this->qr, $this->name, $this->userInvitation);
+            $imageName = ImageTemplate::process($this->data['qr'], $this->data['name'], $this->userInvitation);
 
-            // إنشاء سجل جديد للمدعو
+            // إنشاء دعوة جديدة
             $invitedUser = InvitedUsers::create([
-                'name' => $this->name,
-                'phone' => $this->phone,
-                'code' => $this->code,
+                'name' => $this->data['name'],
+                'phone' => $this->data['phone'],
+                'code' => $this->data['code'],
                 'qr' => $imageName,
                 'user_invitations_id' => $this->userInvitation->id,
                 'send_status' => 'pending'
             ]);
 
-            // إعادة المحاولة لإرسال الرسالة
+            // إعادة المحاولة لإرسال الرسالة (3 محاولات كحد أقصى)
             $maxRetries = 3;
             $retryCount = 0;
             $sent = false;
@@ -66,29 +60,21 @@ class SendPrivateInvitationJob implements ShouldQueue
                 if (!$sent) {
                     $retryCount++;
                     sleep(1); // انتظار قبل إعادة المحاولة
-                    Log::info('إعادة محاولة الإرسال:', [
-                        'attempt' => $retryCount,
-                        'phone' => $invitedUser->phone
-                    ]);
+                    Log::info('Retrying to send message:', ['attempt' => $retryCount, 'phone' => $invitedUser->phone]);
                 }
             }
 
             // تحديث حالة الإرسال بناءً على النتيجة
             if ($sent) {
                 $invitedUser->update(['send_status' => 'sent']);
-                $this->userInvitation->decrement('number_invitees'); // تحديث العدد المتبقي
             } else {
                 $invitedUser->update([
                     'send_status' => 'failed',
-                    'error_message' => 'فشل الإرسال بعد ' . $maxRetries . ' محاولات'
-                ]);
-                Log::error('فشل الإرسال النهائي:', [
-                    'phone' => $invitedUser->phone,
-                    'error' => 'تمت ' . $maxRetries . ' محاولات دون نجاح'
+                    'error_message' => 'Failed after ' . $maxRetries . ' attempts'
                 ]);
             }
         } catch (\Exception $e) {
-            Log::error('خطأ أثناء معالجة الدعوة:', ['error' => $e->getMessage()]);
+            Log::error('Error in SendPrivateInvitationJob:', ['error' => $e->getMessage()]);
         }
     }
 }

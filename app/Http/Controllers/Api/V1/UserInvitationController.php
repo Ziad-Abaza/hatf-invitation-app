@@ -176,45 +176,60 @@ class UserInvitationController extends Controller
         }
 
         // التحقق من عدد الدعوات المسموح بها
-        $totalAllowed = $userInvitation->number_invitees;
-        $currentCount = InvitedUsers::where('user_invitations_id', $userInvitation->id)
-            ->where('send_status', 'sent')
-            ->count();
-        $remaining = $totalAllowed - $currentCount;
+        $totalAllowedInvitations = $userInvitation->number_invitees;
+        $currentInviteCount = InvitedUsers::where("user_invitations_id", $userInvitation->id)->count();
+        $remainingInvitations = $totalAllowedInvitations - $currentInviteCount;
 
-        if ($remaining <= 0) {
-            return errorResponse('تم الوصول للحد الأقصى للدعوات');
+        if ($remainingInvitations <= 0) {
+            return response()->json([
+                'message' => 'فشل إرسال الدعوات',
+                'data' => $userInvitation,
+                'error' => "الدعوات المرسلة " . $currentInviteCount . " تساوي عدد الدعوات التي تم شراؤها " . $totalAllowedInvitations
+            ], 400);
         }
 
-        $batchSize = min($remaining, count($request->name));
+        // تحديد عدد الدعوات المطلوب إرسالها
+        $totalRequests = count($request->name);
+        $batchSize = min($remainingInvitations, $totalRequests);
 
-        // إرسال المهام إلى الـ Queue
-        foreach ($request->name as $index => $name) {
-            try {
-                // التحقق من وجود الحقول المطلوبة
-                if (!isset($request->name[$index], $request->phone[$index], $request->code[$index], $request->qr[$index])) {
-                    continue; // تخطي إذا كانت البيانات ناقصة
-                }
+        $errors = [];
 
-                // إرسال المهمة إلى الـ Queue
-                dispatch(new SendPrivateInvitationJob(
-                    $userInvitation,
-                    $request->name[$index],
-                    $request->phone[$index],
-                    $request->code[$index],
-                    $request->qr[$index]
-                ))->onQueue('high'); // تحديد Queue ذات أولوية عالية
-            } catch (\Exception $e) {
-                Log::error('خطأ أثناء إرسال المهمة إلى الـ Queue:', ['error' => $e->getMessage()]);
+        for ($index = 0; $index < $batchSize; $index++) {
+            // التحقق من وجود جميع الحقول المطلوبة
+            if (!isset($request->name[$index], $request->phone[$index], $request->code[$index], $request->qr[$index])) {
+                $errors[] = [
+                    'index' => $index,
+                    'phone' => $request->phone[$index] ?? 'N/A',
+                    'success' => false,
+                    'error' => 'بيانات ناقصة'
+                ];
+                continue;
             }
+
+            // إرسال المهمة إلى الـ Queue
+            dispatch(new SendPrivateInvitationJob([
+                'name' => $request->name[$index],
+                'phone' => $request->phone[$index],
+                'code' => $request->code[$index],
+                'qr' => $request->qr[$index],
+            ], $userInvitation))->onQueue('high');
         }
 
-        // إرجاع رد فوري للمستخدم
+        // إذا كانت هناك أخطاء في البيانات، يتم إرجاع الخطأ دون إرسال أي دعوة
+        if (!empty($errors)) {
+            return response()->json([
+                'message' => 'فشل إرسال بعض الدعوات بسبب بيانات ناقصة',
+                'errors' => $errors
+            ], 400);
+        }
+
+        // إرجاع رد فوري بأن الدعوات قيد الإرسال
         return response()->json([
-            'message' => 'جارٍ معالجة الدعوات في الخلفية...',
+            'message' => 'الدعوات قيد الإرسال في الخلفية...',
             'total_queued' => $batchSize
         ]);
     }
+
     public function scanQr(Request $request, UserInvitation $userInvitation)
     {
         $invitedUsers = InvitedUsers::where('user_invitations_id', $userInvitation->id)->where('code', $request->code)->first();
