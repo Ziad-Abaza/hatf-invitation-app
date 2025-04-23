@@ -200,9 +200,9 @@ class UserInvitationController extends Controller
             }
 
             //  Check if the phone number is valid like 0591234567
-            if (!preg_match('/^9665\d{8}$/', $request->phone[$index])) {
-                $errors[] = "رقم الهاتف في الدعوة رقم " . ($index + 1) . " غير صالح.";
-            }
+            // if (!preg_match('/^9665\d{8}$/', $request->phone[$index])) {
+            //     $errors[] = "رقم الهاتف في الدعوة رقم " . ($index + 1) . " غير صالح.";
+            // }
         }
 
         if (!empty($errors)) {
