@@ -3,37 +3,57 @@
 namespace App\Jobs;
 
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Foundation\Bus\Dispatchable;
-use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Support\Facades\Log;
+use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use App\Models\UserInvitation;
 use App\Models\InvitedUsers;
+use Illuminate\Support\Facades\Log;
+use App\Services\ImageTemplate; // Adjust the namespace if the class exists elsewhere
 
 class SendPrivateInvitationJob implements ShouldQueue
 {
-    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+    use InteractsWithQueue, Queueable, SerializesModels;
 
-    protected $invitedUser;
     protected $userInvitation;
+    protected $name;
+    protected $phone;
+    protected $code;
+    protected $qr;
 
-    public function __construct(InvitedUsers $invitedUser, UserInvitation $userInvitation)
+    public function __construct(UserInvitation $userInvitation, $name, $phone, $code, $qr)
     {
-        $this->invitedUser = $invitedUser;
         $this->userInvitation = $userInvitation;
+        $this->name = $name;
+        $this->phone = $phone;
+        $this->code = $code;
+        $this->qr = $qr;
     }
 
-    public function handle(): void
+    public function handle()
     {
         try {
+            // معالجة QR
+            $imageName = ImageTemplate::process($this->qr, $this->name, $this->userInvitation);
+
+            // إنشاء سجل جديد للمدعو
+            $invitedUser = InvitedUsers::create([
+                'name' => $this->name,
+                'phone' => $this->phone,
+                'code' => $this->code,
+                'qr' => $imageName,
+                'user_invitations_id' => $this->userInvitation->id,
+                'send_status' => 'pending'
+            ]);
+
+            // إعادة المحاولة لإرسال الرسالة
             $maxRetries = 3;
             $retryCount = 0;
             $sent = false;
 
             while ($retryCount < $maxRetries && !$sent) {
                 $sent = sendWhatsappImage(
-                    $this->invitedUser->phone,
+                    $invitedUser->phone,
                     $this->userInvitation->getFirstMediaUrl('userInvitation'),
                     $this->userInvitation->user->phone ?? 'غير متوفر',
                     $this->userInvitation->name ?? 'غير متوفر',
@@ -45,29 +65,30 @@ class SendPrivateInvitationJob implements ShouldQueue
 
                 if (!$sent) {
                     $retryCount++;
-                    sleep(1); // Wait for 1 second before retrying
+                    sleep(1); // انتظار قبل إعادة المحاولة
                     Log::info('إعادة محاولة الإرسال:', [
                         'attempt' => $retryCount,
-                        'phone' => $this->invitedUser->phone
+                        'phone' => $invitedUser->phone
                     ]);
                 }
             }
 
+            // تحديث حالة الإرسال بناءً على النتيجة
             if ($sent) {
-                $this->invitedUser->update(['send_status' => 'sent']);
-                $this->userInvitation->decrement('number_invitees'); // Assuming this is the correct logic
+                $invitedUser->update(['send_status' => 'sent']);
+                $this->userInvitation->decrement('number_invitees'); // تحديث العدد المتبقي
             } else {
-                $this->invitedUser->update([
+                $invitedUser->update([
                     'send_status' => 'failed',
                     'error_message' => 'فشل الإرسال بعد ' . $maxRetries . ' محاولات'
                 ]);
+                Log::error('فشل الإرسال النهائي:', [
+                    'phone' => $invitedUser->phone,
+                    'error' => 'تمت ' . $maxRetries . ' محاولات دون نجاح'
+                ]);
             }
         } catch (\Exception $e) {
-            Log::error('خطأ في SendPrivateInvitationJob:', ['error' => $e->getMessage()]);
-            $this->invitedUser->update([
-                'send_status' => 'failed',
-                'error_message' => $e->getMessage()
-            ]);
+            Log::error('خطأ أثناء معالجة الدعوة:', ['error' => $e->getMessage()]);
         }
     }
 }
