@@ -21,8 +21,6 @@ use App\Http\Resources\UserInvitation\UserInvitationResource;
 use App\Http\Resources\UserInvitation\UserPrivateInvitationResource;
 use App\Http\Requests\Api\UserInvitation\PaymentUserInvitationRequest;
 use App\Jobs\SendInvitationJob;
-use App\Jobs\BulkSendPrivateInvitationsJob;
-use App\Jobs\SendPrivateInvitationJob;
 
 
 
@@ -177,34 +175,43 @@ class UserInvitationController extends Controller
         }
 
         // Ensure the number of invitations does not exceed the allowed limit
-        $totalAllowed = $userInvitation->number_invitees;
-        $currentCount = InvitedUsers::where('user_invitations_id', $userInvitation->id)
-            ->where('send_status', 'sent')
-            ->count();
-        $remaining = $totalAllowed - $currentCount;
-        if ($totalAllowed <= $currentCount) {
+        $totalAllowedInvitations = $userInvitation->number_invitees;
+        $currentInviteCount = InvitedUsers::where("user_invitations_id", $userInvitation->id)
+        ->where('send_status', 'send')->count();
+        $remainingInvitations = $totalAllowedInvitations - $currentInviteCount;
+
+        if ($totalAllowedInvitations <= $currentInviteCount) {
             return response()->json([
                 'message' => 'فشل إرسال الدعوات',
                 'data' => $userInvitation,
-                'error' => "الدعوات المرسلة " . $currentCount . " تساوي عدد الدعوات التي تم شراؤها " . $totalAllowed
+                'error' => "الدعوات المرسلة " . $currentInviteCount . " تساوي عدد الدعوات التي تم شراؤها " . $totalAllowedInvitations
             ], 400);
         }
 
         // Limit the number of invitations to send
-        $batchSize = min($remaining, count($request->name));
+        $totalRequests = count($request->name);
+        $batchSize = min($remainingInvitations, $totalRequests);
+
         $sendResults = [];
+        $successfulSends = 0;
 
-
-        $invitedUsersData = [];
-
-        foreach ($request->name as $index => $name) {
+        for ($index = 0; $index < $batchSize; $index++) {
             try {
+                // Check if all required fields are set
                 if (!isset($request->name[$index], $request->phone[$index], $request->code[$index], $request->qr[$index])) {
+                    $sendResults[] = [
+                        'index' => $index,
+                        'phone' => $request->phone[$index] ?? 'N/A',
+                        'success' => false,
+                        'error' => 'بيانات ناقصة'
+                    ];
                     continue;
                 }
 
+                // Process QR and preview the image
                 $imageName = ImageTemplate::process($request->qr[$index], $request->name[$index], $userInvitation);
 
+                // Create a new invited user record
                 $invitedUser = InvitedUsers::create([
                     'name' => $request->name[$index],
                     'phone' => $request->phone[$index],
@@ -214,22 +221,75 @@ class UserInvitationController extends Controller
                     'send_status' => 'pending'
                 ]);
 
-                // نخزن بيانات المدعوين فقط (الـ IDs)، وسنستخدمها في Job
-                $invitedUsersData[] = $invitedUser->id;
+                // Retry sending the message
+                $maxRetries = 3;
+                $retryCount = 0;
+                $sent = false;
+
+                while ($retryCount < $maxRetries && !$sent) {
+                    $sent = sendWhatsappImage(
+                        $invitedUser->phone,
+                        $userInvitation->getFirstMediaUrl('userInvitation'),
+                        $userInvitation->user->phone ?? 'غير متوفر',
+                        $userInvitation->name ?? 'غير متوفر',
+                        $userInvitation->user->name ?? 'غير متوفر',
+                        $userInvitation->invitation_date ?? 'غير متوفر',
+                        $userInvitation->invitation_time ?? 'غير متوفر',
+                        $userInvitation->getFirstMediaUrl('qr')
+                    );
+
+                    if (!$sent) {
+                        $retryCount++;
+                        sleep(1); // Wait before retrying
+                        Log::info('Retry sending message:', ['attempt' => $retryCount, 'phone' => $invitedUser->phone]);
+                    }
+                }
+
+                // Update the sending status based on the result
+                if ($sent) {
+                    $invitedUser->update(['send_status' => 'sent']);
+                    $successfulSends++;
+                    $sendResults[] = [
+                        'index' => $index,
+                        'phone' => $invitedUser->phone,
+                        'success' => true
+                    ];
+                } else {
+                    $invitedUser->update([
+                        'send_status' => 'failed',
+                        'error_message' => 'Failed after ' . $maxRetries . ' attempts'
+                    ]);
+                    $sendResults[] = [
+                        'index' => $index,
+                        'phone' => $invitedUser->phone,
+                        'success' => false,
+                        'error' => 'فشل الإرسال'
+                    ];
+                }
             } catch (\Exception $e) {
-                continue;
+                $sendResults[] = [
+                    'index' => $index,
+                    'phone' => $request->phone[$index] ?? 'N/A',
+                    'success' => false,
+                    'error' => $e->getMessage()
+                ];
             }
         }
 
-    dispatch(new BulkSendPrivateInvitationsJob($invitedUsersData, $userInvitation->id))
-        ->onQueue('high')
-        ->delay(now()->addSeconds(1));
+        // Update the number of successfully sent invitations
+        // $userInvitation->update([
+        //     'number_invitees' =>($currentInviteCount + $successfulSends)
+        // ]);
+        $userInvitation->refresh();
 
-    return response()->json([
-        'message' => 'تمت جدولة الدعوات بنجاح. المعالجة تجري في الخلفية.',
-        'total_queued' => count($invitedUsersData)
-]);
-
+        // Return the final results
+        return response()->json([
+            'message' => 'تمت معالجة الدعوات',
+            'total' => $batchSize,
+            'successful' => $successfulSends,
+            'failed' => $batchSize - $successfulSends,
+            'results' => $sendResults
+        ]);
     }
 
     public function scanQr(Request $request, UserInvitation $userInvitation)
