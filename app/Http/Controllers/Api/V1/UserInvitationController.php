@@ -138,8 +138,7 @@ class UserInvitationController extends Controller
         return response()->json([
             'message' => 'جارٍ معالجة الدعوات في الخلفية...',
             'total_queued' => count($invitedUserIds),
-            'success' => true,
-            'user_invitation' => $userInvitation,
+            'success' => true
         ]);
     }
     public function addInviteUsersP(InviteRequestP $request, UserPackage $userPackage)
