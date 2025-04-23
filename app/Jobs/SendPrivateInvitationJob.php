@@ -18,27 +18,19 @@ class SendPrivateInvitationJob implements ShouldQueue
     protected $invitedUser;
     protected $userInvitation;
 
-    /**
-     * Create a new job instance.
-     */
     public function __construct(InvitedUsers $invitedUser, UserInvitation $userInvitation)
     {
         $this->invitedUser = $invitedUser;
         $this->userInvitation = $userInvitation;
     }
 
-    /**
-     * Execute the job.
-     */
     public function handle(): void
     {
         try {
-            // set_time_limit(0); // Remove time limit for long-running jobs
             $maxRetries = 3;
             $retryCount = 0;
             $sent = false;
 
-            // Attempt to send the message with retries
             while ($retryCount < $maxRetries && !$sent) {
                 $sent = sendWhatsappImage(
                     $this->invitedUser->phone,
@@ -51,11 +43,10 @@ class SendPrivateInvitationJob implements ShouldQueue
                     $this->userInvitation->getFirstMediaUrl('qr')
                 );
 
-
                 if (!$sent) {
                     $retryCount++;
-                    sleep(1); // Wait for a second before retrying
-                    Log::info('Retry sending message:', [
+                    sleep(1); // Wait for 1 second before retrying
+                    Log::info('إعادة محاولة الإرسال:', [
                         'attempt' => $retryCount,
                         'phone' => $this->invitedUser->phone
                     ]);
@@ -64,15 +55,15 @@ class SendPrivateInvitationJob implements ShouldQueue
 
             if ($sent) {
                 $this->invitedUser->update(['send_status' => 'sent']);
-                $this->userInvitation->decrement('number_invitees'); // Decrement the number of invitees
+                $this->userInvitation->decrement('number_invitees'); // Assuming this is the correct logic
             } else {
                 $this->invitedUser->update([
                     'send_status' => 'failed',
-                    'error_message' => 'Failed after ' . $maxRetries . ' attempts'
+                    'error_message' => 'فشل الإرسال بعد ' . $maxRetries . ' محاولات'
                 ]);
             }
         } catch (\Exception $e) {
-            Log::error('Error in SendPrivateInvitationJob:', ['error' => $e->getMessage()]);
+            Log::error('خطأ في SendPrivateInvitationJob:', ['error' => $e->getMessage()]);
             $this->invitedUser->update([
                 'send_status' => 'failed',
                 'error_message' => $e->getMessage()

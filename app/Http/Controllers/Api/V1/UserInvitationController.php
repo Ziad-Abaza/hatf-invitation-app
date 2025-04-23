@@ -144,19 +144,19 @@ class UserInvitationController extends Controller
     }
     public function addInviteUsersP(InviteRequestP $request, UserPackage $userPackage)
     {
-        // Check payment status
+        // التحقق من حالة الدفع
         if ($userPackage->payment->status == 0) {
             return response()->json(['message' => 'لم يتم الدفع'], 400);
         }
 
-        // Check the validity of the private package (expiration date)
+        // التحقق من صلاحية الباقة الخاصة (تاريخ انتهاء الصلاحية)
         try {
             PaymentUserInvitation::chickExpirartionPrivateInvitation($userPackage->id);
         } catch (\Throwable $th) {
             throw $th;
         }
 
-        // Create a new invitation
+        // إنشاء دعوة جديدة
         $user = auth('api')->user();
         $userInvitation = UserInvitation::create([
             'state'           => UserInvitation::AVAILABLE,
@@ -170,18 +170,19 @@ class UserInvitationController extends Controller
             'is_active'       => 1
         ]);
 
-        // Add media file (e.g., image or PDF)
+        // إضافة ملف الوسائط (مثل صورة أو ملف PDF)
         if ($request->hasFile('file')) {
             $userInvitation->addMedia($request->file('file'))->toMediaCollection('userInvitation');
         }
 
-        // Ensure the number of invitations does not exceed the allowed limit
+        // التحقق من عدد الدعوات المسموح بها
         $totalAllowed = $userInvitation->number_invitees;
         $currentCount = InvitedUsers::where('user_invitations_id', $userInvitation->id)
             ->where('send_status', 'sent')
             ->count();
         $remaining = $totalAllowed - $currentCount;
-        if ($totalAllowed <= $currentCount) {
+
+        if ($remaining <= 0) {
             return response()->json([
                 'message' => 'فشل إرسال الدعوات',
                 'data' => $userInvitation,
@@ -189,14 +190,13 @@ class UserInvitationController extends Controller
             ], 400);
         }
 
-        // Limit the number of invitations to send
+        // تحديد عدد الدعوات المراد إرسالها
         $batchSize = min($remaining, count($request->name));
         $sendResults = [];
-        $successfulSends = 0;
 
         foreach ($request->name as $index => $name) {
             try {
-                // Check if all required fields are set
+                // التحقق من وجود الحقول المطلوبة
                 if (!isset($request->name[$index], $request->phone[$index], $request->code[$index], $request->qr[$index])) {
                     $sendResults[] = [
                         'index' => $index,
@@ -207,7 +207,7 @@ class UserInvitationController extends Controller
                     continue;
                 }
 
-                // Process QR and preview the image
+                // معالجة QR وإنشاء الدعوة
                 $imageName = ImageTemplate::process($request->qr[$index], $request->name[$index], $userInvitation);
                 $invitedUser = InvitedUsers::create([
                     'name' => $request->name[$index],
@@ -218,9 +218,10 @@ class UserInvitationController extends Controller
                     'send_status' => 'pending'
                 ]);
 
+                // إرسال المهمة إلى الـ Queue
                 dispatch(new SendPrivateInvitationJob($invitedUser, $userInvitation))
-                    ->onQueue('high') // define the queue name
-                    ->delay(now()->addSeconds(1)); // delay the job by 1 second
+                    ->onQueue('high') // تحديد اسم الـ Queue
+                    ->delay(now()->addSeconds(1)); // تأخير بسيط لتجنب الازدحام
 
                 $sendResults[] = [
                     'index' => $index,
@@ -237,14 +238,13 @@ class UserInvitationController extends Controller
             }
         }
 
-        // Return the final results
+        // إرجاع رد فوري للمستخدم
         return response()->json([
             'message' => 'جارٍ معالجة الدعوات في الخلفية...',
             'total_queued' => $batchSize,
             'results' => $sendResults
         ]);
     }
-
     public function scanQr(Request $request, UserInvitation $userInvitation)
     {
         $invitedUsers = InvitedUsers::where('user_invitations_id', $userInvitation->id)->where('code', $request->code)->first();
