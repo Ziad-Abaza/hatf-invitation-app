@@ -21,6 +21,7 @@ use App\Http\Resources\UserInvitation\UserInvitationResource;
 use App\Http\Resources\UserInvitation\UserPrivateInvitationResource;
 use App\Http\Requests\Api\UserInvitation\PaymentUserInvitationRequest;
 use App\Jobs\SendInvitationJob;
+use App\Jobs\BulkSendPrivateInvitationsJob;
 use App\Jobs\SendPrivateInvitationJob;
 
 
@@ -193,21 +194,17 @@ class UserInvitationController extends Controller
         $batchSize = min($remaining, count($request->name));
         $sendResults = [];
 
+
+        $invitedUsersData = [];
+
         foreach ($request->name as $index => $name) {
             try {
-                // Check if all required fields are set
                 if (!isset($request->name[$index], $request->phone[$index], $request->code[$index], $request->qr[$index])) {
-                    $sendResults[] = [
-                        'index' => $index,
-                        'phone' => $request->phone[$index] ?? 'N/A',
-                        'success' => false,
-                        'error' => 'بيانات ناقصة'
-                    ];
                     continue;
                 }
 
-                // Process QR and preview the image
                 $imageName = ImageTemplate::process($request->qr[$index], $request->name[$index], $userInvitation);
+
                 $invitedUser = InvitedUsers::create([
                     'name' => $request->name[$index],
                     'phone' => $request->phone[$index],
@@ -217,31 +214,22 @@ class UserInvitationController extends Controller
                     'send_status' => 'pending'
                 ]);
 
-                dispatch(new SendPrivateInvitationJob($invitedUser, $userInvitation))
-                    ->onQueue('high') // define the queue name
-                    ->delay(now()->addSeconds(1)); // delay the job by 1 second
-
-                $sendResults[] = [
-                    'index' => $index,
-                    'phone' => $invitedUser->phone,
-                    'success' => true
-                ];
+                // نخزن بيانات المدعوين فقط (الـ IDs)، وسنستخدمها في Job
+                $invitedUsersData[] = $invitedUser->id;
             } catch (\Exception $e) {
-                $sendResults[] = [
-                    'index' => $index,
-                    'phone' => $request->phone[$index] ?? 'N/A',
-                    'success' => false,
-                    'error' => $e->getMessage()
-                ];
+                continue;
             }
         }
 
-        // Return the final results
-        return response()->json([
-            'message' => 'جارٍ معالجة الدعوات في الخلفية...',
-            'total_queued' => $batchSize,
-            'results' => $sendResults
-        ]);
+    dispatch(new BulkSendPrivateInvitationsJob($invitedUsersData, $userInvitation->id))
+        ->onQueue('high')
+        ->delay(now()->addSeconds(1));
+
+    return response()->json([
+        'message' => 'تمت جدولة الدعوات بنجاح. المعالجة تجري في الخلفية.',
+        'total_queued' => count($invitedUsersData)
+]);
+
     }
 
     public function scanQr(Request $request, UserInvitation $userInvitation)
