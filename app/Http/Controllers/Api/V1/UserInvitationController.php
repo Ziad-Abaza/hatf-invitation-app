@@ -145,19 +145,16 @@ class UserInvitationController extends Controller
     }
     public function addInviteUsersP(InviteRequestP $request, UserPackage $userPackage)
     {
-        // Check payment status
         if ($userPackage->payment->status == 0) {
             return response()->json(['message' => 'لم يتم الدفع'], 400);
         }
 
-        // Check the validity of the private package (expiration date)
         try {
             PaymentUserInvitation::chickExpirartionPrivateInvitation($userPackage->id);
         } catch (\Throwable $th) {
             throw $th;
         }
 
-        // Create a new invitation
         $user = auth('api')->user();
         $userInvitation = UserInvitation::create([
             'state'           => UserInvitation::AVAILABLE,
@@ -171,38 +168,54 @@ class UserInvitationController extends Controller
             'is_active'       => 1
         ]);
 
-        // Add media file (e.g., image or PDF)
         if ($request->hasFile('file')) {
             $userInvitation->addMedia($request->file('file'))->toMediaCollection('userInvitation');
         }
 
-        // Ensure the number of invitations does not exceed the allowed limit
         $totalAllowed = $userInvitation->number_invitees;
         $currentCount = InvitedUsers::where('user_invitations_id', $userInvitation->id)
             ->where('send_status', 'sent')
             ->count();
         $remaining = $totalAllowed - $currentCount;
+
         if ($totalAllowed <= $currentCount) {
             return response()->json([
                 'message' => 'فشل إرسال الدعوات',
                 'data' => $userInvitation,
-                'error' => "الدعوات المرسلة " . $currentCount . " تساوي عدد الدعوات التي تم شراؤها " . $totalAllowed
+                'error' => "عدد الدعوات المرسلة ($currentCount) يساوي الحد المسموح ($totalAllowed)"
             ], 400);
         }
 
-        // Limit the number of invitations to send
-        $batchSize = min($remaining, count($request->name));
-        $sendResults = [];
+        // check if the number of invitations doesn't exceed allowed limit
+        $errors = [];
+        foreach ($request->name as $index => $name) {
+            if (
+                !isset($request->name[$index]) ||
+                !isset($request->phone[$index]) ||
+                !isset($request->code[$index]) ||
+                !isset($request->qr[$index])
+            ) {
+                $errors[] = "الدعوة رقم " . ($index + 1) . " تحتوي على بيانات ناقصة.";
+                continue;
+            }
 
+            //  Check if the phone number is valid like 0591234567
+            if (!preg_match('/^9665\d{8}$/', $request->phone[$index])) {
+                $errors[] = "رقم الهاتف في الدعوة رقم " . ($index + 1) . " غير صالح.";
+            }
+        }
 
+        if (!empty($errors)) {
+            return response()->json([
+                'message' => 'فشل التحقق من بعض الدعوات.',
+                'errors' => $errors
+            ], 422);
+        }
+
+        // Process the QR code and create invited users
         $invitedUsersData = [];
-
         foreach ($request->name as $index => $name) {
             try {
-                if (!isset($request->name[$index], $request->phone[$index], $request->code[$index], $request->qr[$index])) {
-                    continue;
-                }
-
                 $imageName = ImageTemplate::process($request->qr[$index], $request->name[$index], $userInvitation);
 
                 $invitedUser = InvitedUsers::create([
@@ -214,22 +227,25 @@ class UserInvitationController extends Controller
                     'send_status' => 'pending'
                 ]);
 
-                // نخزن بيانات المدعوين فقط (الـ IDs)، وسنستخدمها في Job
                 $invitedUsersData[] = $invitedUser->id;
             } catch (\Exception $e) {
-                continue;
+                // Log the error and continue
+                return response()->json([
+                    'message' => 'حدث خطأ أثناء حفظ الدعوات.',
+                    'error' => $e->getMessage()
+                ], 500);
             }
         }
 
-    dispatch(new BulkSendPrivateInvitationsJob($invitedUsersData, $userInvitation->id))
-        ->onQueue('high')
-        ->delay(now()->addSeconds(1));
+        dispatch(new BulkSendPrivateInvitationsJob($invitedUsersData, $userInvitation->id))
+            ->onQueue('high')
+            ->delay(now()->addSeconds(1));
 
-    return response()->json([
-        'message' => 'تمت جدولة الدعوات بنجاح. المعالجة تجري في الخلفية.',
-        'total_queued' => count($invitedUsersData)
-]);
-
+        return response()->json([
+            'message' => 'تم التحقق من الدعوات وإرسالها للمعالجة.',
+            'total_queued' => count($invitedUsersData),
+            'success' => true
+        ]);
     }
 
     public function scanQr(Request $request, UserInvitation $userInvitation)
