@@ -68,12 +68,12 @@ class UserPaymentController extends Controller
         ]);
 
         // check if the user is authenticated
-        $userInvitation = UserInvitation::findOrFail($validated['invitation_id']);
+        // $userInvitation = UserInvitation::findOrFail($validated['invitation_id']);
 
         // check if the user is the owner of the invitation
-        if ($userInvitation->user_id != auth('api')->id()) {
-            return errorResponse('لا تملك صلاحية لهذه الدعوة.', 403);
-        }
+        // if ($userInvitation->user_id != auth('api')->id()) {
+        //     return errorResponse('لا تملك صلاحية لهذه الدعوة.', 403);
+        // }
 
         // check if the user has already paid for this invitation
         if (empty($userInvitation->getFirstMediaUrl('userInvitation')) && empty($request->file('file'))) {
