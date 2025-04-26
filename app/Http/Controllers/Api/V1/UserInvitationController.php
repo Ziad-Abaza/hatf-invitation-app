@@ -299,8 +299,17 @@ class UserInvitationController extends Controller
         }
 
         // check if the user has paid for the package
+        $userInvitation = UserInvitation::where('user_package_id', $userPackage->id)->first();
+
+        if (!$userInvitation) {
+            return response()->json([
+                'message' => 'لم يتم العثور على الدعوة المرتبطة بهذه الباقة.',
+                'success' => false
+            ], 404);
+        }
+
         $totalAllowed = $request->number_invitees;
-        $currentCount = InvitedUsers::where('user_package_id', $userPackage->id)
+        $currentCount = InvitedUsers::where('user_invitations_id', $userInvitation->id)
             ->where('send_status', 'sent')
             ->count();
         $remaining = $totalAllowed - $currentCount;
