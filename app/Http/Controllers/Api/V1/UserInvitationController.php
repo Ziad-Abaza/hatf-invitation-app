@@ -177,10 +177,10 @@ class UserInvitationController extends Controller
                 continue;
             }
 
-            if (!preg_match('/^9665\d{8}$/', $request->phone[$i])) {
-                $errors[] = "رقم الهاتف في الدعوة رقم " . ($i + 1) . " غير صالح.";
-                continue;
-            }
+            // if (!preg_match('/^9665\d{8}$/', $request->phone[$i])) {
+            //     $errors[] = "رقم الهاتف في الدعوة رقم " . ($i + 1) . " غير صالح.";
+            //     continue;
+            // }
 
             $inviteesData[] = [
                 'name' => $request->name[$i],
