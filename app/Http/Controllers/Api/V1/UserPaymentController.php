@@ -61,7 +61,7 @@ class UserPaymentController extends Controller
             'name'               => 'nullable|filled|string',
             'number_invitees'    => 'required|integer',
             'total_price'        => 'required|numeric',
-            'image'              => 'nullable|filled|file|mimes:png,jpg,pdf',
+            'file'              => 'nullable|filled|file|mimes:png,jpg,pdf',
             'invitation_date'    => ['required', 'date', 'after_or_equal:today'],
             'invitation_time'    => ['required', 'date_format:H:i'],
             'payment_uuid'       => 'required|string|unique:payment_user_invitations,payment_uuid',
@@ -76,7 +76,7 @@ class UserPaymentController extends Controller
         }
 
         // check if the user has already paid for this invitation
-        if (empty($userInvitation->getFirstMediaUrl('userInvitation')) && empty($request->file('image'))) {
+        if (empty($userInvitation->getFirstMediaUrl('userInvitation')) && empty($request->file('file'))) {
             return errorResponse('يجب إرفاق ملف دعوة صالح.');
         }
 
@@ -144,6 +144,7 @@ class UserPaymentController extends Controller
             'invitation_id'      => 'required|integer|exists:invitations,id',
             'total_price'        => 'required|numeric',
             'payment_uuid'       => 'required|string|unique:payment_user_invitations,payment_uuid',
+            'file'              => 'nullable|filled|file|mimes:png,jpg,pdf',
         ]);
 
         // // get the user package
