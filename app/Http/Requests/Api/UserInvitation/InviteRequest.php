@@ -23,10 +23,6 @@ class InviteRequest extends BaseFormRequest
     {
 
         return [
-
-
-
-
             'phone'   => 'required|array',
             'name'    => 'required|array',
             'code'    => 'required|array',
@@ -38,9 +34,6 @@ class InviteRequest extends BaseFormRequest
             'code.*'  => 'required|numeric|unique:invited_users,code',
             'qr.*'    => 'required|file|max:15000',
             'note.*'  => 'nullable|string',
-
-
-
         ];
     }
 }

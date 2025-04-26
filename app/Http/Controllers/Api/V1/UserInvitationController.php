@@ -147,6 +147,61 @@ class UserInvitationController extends Controller
     // }
 
 
+    public function validateInviteUsersBeforePayment(InviteRequest $request, UserInvitation $userInvitation)
+    {
+        // check if the user has access to the invitation
+        if ($userInvitation->user_id != auth('api')->id()) {
+            return errorResponse('You do not have access', 403);
+        }
+
+        // check if the user has paid for the package
+        if (empty($userInvitation->getFirstMediaUrl('userInvitation'))) {
+            return errorResponse('لا يوجد ملف دعوة مرفق.');
+        }
+
+        // check if the user has paid for the package
+        $totalAllowed = $userInvitation->number_invitees;
+        $currentCount = InvitedUsers::where('user_invitations_id', $userInvitation->id)
+            ->where('send_status', 'send')
+            ->count();
+        $remaining = $totalAllowed - $currentCount;
+
+        if ($totalAllowed <= $currentCount) {
+            return errorResponse('تم الوصول للحد الأقصى للدعوات');
+        }
+
+        // check if the number of invitations doesn't exceed allowed limit
+        $errors = [];
+
+        foreach ($request->name as $index => $name) {
+            if (!isset($request->name[$index], $request->phone[$index], $request->code[$index], $request->qr[$index])) {
+                $errors[] = "بيانات ناقصة في الدعوة رقم " . ($index + 1) . ".";
+                continue;
+            }
+
+
+            if (!preg_match('/^9665\d{8}$/', $request->phone[$index])) {
+                $errors[] = "رقم الهاتف في الدعوة رقم " . ($index + 1) . " غير صالح.";
+                continue;
+            }
+        }
+
+        if (!empty($errors)) {
+            return response()->json([
+                'message' => 'خطأ في البيانات.',
+                'errors' => $errors,
+                'success' => false
+            ], 422);
+        }
+
+        // if the validation passes, return a success response
+        return response()->json([
+            'message' => 'البيانات صحيحة وجاهزة لإتمام الدفع.',
+            'success' => true
+        ]);
+    }
+
+
     public function addInviteUsers(InviteRequest $request, UserInvitation $userInvitation)
     {
         if ($userInvitation->user_id != auth('api')->id()) {
@@ -161,7 +216,7 @@ class UserInvitationController extends Controller
             return errorResponse('لم يتم الدفع بعد');
         }
 
-        // التحقق من عدد الدعوات
+        // Ensure the number of invitations doesn't exceed allowed limit
         $totalAllowed = $userInvitation->number_invitees;
         $currentCount = InvitedUsers::where('user_invitations_id', $userInvitation->id)
             ->where('send_status', 'send')
@@ -172,7 +227,7 @@ class UserInvitationController extends Controller
             return errorResponse('تم الوصول للحد الأقصى للدعوات');
         }
 
-        // التحقق من صحة الداتا
+        // check if the number of invitations doesn't exceed allowed limit
         $errors = [];
 
         foreach ($request->name as $index => $name) {
@@ -200,14 +255,14 @@ class UserInvitationController extends Controller
 
         foreach (range(0, $batchSize - 1) as $index) {
             try {
-                // هنا بنعالج الصورة ونسيفها
+                // Check if all required fields are set
                 $imageName = ImageTemplate::process(
                     $request->qr[$index],
                     $request->name[$index],
                     $userInvitation
                 );
 
-                // نضيف السجل للداتابيز
+                // Create a new invited user record
                 $invitedUser = InvitedUsers::create([
                     'name' => $request->name[$index],
                     'phone' => $request->phone[$index],
@@ -217,7 +272,6 @@ class UserInvitationController extends Controller
                     'send_status' => 'pending'
                 ]);
 
-                // نبعت الـ Job بالـ id مش بالأوبجكت
                 dispatch(new SendInvitationJob(
                     $invitedUser->id,
                     $userInvitation->id
@@ -234,6 +288,59 @@ class UserInvitationController extends Controller
         ]);
     }
 
+    public function validateInviteUsersBeforePaymentP(InviteRequestP $request, UserPackage $userPackage)
+    {
+        // check if the user has access to the package
+        if ($request->hasFile('file') && !$request->file('file')->isValid()) {
+            return response()->json([
+                'message' => 'الملف غير صالح.',
+                'success' => false
+            ], 400);
+        }
+
+        // check if the user has paid for the package
+        $totalAllowed = $request->number_invitees;
+        $currentCount = InvitedUsers::where('user_package_id', $userPackage->id)
+            ->where('send_status', 'sent')
+            ->count();
+        $remaining = $totalAllowed - $currentCount;
+
+        if ($totalAllowed <= $currentCount) {
+            return response()->json([
+                'message' => 'فشل إرسال الدعوات',
+                'error' => "عدد الدعوات المرسلة ($currentCount) يساوي الحد المسموح ($totalAllowed)"
+            ], 400);
+        }
+
+        // check if the number of invitations doesn't exceed allowed limit
+        $errors = [];
+
+        foreach ($request->name as $index => $name) {
+            // check if all required fields are set
+            if (!isset($request->name[$index]) || !isset($request->phone[$index]) || !isset($request->code[$index]) || !isset($request->qr[$index])) {
+                $errors[] = "الدعوة رقم " . ($index + 1) . " تحتوي على بيانات ناقصة.";
+                continue;
+            }
+
+            // Check if the phone number is valid
+            if (!preg_match('/^9665\d{8}$/', $request->phone[$index])) {
+                $errors[] = "رقم الهاتف في الدعوة رقم " . ($index + 1) . " غير صالح.";
+            }
+        }
+
+        if (!empty($errors)) {
+            return response()->json([
+                'message' => 'فشل التحقق من بعض الدعوات.',
+                'errors' => $errors
+            ], 422);
+        }
+
+        // if the validation passes, return a success response
+        return response()->json([
+            'message' => 'البيانات تم التحقق منها بنجاح.',
+            'success' => true
+        ]);
+    }
 
 
     public function addInviteUsersP(InviteRequestP $request, UserPackage $userPackage)

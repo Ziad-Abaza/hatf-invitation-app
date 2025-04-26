@@ -63,6 +63,9 @@ Route::prefix('v1')->group(function () {
 
 
 
+        // Validate user invitations before payment
+        Route::post('user-invitation/{userInvitation}/validate', [UserInvitationController::class, 'validateInviteUsersBeforePayment']);
+        Route::post('user-invitation/{userPackage}/validate-private', [UserInvitationController::class, 'validateInviteUsersBeforePaymentP']);
 
         // user invitationsInvitation_date
         Route::get('invitations/private/index', [InvitationController::class, 'indexPrivate']);
