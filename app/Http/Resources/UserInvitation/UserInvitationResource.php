@@ -31,7 +31,22 @@ class UserInvitationResource extends JsonResource
             'image_user_invitation'    => optional($this->getFirstMedia('userInvitation'))->getFullUrl(),
             'image_qr'                 => optional($this->getFirstMedia('qr'))->getFullUrl(),
             'invitation'               => InvitationResource::make($this->invitation),
-            'invitedUsers'             => $this->invitedUsers,
+            'invitedUsers'             => $this->invitedUsers->map(function ($user) {
+                return [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'phone' => $user->phone,
+                    'code' => $user->code,
+                    'status' => $user->status,
+                    // 'send_status' => $user->send_status,
+                    'qr' => $user->qr,
+                    'user_invitations_id' => $user->user_invitations_id,
+                    'note' => $user->note,
+                    'error_message' => $user->error_message,
+                    'created_at' => $user->created_at,
+                    'updated_at' => $user->updated_at,
+                ];
+            }),
             'payment_user_invitations' => $this->userPackage->payment,
         ];
     }
@@ -62,14 +77,14 @@ class UserInvitationResource extends JsonResource
 //             'user_package_id' => $this->user_package_id,
 //             'created_at' => $this->created_at,
 //             'updated_at' => $this->updated_at,
-            
+
 //             // Media Collections
 //             'images' => [
 //                 'default' => $this->getMedia('default')->map(fn(Media $media) => $media->getFullUrl())->toArray(),
 //                 'user_invitation' => $this->getMedia('userInvitation')->map(fn(Media $media) => $media->getFullUrl())->toArray(),
 //                 'qr' => $this->getMedia('qr')->map(fn(Media $media) => $media->getFullUrl())->toArray(),
 //             ],
-            
+
 //             // Relationships
 //             'user' => $this->user,
 //             'invitation' => $this->invitation,

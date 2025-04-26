@@ -209,8 +209,6 @@ class UserPaymentController extends Controller
         }
     }
 
-
-
     //*response shoud send in success case and in fail case*//
     // {
     //     "data": {
