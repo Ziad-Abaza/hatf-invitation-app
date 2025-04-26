@@ -62,17 +62,17 @@ class UserInvitationResource extends JsonResource
     private function getInvitationStatus($user)
     {
         // تحقق من send_status و status لإرجاع الحالة المناسبة
-        if (in_array($user->send_status, ['Rejected', 'Accepted', 'Failed', 'Sent'])) {
+        if (in_array($user->send_status, ['rejected', 'accepted', 'failed', 'sent'])) {
             return $user->send_status;
         }
 
         // إذا كان status 1
         if ($user->status == 1) {
-            return 'Attended';
+            return 'attended';
         }
 
         // في حال لم يتم تلبية الشروط
-        return 'Pending';
+        return 'pending';
     }
 
     /**
@@ -81,12 +81,12 @@ class UserInvitationResource extends JsonResource
     private function getStatusAr($user)
     {
         $statusMap = [
-            'Rejected'  => 'مرفوضة',
-            'Accepted'  => 'مقبولة',
-            'Failed'    => 'فشلت',
-            'Sent'      => 'تم الإرسال',
-            'Attended'  => 'حضرت',
-            'Pending'   => 'قيد الانتظار',
+            'rejected'  => 'مرفوضة',
+            'accepted'  => 'مقبولة',
+            'failed'    => 'فشلت',
+            'sent'      => 'تم الإرسال',
+            'attended'  => 'حضرت',
+            'pending'   => 'قيد الانتظار',
         ];
 
         return $statusMap[$this->getInvitationStatus($user)] ?? 'قيد الانتظار';
@@ -98,12 +98,12 @@ class UserInvitationResource extends JsonResource
     private function getDescriptionEn($user)
     {
         $descriptionMap = [
-            'Rejected'  => 'The invitation was declined by the recipient.',
-            'Accepted'  => 'The invitation was accepted by the recipient.',
-            'Failed'    => 'There was an error sending the invitation.',
-            'Sent'      => 'The invitation was sent successfully.',
-            'Attended'  => 'The recipient has attended the event.',
-            'Pending'   => 'The invitation is pending.',
+            'rejected'  => 'The invitation was declined by the recipient.',
+            'accepted'  => 'The invitation was accepted by the recipient.',
+            'failed'    => 'There was an error sending the invitation.',
+            'sent'      => 'The invitation was sent successfully.',
+            'attended'  => 'The recipient has attended the event.',
+            'pending'   => 'The invitation is pending.',
         ];
 
         return $descriptionMap[$this->getInvitationStatus($user)] ?? 'The invitation is pending.';
@@ -115,12 +115,12 @@ class UserInvitationResource extends JsonResource
     private function getDescriptionAr($user)
     {
         $descriptionMap = [
-            'Rejected'  => 'تم رفض الدعوة من قبل المستلم.',
-            'Accepted'  => 'تم قبول الدعوة من قبل المستلم.',
-            'Failed'    => 'حدث خطأ أثناء إرسال الدعوة.',
-            'Sent'      => 'تم إرسال الدعوة بنجاح.',
-            'Attended'  => 'حضر المستلم الفعالية.',
-            'Pending'   => 'الدعوة في انتظار الرد.',
+            'rejected'  => 'تم رفض الدعوة من قبل المستلم.',
+            'accepted'  => 'تم قبول الدعوة من قبل المستلم.',
+            'failed'    => 'حدث خطأ أثناء إرسال الدعوة.',
+            'sent'      => 'تم إرسال الدعوة بنجاح.',
+            'attended'  => 'حضر المستلم الفعالية.',
+            'pending'   => 'الدعوة في انتظار الرد.',
         ];
 
         return $descriptionMap[$this->getInvitationStatus($user)] ?? 'الدعوة في انتظار الرد.';
@@ -132,12 +132,12 @@ class UserInvitationResource extends JsonResource
     private function getColor($user)
     {
         $colorMap = [
-            'Rejected'  => 'd00202',  // أحمر
-            'Accepted'  => '28a745',  // أخضر
-            'Failed'    => 'ffc107',  // أصفر
-            'Sent'      => '007bff',  // أزرق
-            'Attended'  => '6c757d',  // رمادي
-            'Pending'   => '17a2b8',  // أزرق فاتح
+            'rejected'  => 'd00202',  // أحمر
+            'accepted'  => '28a745',  // أخضر
+            'failed'    => 'ffc107',  // أصفر
+            'sent'      => '007bff',  // أزرق
+            'attended'  => '6c757d',  // رمادي
+            'pending'   => '17a2b8',  // أزرق فاتح
         ];
 
         return $colorMap[$this->getInvitationStatus($user)] ?? '17a2b8';  // اللون الافتراضي للأزرق الفاتح
