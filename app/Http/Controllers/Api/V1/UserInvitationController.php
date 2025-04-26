@@ -70,79 +70,149 @@ class UserInvitationController extends Controller
         $userInvitation = UserInvitationResource::make($userInvitation);
         return successResponseDataWithMessage($userInvitation);
     }
+
+
+    // public function addInviteUsers(InviteRequest $request, UserInvitation $userInvitation)
+    // {
+    //     if ($userInvitation->user_id != auth('api')->id()) {
+    //         return errorResponse('You do not have access', 403);
+    //     }
+
+    //     if ($userInvitation->userPackage->payment->status == 0) {
+    //         return response()->json(['message' => 'not paymnet'], 400);
+    //     }
+
+    //     if ($userInvitation->is_active == 0) {
+    //         return errorResponse('لم يتم الدفع بعد');
+    //     }
+
+    //     // Ensure the number of invitations doesn't exceed allowed limit
+    //     $totalAllowed = $userInvitation->number_invitees;
+    //     $currentCount = InvitedUsers::where('user_invitations_id', $userInvitation->id)
+    //         ->where('send_status', 'send')
+    //         ->count();
+    //     $remaining = $totalAllowed - $currentCount;
+
+    //     if ($totalAllowed <= $currentCount) {
+    //         return errorResponse('تم الوصول للحد الأقصى للدعوات');
+    //     }
+
+    //     $batchSize = min($remaining, count($request->name));
+    //     $invitedUserIds = [];
+
+    //     foreach ($request->name as $index => $name) {
+    //         try {
+    //             // Check if all required fields are set
+    //             if (!isset($request->name[$index], $request->phone[$index], $request->code[$index], $request->qr[$index])) {
+    //                 Log::warning('Missing data for invitation at index: ' . $index);
+    //                 continue;
+    //             }
+
+    //             // Process QR and preview the image
+    //             $imageName = ImageTemplate::process($request->qr[$index], $request->name[$index], $userInvitation);
+
+    //             // Create a new invited user record
+    //             $invitedUser = InvitedUsers::create([
+    //                 'name' => $request->name[$index],
+    //                 'phone' => $request->phone[$index],
+    //                 'code' => $request->code[$index],
+    //                 'qr' => $imageName,
+    //                 'user_invitations_id' => $userInvitation->id,
+    //                 'send_status' => 'pending'
+    //             ]);
+
+    //             // Retry sending the message
+    //             $invitedUserIds[] = $invitedUser->id;
+    //         } catch (\Exception $e) {
+    //             Log::error('Error creating invited user: ' . $e->getMessage());
+    //         }
+    //     }
+
+    //     // Check if there are any invited users to process
+    //     foreach ($invitedUserIds as $userId) {
+    //         $invitedUser = InvitedUsers::find($userId);
+    //         dispatch(new SendInvitationJob(
+    //             $invitedUser,
+    //             $userInvitation->getFirstMediaUrl('userInvitation'),
+    //             $userInvitation
+    //         ))->onQueue('high');
+    //     }
+
+    //     // Update the number of successfully sent invitations
+    //     return response()->json([
+    //         'message' => 'جارٍ معالجة الدعوات في الخلفية...',
+    //         'total_queued' => count($invitedUserIds),
+    //         'success' => true
+    //     ]);
+    // }
+
+
     public function addInviteUsers(InviteRequest $request, UserInvitation $userInvitation)
     {
         if ($userInvitation->user_id != auth('api')->id()) {
             return errorResponse('You do not have access', 403);
         }
 
-        if ($userInvitation->userPackage->payment->status == 0) {
-            return response()->json(['message' => 'not paymnet'], 400);
-        }
-
-        if ($userInvitation->is_active == 0) {
+        if ($userInvitation->userPackage->payment->status == 0 || $userInvitation->is_active == 0) {
             return errorResponse('لم يتم الدفع بعد');
         }
 
-        // Ensure the number of invitations doesn't exceed allowed limit
         $totalAllowed = $userInvitation->number_invitees;
         $currentCount = InvitedUsers::where('user_invitations_id', $userInvitation->id)
             ->where('send_status', 'send')
             ->count();
-        $remaining = $totalAllowed - $currentCount;
 
         if ($totalAllowed <= $currentCount) {
             return errorResponse('تم الوصول للحد الأقصى للدعوات');
         }
 
-        $batchSize = min($remaining, count($request->name));
-        $invitedUserIds = [];
+        $errors = [];
+        $inviteesData = [];
 
-        foreach ($request->name as $index => $name) {
-            try {
-                // Check if all required fields are set
-                if (!isset($request->name[$index], $request->phone[$index], $request->code[$index], $request->qr[$index])) {
-                    Log::warning('Missing data for invitation at index: ' . $index);
-                    continue;
-                }
+        $batchSize = min($totalAllowed - $currentCount, count($request->name));
 
-                // Process QR and preview the image
-                $imageName = ImageTemplate::process($request->qr[$index], $request->name[$index], $userInvitation);
-
-                // Create a new invited user record
-                $invitedUser = InvitedUsers::create([
-                    'name' => $request->name[$index],
-                    'phone' => $request->phone[$index],
-                    'code' => $request->code[$index],
-                    'qr' => $imageName,
-                    'user_invitations_id' => $userInvitation->id,
-                    'send_status' => 'pending'
-                ]);
-
-                // Retry sending the message
-                $invitedUserIds[] = $invitedUser->id;
-            } catch (\Exception $e) {
-                Log::error('Error creating invited user: ' . $e->getMessage());
+        for ($i = 0; $i < $batchSize; $i++) {
+            if (!isset($request->name[$i], $request->phone[$i], $request->code[$i], $request->qr[$i])) {
+                $errors[] = "بيانات ناقصة في الدعوة رقم " . ($i + 1) . ".";
+                continue;
             }
+
+            if (!preg_match('/^9665\d{8}$/', $request->phone[$i])) {
+                $errors[] = "رقم الهاتف في الدعوة رقم " . ($i + 1) . " غير صالح.";
+                continue;
+            }
+
+            $inviteesData[] = [
+                'name' => $request->name[$i],
+                'phone' => $request->phone[$i],
+                'code' => $request->code[$i],
+                'qr' => $request->qr[$i],
+            ];
         }
 
-        // Check if there are any invited users to process
-        foreach ($invitedUserIds as $userId) {
-            $invitedUser = InvitedUsers::find($userId);
-            dispatch(new SendInvitationJob(
-                $invitedUser,
-                $userInvitation->getFirstMediaUrl('userInvitation'),
-                $userInvitation
-            ))->onQueue('high');
+        if (!empty($errors)) {
+            return response()->json([
+                'message' => 'خطأ في البيانات.',
+                'errors' => $errors,
+                'success' => false
+            ], 422);
         }
 
-        // Update the number of successfully sent invitations
+        // Dispatch the whole batch to a Job
+        dispatch(new SendInvitationJob(
+            $inviteesData,
+            $userInvitation
+        ))->onQueue('high');
+
         return response()->json([
-            'message' => 'جارٍ معالجة الدعوات في الخلفية...',
-            'total_queued' => count($invitedUserIds),
+            'message' => 'تمت جدولة معالجة الدعوات بنجاح.',
+            'total_queued' => count($inviteesData),
             'success' => true
         ]);
     }
+
+
+
     public function addInviteUsersP(InviteRequestP $request, UserPackage $userPackage)
     {
         if ($userPackage->payment->status == 0) {
@@ -199,7 +269,7 @@ class UserInvitationController extends Controller
                 continue;
             }
 
-            //  Check if the phone number is valid like 0591234567
+            //  Check if the phone number is valid like 966591234567
             // if (!preg_match('/^9665\d{8}$/', $request->phone[$index])) {
             //     $errors[] = "رقم الهاتف في الدعوة رقم " . ($index + 1) . " غير صالح.";
             // }
