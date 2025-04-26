@@ -146,17 +146,17 @@ class UserPaymentController extends Controller
             'payment_uuid'       => 'required|string|unique:payment_user_invitations,payment_uuid',
         ]);
 
-        // get the user package
-        $userPackage = UserPackage::findOrFail($validated['invitation_id']);
-        $userInvitation = UserInvitation::where('user_package_id', $userPackage->id)->first();
+        // // get the user package
+        // $userPackage = UserPackage::findOrFail($validated['invitation_id']);
+        // $userInvitation = UserInvitation::where('user_package_id', $userPackage->id)->first();
 
-        // check if the user is the owner of the package
-        if (!$userInvitation) {
-            return response()->json([
-                'message' => 'لم يتم العثور على الدعوة المرتبطة بهذه الباقة.',
-                'success' => false
-            ], 404);
-        }
+        // // check if the user is the owner of the package
+        // if (!$userInvitation) {
+        //     return response()->json([
+        //         'message' => 'لم يتم العثور على الدعوة المرتبطة بهذه الباقة.',
+        //         'success' => false
+        //     ], 404);
+        // }
 
         // check if the user is the owner of the package
         if ($request->hasFile('file') && !$request->file('file')->isValid()) {
@@ -166,18 +166,18 @@ class UserPaymentController extends Controller
             ], 400);
         }
 
-        //  check if the user is the owner of the package
-        $totalAllowed = $userPackage->number_invitees; // change this to the correct field name
-        $currentCount = InvitedUsers::where('user_invitations_id', $userInvitation->id)
-            ->where('send_status', 'sent')
-            ->count();
+        // //  check if the user is the owner of the package
+        // $totalAllowed = $userPackage->number_invitees; // change this to the correct field name
+        // $currentCount = InvitedUsers::where('user_invitations_id', $userInvitation->id)
+        //     ->where('send_status', 'sent')
+        //     ->count();
 
-        if (($currentCount + $validated['number_invitees']) > $totalAllowed) {
-            return response()->json([
-                'message' => 'عدد الدعوات يتجاوز الحد الأقصى المسموح به.',
-                'error' => "عدد الدعوات المرسلة ($currentCount) يساوي الحد المسموح ($totalAllowed)"
-            ], 400);
-        }
+        // if (($currentCount + $validated['number_invitees']) > $totalAllowed) {
+        //     return response()->json([
+        //         'message' => 'عدد الدعوات يتجاوز الحد الأقصى المسموح به.',
+        //         'error' => "عدد الدعوات المرسلة ($currentCount) يساوي الحد المسموح ($totalAllowed)"
+        //     ], 400);
+        // }
 
         // check if the user has already paid for this package
         $errors = [];
