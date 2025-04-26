@@ -153,41 +153,38 @@ class UserInvitationController extends Controller
             return errorResponse('You do not have access', 403);
         }
 
-        if ($userInvitation->userPackage->payment->status == 0 || $userInvitation->is_active == 0) {
+        if ($userInvitation->userPackage->payment->status == 0) {
+            return response()->json(['message' => 'not payment'], 400);
+        }
+
+        if ($userInvitation->is_active == 0) {
             return errorResponse('لم يتم الدفع بعد');
         }
 
+        // التحقق من عدد الدعوات
         $totalAllowed = $userInvitation->number_invitees;
         $currentCount = InvitedUsers::where('user_invitations_id', $userInvitation->id)
             ->where('send_status', 'send')
             ->count();
+        $remaining = $totalAllowed - $currentCount;
 
         if ($totalAllowed <= $currentCount) {
             return errorResponse('تم الوصول للحد الأقصى للدعوات');
         }
 
+        // التحقق من صحة الداتا
         $errors = [];
-        $inviteesData = [];
 
-        $batchSize = min($totalAllowed - $currentCount, count($request->name));
-
-        for ($i = 0; $i < $batchSize; $i++) {
-            if (!isset($request->name[$i], $request->phone[$i], $request->code[$i], $request->qr[$i])) {
-                $errors[] = "بيانات ناقصة في الدعوة رقم " . ($i + 1) . ".";
+        foreach ($request->name as $index => $name) {
+            if (!isset($request->name[$index], $request->phone[$index], $request->code[$index], $request->qr[$index])) {
+                $errors[] = "بيانات ناقصة في الدعوة رقم " . ($index + 1) . ".";
                 continue;
             }
 
-            // if (!preg_match('/^9665\d{8}$/', $request->phone[$i])) {
-            //     $errors[] = "رقم الهاتف في الدعوة رقم " . ($i + 1) . " غير صالح.";
+            // if (!preg_match('/^9665\d{8}$/', $request->phone[$index])) {
+            //     $errors[] = "رقم الهاتف في الدعوة رقم " . ($index + 1) . " غير صالح.";
             //     continue;
             // }
-
-            $inviteesData[] = [
-                'name' => $request->name[$i],
-                'phone' => $request->phone[$i],
-                'code' => $request->code[$i],
-                'qr' => $request->qr[$i],
-            ];
         }
 
         if (!empty($errors)) {
@@ -198,15 +195,41 @@ class UserInvitationController extends Controller
             ], 422);
         }
 
-        // Dispatch the whole batch to a Job
-        dispatch(new SendInvitationJob(
-            $inviteesData,
-            $userInvitation
-        ))->onQueue('high');
+        $batchSize = min($remaining, count($request->name));
+        $invitedUsersData = [];
+
+        foreach (range(0, $batchSize - 1) as $index) {
+            try {
+                // هنا بنعالج الصورة ونسيفها
+                $imageName = ImageTemplate::process(
+                    $request->qr[$index],
+                    $request->name[$index],
+                    $userInvitation
+                );
+
+                // نضيف السجل للداتابيز
+                $invitedUser = InvitedUsers::create([
+                    'name' => $request->name[$index],
+                    'phone' => $request->phone[$index],
+                    'code' => $request->code[$index],
+                    'qr' => $imageName,
+                    'user_invitations_id' => $userInvitation->id,
+                    'send_status' => 'pending'
+                ]);
+
+                // نبعت الـ Job بالـ id مش بالأوبجكت
+                dispatch(new SendInvitationJob(
+                    $invitedUser->id,
+                    $userInvitation->id
+                ))->onQueue('high');
+            } catch (\Exception $e) {
+                Log::error('Error creating invited user: ' . $e->getMessage());
+            }
+        }
 
         return response()->json([
-            'message' => 'تمت جدولة معالجة الدعوات بنجاح.',
-            'total_queued' => count($inviteesData),
+            'message' => 'جارٍ معالجة الدعوات في الخلفية...',
+            'total_queued' => $batchSize,
             'success' => true
         ]);
     }

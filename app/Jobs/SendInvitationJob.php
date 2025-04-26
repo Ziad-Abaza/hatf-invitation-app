@@ -7,60 +7,59 @@ use Illuminate\Queue\SerializesModels;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use App\Models\InvitedUsers;
+use App\Models\UserInvitation;
 use Illuminate\Support\Facades\Log;
-use App\Services\ImageTemplate;
 
 class SendInvitationJob implements ShouldQueue
 {
     use InteractsWithQueue, Queueable, SerializesModels;
 
-    protected $inviteesData;
-    protected $userInvitation;
+    protected $invitedUserId;
+    protected $userInvitationId;
 
-    public function __construct(array $inviteesData, $userInvitation)
+    public function __construct($invitedUserId, $userInvitationId)
     {
-        $this->inviteesData = $inviteesData;
-        $this->userInvitation = $userInvitation;
+        $this->invitedUserId = $invitedUserId;
+        $this->userInvitationId = $userInvitationId;
     }
 
     public function handle()
     {
-        foreach ($this->inviteesData as $invitee) {
-            try {
-                $imageName = ImageTemplate::process($invitee['qr'], $invitee['name'], $this->userInvitation);
+        $invitedUser = InvitedUsers::find($this->invitedUserId);
+        $userInvitation = UserInvitation::find($this->userInvitationId);
 
-                $invitedUser = InvitedUsers::create([
-                    'name' => $invitee['name'],
-                    'phone' => $invitee['phone'],
-                    'code' => $invitee['code'],
-                    'qr' => $imageName,
-                    'user_invitations_id' => $this->userInvitation->id,
-                    'send_status' => 'pending'
+        if (!$invitedUser || !$userInvitation) {
+            Log::error('InvitedUser or UserInvitation not found.');
+            return;
+        }
+
+        try {
+            $sent = sendWhatsappImage(
+                $invitedUser->phone,
+                $userInvitation->getFirstMediaUrl('userInvitation'),
+                $userInvitation->user->phone ?? 'غير متوفر',
+                $userInvitation->name ?? 'غير متوفر',
+                $userInvitation->user->name ?? 'غير متوفر',
+                $userInvitation->invitation_date ?? 'غير متوفر',
+                $userInvitation->invitation_time ?? 'غير متوفر',
+                $userInvitation->getFirstMediaUrl('qr')
+            );
+
+            if ($sent) {
+                $invitedUser->update(['send_status' => 'sent']);
+                $userInvitation->increment('number_invitees');
+            } else {
+                $invitedUser->update([
+                    'send_status' => 'failed',
+                    'error_message' => 'فشل الإرسال بعد ' . $this->attempts() . ' محاولات'
                 ]);
-
-                $sent = sendWhatsappImage(
-                    $invitedUser->phone,
-                    $this->userInvitation->getFirstMediaUrl('userInvitation'),
-                    $this->userInvitation->user->phone ?? 'غير متوفر',
-                    $this->userInvitation->name ?? 'غير متوفر',
-                    $this->userInvitation->user->name ?? 'غير متوفر',
-                    $this->userInvitation->invitation_date ?? 'غير متوفر',
-                    $this->userInvitation->invitation_time ?? 'غير متوفر',
-                    $this->userInvitation->getFirstMediaUrl('qr')
-                );
-
-                if ($sent) {
-                    $invitedUser->update(['send_status' => 'sent']);
-                    $this->userInvitation->increment('number_invitees');
-                } else {
-                    $invitedUser->update([
-                        'send_status' => 'failed',
-                        'error_message' => 'فشل الإرسال بعد ' . $this->attempts() . ' محاولات'
-                    ]);
-                }
-            } catch (\Exception $e) {
-                Log::error('Error in SendInvitationJob:', ['error' => $e->getMessage()]);
             }
+        } catch (\Exception $e) {
+            $invitedUser->update([
+                'send_status' => 'failed',
+                'error_message' => $e->getMessage()
+            ]);
+            Log::error('Error in SendInvitationJob:', ['error' => $e->getMessage()]);
         }
     }
 }
