@@ -64,7 +64,7 @@ class UserPaymentController extends Controller
             'file'               => 'nullable|filled|file|mimes:png,jpg,pdf',
             'invitation_date'    => ['required', 'date', 'after_or_equal:today'],
             'invitation_time'    => ['required', 'date_format:H:i'],
-            'payment_uuid'       => 'nullable|string|unique:payment_user_invitations,payment_uuid',
+            'payment_uuid'       => 'nullable|string',
         ]);
 
         // check if the user is authenticated
