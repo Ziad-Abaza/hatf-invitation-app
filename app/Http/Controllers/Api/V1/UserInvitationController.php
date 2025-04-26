@@ -146,7 +146,6 @@ class UserInvitationController extends Controller
     //     ]);
     // }
 
-
     public function validateInviteUsersBeforePayment(InviteRequest $request, UserInvitation $userInvitation)
     {
         // check if the user has access to the invitation
@@ -200,7 +199,6 @@ class UserInvitationController extends Controller
             'success' => true
         ]);
     }
-
 
     public function addInviteUsers(InviteRequest $request, UserInvitation $userInvitation)
     {
@@ -350,7 +348,6 @@ class UserInvitationController extends Controller
             'success' => true
         ]);
     }
-
 
     public function addInviteUsersP(InviteRequestP $request, UserPackage $userPackage)
     {

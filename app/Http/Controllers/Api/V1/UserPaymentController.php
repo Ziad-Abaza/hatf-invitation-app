@@ -6,6 +6,7 @@ use Carbon\Carbon;
 use App\Models\UserPackage;
 use Illuminate\Http\Request;
 use App\Models\UserInvitation;
+use App\Models\InvitedUsers;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 use App\Services\UserPaymentService;
@@ -30,8 +31,31 @@ class UserPaymentController extends Controller
         // return $this->handlePaymentResponse($pay);
     }
 
+    // public function payment(Request $request)
+    // {
+    //     $validated = $request->validate([
+    //         'invitation_id'      => 'required|integer|exists:invitations,id',
+    //         'name'               => 'nullable|filled|string',
+    //         'number_invitees'    => 'required|integer',
+    //         'total_price'        => 'required|numeric',
+    //         'image'              => 'nullable|filled|file|mimes:png,jpg,pdf',
+    //         'invitation_date'    => ['required', 'date', 'after_or_equal:today'],
+    //         'invitation_time'    => ['required', 'date_format:H:i'],
+    //         'payment_uuid'       => 'required|string|unique:payment_user_invitations,payment_uuid',
+    //     ]);
+
+    //     $payment = $this->paymentService->initiatePayment($validated, auth('api')->user());
+
+    //     if (is_array($payment)) {
+    //         return $this->handlePaymentResponse($payment['pay'], $payment['cart_id'], $payment['userInvitation']);
+    //     }else{
+    //         return $payment ;
+    //     }
+    // }
+
     public function payment(Request $request)
     {
+        //check if the user is authenticated
         $validated = $request->validate([
             'invitation_id'      => 'required|integer|exists:invitations,id',
             'name'               => 'nullable|filled|string',
@@ -43,33 +67,149 @@ class UserPaymentController extends Controller
             'payment_uuid'       => 'required|string|unique:payment_user_invitations,payment_uuid',
         ]);
 
+        // check if the user is authenticated
+        $userInvitation = UserInvitation::findOrFail($validated['invitation_id']);
+
+        // check if the user is the owner of the invitation
+        if ($userInvitation->user_id != auth('api')->id()) {
+            return errorResponse('لا تملك صلاحية لهذه الدعوة.', 403);
+        }
+
+        // check if the user has already paid for this invitation
+        if (empty($userInvitation->getFirstMediaUrl('userInvitation')) && empty($request->file('image'))) {
+            return errorResponse('يجب إرفاق ملف دعوة صالح.');
+        }
+
+        // check if the user has already paid for this invitation
+        $totalAllowed = $userInvitation->number_invitees;
+        $currentCount = InvitedUsers::where('user_invitations_id', $userInvitation->id)
+            ->where('send_status', 'send')
+            ->count();
+
+        if (($currentCount + $validated['number_invitees']) > $totalAllowed) {
+            return errorResponse('عدد المدعوين يتجاوز الحد الأقصى المسموح به.');
+        }
+
+        //  check if the user has already paid for this invitation
+        $errors = [];
+
+        if ($validated['number_invitees'] <= 0) {
+            $errors[] = 'عدد المدعوين يجب أن يكون أكبر من صفر.';
+        }
+
+        if ($validated['total_price'] <= 0) {
+            $errors[] = 'السعر الإجمالي يجب أن يكون قيمة موجبة.';
+        }
+
+        if (!empty($errors)) {
+            return response()->json([
+                'message' => 'خطأ في البيانات.',
+                'errors' => $errors,
+                'success' => false
+            ], 422);
+        }
+
+        // check if the user has already paid for this invitation
         $payment = $this->paymentService->initiatePayment($validated, auth('api')->user());
-        
+
         if (is_array($payment)) {
             return $this->handlePaymentResponse($payment['pay'], $payment['cart_id'], $payment['userInvitation']);
-        }else{
-            return $payment ;
+        } else {
+            return $payment;
         }
     }
 
 
+    // public function paymentP(Request $request)
+    // {
+    //     $validated = $request->validate([
+    //         'invitation_id'      => 'required|integer|exists:invitations,id',
+    //         'total_price'        => 'required|numeric',
+    //         'payment_uuid'       => 'required|string|unique:payment_user_invitations,payment_uuid',
+    //     ]);
+
+    //     $payment = $this->paymentService->initiatePaymentP($validated, auth('api')->user());
+
+    //     if (is_array($payment)) {
+    //         return $this->handlePaymentResponseP($payment['pay'], $payment['cart_id'], $payment['user_package']);
+    //     }else{
+    //         return $payment ;
+    //     }
+    // }
+
     public function paymentP(Request $request)
     {
+        // check if the user is authenticated
         $validated = $request->validate([
             'invitation_id'      => 'required|integer|exists:invitations,id',
             'total_price'        => 'required|numeric',
             'payment_uuid'       => 'required|string|unique:payment_user_invitations,payment_uuid',
         ]);
 
+        // get the user package
+        $userPackage = UserPackage::findOrFail($validated['invitation_id']);
+        $userInvitation = UserInvitation::where('user_package_id', $userPackage->id)->first();
+
+        // check if the user is the owner of the package
+        if (!$userInvitation) {
+            return response()->json([
+                'message' => 'لم يتم العثور على الدعوة المرتبطة بهذه الباقة.',
+                'success' => false
+            ], 404);
+        }
+
+        // check if the user is the owner of the package
+        if ($request->hasFile('file') && !$request->file('file')->isValid()) {
+            return response()->json([
+                'message' => 'الملف المرفق غير صالح.',
+                'success' => false
+            ], 400);
+        }
+
+        //  check if the user is the owner of the package
+        $totalAllowed = $userPackage->number_invitees; // change this to the correct field name
+        $currentCount = InvitedUsers::where('user_invitations_id', $userInvitation->id)
+            ->where('send_status', 'sent')
+            ->count();
+
+        if (($currentCount + $validated['number_invitees']) > $totalAllowed) {
+            return response()->json([
+                'message' => 'عدد الدعوات يتجاوز الحد الأقصى المسموح به.',
+                'error' => "عدد الدعوات المرسلة ($currentCount) يساوي الحد المسموح ($totalAllowed)"
+            ], 400);
+        }
+
+        // check if the user has already paid for this package
+        $errors = [];
+
+        if ($validated['total_price'] <= 0) {
+            $errors[] = 'السعر الإجمالي يجب أن يكون قيمة موجبة.';
+        }
+
+        if ($validated['payment_uuid'] == '') {
+            $errors[] = 'UUID الدفع مطلوب.';
+        }
+
+        // check if the user has already paid for this package
+        if (!empty($errors)) {
+            return response()->json([
+                'message' => 'فشل التحقق من البيانات.',
+                'errors' => $errors
+            ], 422);
+        }
+
+        // check if the user has already paid for this package
         $payment = $this->paymentService->initiatePaymentP($validated, auth('api')->user());
-        
+
+        // check if the user has already paid for this package
         if (is_array($payment)) {
             return $this->handlePaymentResponseP($payment['pay'], $payment['cart_id'], $payment['user_package']);
-        }else{
-            return $payment ;
+        } else {
+            return $payment;
         }
     }
-    
+
+
 
     //*response shoud send in success case and in fail case*//
     // {
@@ -78,24 +218,24 @@ class UserPaymentController extends Controller
     //         "id_payment": "the id returned from gatpayment after successful payment",
     //         "message": "success",
     //         "status": 200,
-    //         "payment_return_response": ""  
+    //         "payment_return_response": ""
     //     },
     //     "status": 200
     // }
-    
-    
+
+
     // {
     //     "data": {
     //         "payment_uuid": null,
     //         "message": "fail",
     //         "status": 400,
-    //         "payment_return_response": ""  
+    //         "payment_return_response": ""
     //     },
     //     "status": 400
     // }
 
 
-    public function returnAction(Request $request) 
+    public function returnAction(Request $request)
     {
         // try {
             // Validate request
@@ -107,7 +247,7 @@ class UserPaymentController extends Controller
                 'data.status' => 'required|integer',
                 'data.payment_return_response' => 'nullable|string',
             ]);
-    
+
             $data = $validatedData['data'];
 
             // Extract necessary fields
@@ -116,7 +256,7 @@ class UserPaymentController extends Controller
             $message = $data['message'] ?? 'Unknown error';
             $status = $data['status'] ?? 500;
             $payment_return_response = $data['payment_return_response'] ?? '';// for backend debug only
-    
+
             // Handle success case
             if ($status == 200 && $payment_uuid && $id_payment) {
                 $request->validate(['data.id_payment' => 'required|string']);
@@ -135,7 +275,7 @@ class UserPaymentController extends Controller
                     'is_active'=>1,
                 ]);
                }
-                
+
                 return response()->json([
                     'data' => [
                         'payment' => PaymentUserInvitation::where('payment_uuid',$payment_uuid)->first()
@@ -143,7 +283,7 @@ class UserPaymentController extends Controller
                     'message' => 'تم الدفع بنجاح',
                     'status' => $status,
                 ], 200);
-            } 
+            }
             // Handle failure case
             elseif ($status == 400) {
                 $payment=PaymentUserInvitation::where('payment_uuid',$payment_uuid)->first();
@@ -161,8 +301,8 @@ class UserPaymentController extends Controller
         //     ], 500);
         // }
     }
-    
-    
+
+
     private function handlePaymentResponse($payment, $payment_uuid, $userInvitation)
     {
         return response()->json([

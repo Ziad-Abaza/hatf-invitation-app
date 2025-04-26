@@ -64,8 +64,8 @@ Route::prefix('v1')->group(function () {
 
 
         // Validate user invitations before payment
-        Route::post('user-invitation/{userInvitation}/validate', [UserInvitationController::class, 'validateInviteUsersBeforePayment']);
-        Route::post('user-invitation/{userPackage}/validate-private', [UserInvitationController::class, 'validateInviteUsersBeforePaymentP']);
+        // Route::post('user-invitation/{userInvitation}/validate', [UserInvitationController::class, 'validateInviteUsersBeforePayment']);
+        // Route::post('user-invitation/{userPackage}/validate-private', [UserInvitationController::class, 'validateInviteUsersBeforePaymentP']);
 
         // user invitationsInvitation_date
         Route::get('invitations/private/index', [InvitationController::class, 'indexPrivate']);
@@ -75,7 +75,7 @@ Route::prefix('v1')->group(function () {
         Route::get('user-invitations/{userInvitation}', [UserInvitationController::class, 'show']);
         Route::post('user-invitations', [UserInvitationController::class, 'create']);
         Route::post('user-invitation/{userInvitation}/invite-users', [UserInvitationController::class, 'addInviteUsers']);//3
-        Route::post('user-invitation/{userPackage}/invite-users-private', [UserInvitationController::class, 'addInviteUsersP']); //3//
+        Route::post('user-invitation/{userPackage}/invite-users-private', [UserInvitationController::class, 'addInviteUsersP']); //3
 
         Route::get('user-invitation/{userInvitation}/check-status', [UserInvitationController::class, 'checkInvitationStatus']);
 
