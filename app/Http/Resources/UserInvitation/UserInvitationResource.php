@@ -36,15 +36,12 @@ class UserInvitationResource extends JsonResource
                     'name'                  => $user->name,
                     'phone'                 => $user->phone,
                     'code'                  => $user->code,
-                    // 'status'                => $user->status,
-                    // 'send_status'           => $user->send_status,
                     'qr'                    => $user->qr,
                     'user_invitations_id'   => $user->user_invitations_id,
                     'note'                  => $user->note,
                     'error_message'         => $user->error_message,
                     'created_at'            => $user->created_at,
                     'updated_at'            => $user->updated_at,
-                    // إضافة البيانات المطلوبة للمستجيب
                     'status'                => $this->getInvitationStatus($user),
                     'status_ar'             => $this->getStatusAr($user),
                     'description_en'        => $this->getDescriptionEn($user),
@@ -57,26 +54,26 @@ class UserInvitationResource extends JsonResource
     }
 
     /**
-     * دالة للتحقق من الحالة بناءً على send_status و status
+     *  function to get the status of the invitation
      */
     private function getInvitationStatus($user)
     {
-        // تحقق من send_status و status لإرجاع الحالة المناسبة
-        if (in_array($user->send_status, ['rejected', 'accepted', 'failed', 'sent'])) {
-            return $user->send_status;
-        }
-
-        // إذا كان status 1
+        // check if the user has attended
         if ($user->status == 1) {
             return 'attended';
         }
 
-        // في حال لم يتم تلبية الشروط
+        // control the status of the invitation
+        if (in_array($user->send_status, ['rejected', 'accepted', 'failed', 'sent'])) {
+            return $user->send_status;
+        }
+
+        // if the user has not attended and the status is not in the above array, return pending
         return 'pending';
     }
 
     /**
-     * الترجمة للعربية
+     * translate status to Arabic
      */
     private function getStatusAr($user)
     {
@@ -85,7 +82,7 @@ class UserInvitationResource extends JsonResource
             'accepted'  => 'مقبولة',
             'failed'    => 'فشلت',
             'sent'      => 'تم الإرسال',
-            'attended'  => 'حضرت',
+            'attended'  => 'تم الحضور',
             'pending'   => 'قيد الانتظار',
         ];
 
@@ -93,53 +90,53 @@ class UserInvitationResource extends JsonResource
     }
 
     /**
-     * وصف الحالة باللغة الإنجليزية
+     *  description of the status in English
      */
     private function getDescriptionEn($user)
     {
         $descriptionMap = [
-            'rejected'  => 'The invitation was declined by the recipient.',
-            'accepted'  => 'The invitation was accepted by the recipient.',
-            'failed'    => 'There was an error sending the invitation.',
-            'sent'      => 'The invitation was sent successfully.',
+            'rejected'  => 'The recipient has declined the invitation and will not attend the event.',
+            'accepted'  => 'The recipient has accepted the invitation and confirmed their attendance at the event.',
+            'failed'    => 'There was an error sending the invitation. Please contact technical support.',
+            'sent'      => 'The invitation was sent successfully to the recipient.',
             'attended'  => 'The recipient has attended the event.',
-            'pending'   => 'The invitation is pending.',
+            'pending'   => 'The invitation is still pending and awaiting a response from the recipient.',
         ];
 
         return $descriptionMap[$this->getInvitationStatus($user)] ?? 'The invitation is pending.';
     }
 
     /**
-     * وصف الحالة باللغة العربية
+     * description of the status in Arabic
      */
     private function getDescriptionAr($user)
     {
         $descriptionMap = [
-            'rejected'  => 'تم رفض الدعوة من قبل المستلم.',
-            'accepted'  => 'تم قبول الدعوة من قبل المستلم.',
-            'failed'    => 'حدث خطأ أثناء إرسال الدعوة.',
-            'sent'      => 'تم إرسال الدعوة بنجاح.',
-            'attended'  => 'حضر المستلم الفعالية.',
-            'pending'   => 'الدعوة في انتظار الرد.',
+            'rejected'  => 'قام المستلم بالاعتذار عن حضور الفعالية ولم يتمكن من قبول الدعوة.',
+            'accepted'  => 'تم قبول الدعوة من قبل المستلم وأكد حضوره للفعالية.',
+            'failed'    => 'تعذر إرسال الدعوة بسبب خطأ يرجى التواصل مع الدعم الفني.',
+            'sent'      => 'تم إرسال الدعوة بنجاح إلى المستلم.',
+            'attended'  => 'لقد حضر المستلم الفعالية.',
+            'pending'   => 'الدعوة في انتظار الرد من قبل المستلم.',
         ];
 
         return $descriptionMap[$this->getInvitationStatus($user)] ?? 'الدعوة في انتظار الرد.';
     }
 
     /**
-     * تحديد اللون المخصص للحالة
+     *  function to get the color based on the status
      */
     private function getColor($user)
     {
         $colorMap = [
-            'rejected'  => 'd00202',  // أحمر
-            'accepted'  => '28a745',  // أخضر
-            'failed'    => 'ffc107',  // أصفر
-            'sent'      => '007bff',  // أزرق
-            'attended'  => '6c757d',  // رمادي
-            'pending'   => '17a2b8',  // أزرق فاتح
+            'rejected'  => 'd00202',  // red
+            'accepted'  => '28a745',  // green
+            'failed'    => 'ffc107',  // yellow
+            'sent'      => '007bff',  // blue
+            'attended'  => '17a2b8',  // cyan
+            'pending'   => '6c757d',  // silver
         ];
 
-        return $colorMap[$this->getInvitationStatus($user)] ?? '17a2b8';  // اللون الافتراضي للأزرق الفاتح
+        return $colorMap[$this->getInvitationStatus($user)] ?? '6c757d';
     }
 }
