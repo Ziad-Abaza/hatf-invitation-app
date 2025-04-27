@@ -303,6 +303,11 @@ if (!function_exists('generateInvoicePDF')) {
     function generateInvoicePDF($payment, $user, $userPackage)
     {
         try {
+            Log::info('Generating invoice PDF', [
+                'payment' => $payment,
+                'user' => $user,
+                'userPackage' => $userPackage,
+            ]);
             // Load the invoice template with data
             $data = [
                 'payment' => $payment,
