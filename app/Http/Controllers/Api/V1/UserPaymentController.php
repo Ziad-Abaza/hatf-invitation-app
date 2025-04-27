@@ -245,7 +245,7 @@ class UserPaymentController extends Controller
                     'status' => $status,
                     'user' => $user,
                     'payment' => $payment,
-                    'user_package' => $userPackage,
+                    // 'user_package' => $userPackage,
 
                 ], 200);
             }
