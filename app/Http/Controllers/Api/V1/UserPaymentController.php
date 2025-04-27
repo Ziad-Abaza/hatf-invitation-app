@@ -214,7 +214,20 @@ class UserPaymentController extends Controller
         // Handle success case
         if ($status == 200 && $payment_uuid && $id_payment) {
             $request->validate(['data.id_payment' => 'required|string']);
-            $payment = PaymentUserInvitation::where('payment_uuid', $payment_uuid)->first();
+
+            // Fetch payment with related data (UserPackage and User)
+            $payment = PaymentUserInvitation::with(['userPackage.user', 'userPackage.invitation'])
+                ->where('payment_uuid', $payment_uuid)
+                ->first();
+
+            if (!$payment) {
+                return response()->json([
+                    'message' => 'Payment not found',
+                    'status' => 404,
+                ], 404);
+            }
+
+            // Update payment status and ID
             $payment->update([
                 'status' => 1,
                 'id_payment' => $data['id_payment'],
@@ -222,43 +235,34 @@ class UserPaymentController extends Controller
                 'updated_at' => Carbon::now(),
             ]);
 
-            // Retrieve UserPackage
-            $userPackage = UserPackage::where('payment_user_invitation_id', $payment->id)->first();
-
-            // Ensure UserPackage exists
+            // Activate the user invitation if a package exists
+            $userPackage = $payment->userPackage;
             if ($userPackage) {
                 UserInvitation::where('user_package_id', $userPackage->id)->update([
                     'is_active' => 1,
                 ]);
-
-                // Generate invoice data
-                $invoiceData = [
-                    'client_name' => $userPackage->user?->name ?? 'عميل غير معروف', // Use null-safe operator
-                    'invoice_number' => 'INV-' . $payment->id,
-                    'total_amount' => $payment->amount ?? 0, // Default to 0 if amount is not set
-                ];
-
-                // Generate PDF invoice
-                $invoicePath = generateInvoicePDF($invoiceData);
-
-                // Send invoice via WhatsApp if PDF generation is successful
-                if ($invoicePath) {
-                    $phoneNumber = $userPackage->user?->phone ?? null; // Use null-safe operator
-                    if ($phoneNumber) {
-                        sendInvoiceViaWhatsapp($phoneNumber, $invoicePath);
-                    } else {
-                        Log::warning('Phone number not found for user', ['user_id' => $userPackage->user_id]);
-                    }
-                }
-            } else {
-                // Log warning if UserPackage is not found
-                Log::warning('UserPackage not found for payment', ['payment_id' => $payment->id]);
             }
 
-            return response()->json([
-                'data' => [
-                    'payment' => PaymentUserInvitation::where('payment_uuid', $payment_uuid)->first(),
+            // Prepare response data
+            $responseData = [
+                'payment' => [
+                    'id' => $payment->id,
+                    'value' => $payment->value,
+                    'status' => $payment->status,
+                    'created_at' => $payment->created_at,
+                    'updated_at' => $payment->updated_at,
                 ],
+                'user' => $userPackage ? $userPackage->user : null,
+                'package' => $userPackage ? [
+                    'id' => $userPackage->id,
+                    'invitation_id' => $userPackage->invitation_id,
+                    'user_id' => $userPackage->user_id,
+                    'invitation' => $userPackage->invitation,
+                ] : null,
+            ];
+
+            return response()->json([
+                'data' => $responseData,
                 'message' => 'تم الدفع بنجاح',
                 'status' => $status,
             ], 200);
@@ -277,8 +281,6 @@ class UserPaymentController extends Controller
             ], 400);
         }
     }
-
-
 
     private function handlePaymentResponse($payment, $payment_uuid, $userInvitation)
     {

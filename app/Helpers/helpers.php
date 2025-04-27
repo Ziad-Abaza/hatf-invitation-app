@@ -7,9 +7,6 @@ use GreenApi\RestApi\GreenApiClient;
 use Illuminate\Support\Facades\Http;
 use Barryvdh\DomPDF\Facade\Pdf as PDF;
 
-use Dompdf\Dompdf;
-use Illuminate\Support\Facades\View;
-
 if (!function_exists('successResponse')) {
     function successResponse(string $message = 'Success Response', int $status = 200): JsonResponse
     {
@@ -301,31 +298,11 @@ if (!function_exists('sendInvoiceViaWhatsapp')) {
     }
 }
 
-
 if (!function_exists('generateInvoicePDF')) {
-    function generateInvoicePDF($data)
+    function generateInvoicePDF()
     {
         try {
-            // Generate HTML content
-            $html = View::make('pdf.invoice', [
-                'clientName' => $data['client_name'],
-                'invoiceNumber' => $data['invoice_number'],
-                'date' => now()->format('Y-m-d'),
-                'totalAmount' => $data['total_amount']
-            ])->render();
 
-            // Create PDF
-            $dompdf = new Dompdf();
-            $dompdf->loadHtml($html);
-            $dompdf->setPaper('A4', 'portrait');
-            $dompdf->render();
-
-            // Save PDF
-            $filePath = storage_path('app/invoices/' . $data['invoice_number'] . '.pdf');
-            file_put_contents($filePath, $dompdf->output());
-
-            Log::info('Invoice PDF generated successfully', ['file_path' => $filePath]);
-            return $filePath;
         } catch (\Exception $e) {
             Log::error('Exception generating invoice PDF', [
                 'message' => $e->getMessage(),
