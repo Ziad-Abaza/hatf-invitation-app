@@ -222,31 +222,37 @@ class UserPaymentController extends Controller
                 'updated_at' => Carbon::now(),
             ]);
 
+            // Retrieve UserPackage
             $userPackage = UserPackage::where('payment_user_invitation_id', $payment->id)->first();
+
+            // Ensure UserPackage exists
             if ($userPackage) {
                 UserInvitation::where('user_package_id', $userPackage->id)->update([
                     'is_active' => 1,
                 ]);
-            }
 
-            // Generate invoice data
-            $invoiceData = [
-                'client_name' => $userPackage->user->name ?? 'عميل غير معروف', // Ensure user data exists
-                'invoice_number' => 'INV-' . $payment->id,
-                'total_amount' => $payment->amount ?? 0, // Default to 0 if amount is not set
-            ];
+                // Generate invoice data
+                $invoiceData = [
+                    'client_name' => $userPackage->user?->name ?? 'عميل غير معروف', // Use null-safe operator
+                    'invoice_number' => 'INV-' . $payment->id,
+                    'total_amount' => $payment->amount ?? 0, // Default to 0 if amount is not set
+                ];
 
-            // Generate PDF invoice
-            $invoicePath = generateInvoicePDF($invoiceData);
+                // Generate PDF invoice
+                $invoicePath = generateInvoicePDF($invoiceData);
 
-            // Send invoice via WhatsApp if PDF generation is successful
-            if ($invoicePath) {
-                $phoneNumber = $userPackage->user->phone ?? null; // Get client's phone number
-                if ($phoneNumber) {
-                    sendInvoiceViaWhatsapp($phoneNumber, $invoicePath);
-                } else {
-                    Log::warning('Phone number not found for user', ['user_id' => $userPackage->user_id]);
+                // Send invoice via WhatsApp if PDF generation is successful
+                if ($invoicePath) {
+                    $phoneNumber = $userPackage->user?->phone ?? null; // Use null-safe operator
+                    if ($phoneNumber) {
+                        sendInvoiceViaWhatsapp($phoneNumber, $invoicePath);
+                    } else {
+                        Log::warning('Phone number not found for user', ['user_id' => $userPackage->user_id]);
+                    }
                 }
+            } else {
+                // Log warning if UserPackage is not found
+                Log::warning('UserPackage not found for payment', ['payment_id' => $payment->id]);
             }
 
             return response()->json([
@@ -272,7 +278,7 @@ class UserPaymentController extends Controller
         }
     }
 
-    
+
 
     private function handlePaymentResponse($payment, $payment_uuid, $userInvitation)
     {
