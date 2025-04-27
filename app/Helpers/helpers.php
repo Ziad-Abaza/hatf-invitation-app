@@ -6,7 +6,9 @@ use Illuminate\Support\Facades\Log;
 use GreenApi\RestApi\GreenApiClient;
 use Illuminate\Support\Facades\Http;
 use Barryvdh\DomPDF\Facade\Pdf as PDF;
+
 use Dompdf\Dompdf;
+use Illuminate\Support\Facades\View;
 
 if (!function_exists('successResponse')) {
     function successResponse(string $message = 'Success Response', int $status = 200): JsonResponse
@@ -301,36 +303,28 @@ if (!function_exists('sendInvoiceViaWhatsapp')) {
 
 
 if (!function_exists('generateInvoicePDF')) {
-    function generateInvoicePDF($invoice, $client)
+    function generateInvoicePDF($data)
     {
         try {
-            // إنشاء كائن Dompdf
-            $dompdf = new Dompdf();
-
-            // تحويل المتغيرات إلى بيانات يمكن استخدامها في القالب
-            $html = view('invoice_template', [
-                'invoice' => $invoice,
-                'client' => $client,
+            // Generate HTML content
+            $html = View::make('pdf.invoice', [
+                'clientName' => $data['client_name'],
+                'invoiceNumber' => $data['invoice_number'],
+                'date' => now()->format('Y-m-d'),
+                'totalAmount' => $data['total_amount']
             ])->render();
 
-            // تحميل HTML إلى Dompdf
+            // Create PDF
+            $dompdf = new Dompdf();
             $dompdf->loadHtml($html);
-
-            // تعيين حجم الصفحة
             $dompdf->setPaper('A4', 'portrait');
-
-            // إنشاء PDF
             $dompdf->render();
 
-            // حفظ الملف في المسار المناسب
-            $filePath = storage_path('app/invoices/invoice_' . uniqid() . '.pdf');
+            // Save PDF
+            $filePath = storage_path('app/invoices/' . $data['invoice_number'] . '.pdf');
             file_put_contents($filePath, $dompdf->output());
 
-            // تسجيل النجاح
-            Log::info('Invoice PDF generated successfully', [
-                'file_path' => $filePath,
-            ]);
-
+            Log::info('Invoice PDF generated successfully', ['file_path' => $filePath]);
             return $filePath;
         } catch (\Exception $e) {
             Log::error('Exception generating invoice PDF', [
