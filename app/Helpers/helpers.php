@@ -298,16 +298,31 @@ if (!function_exists('sendInvoiceViaWhatsapp')) {
     }
 }
 
+
 if (!function_exists('generateInvoicePDF')) {
-    function generateInvoicePDF()
+    function generateInvoicePDF($payment, $user, $userPackage)
     {
         try {
+            // Load the invoice template with data
+            $data = [
+                'payment' => $payment,
+                'user' => $user,
+                'user_package' => $userPackage,
+            ];
 
+            // Render the HTML content
+            $html = view('pdf.invoice', $data)->render();
+
+            // Generate PDF
+            $pdf = Pdf::loadHTML($html);
+
+            // Save the PDF to a temporary file
+            $filePath = storage_path('app/public/invoices/invoice_' . $payment->id . '.pdf');
+            $pdf->save($filePath);
+
+            return $filePath;
         } catch (\Exception $e) {
-            Log::error('Exception generating invoice PDF', [
-                'message' => $e->getMessage(),
-                'status' => $e->getCode(),
-            ]);
+            Log::error('Error generating invoice PDF', ['message' => $e->getMessage()]);
             return null;
         }
     }

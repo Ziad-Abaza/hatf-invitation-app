@@ -83,26 +83,28 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>فاتورة رقم {{ $invoice->id }}</h1>
+            <h1>فاتورة رقم {{ $payment->id }}</h1>
         </div>
 
         <div class="company-info">
-            <strong>اسم الشركة:</strong> شركتنا المحترمة<br>
+            <strong>اسم الشركة:</strong> هتْف<br>
             <strong>العنوان:</strong> الرياض، السعودية<br>
-            <strong>الهاتف:</strong> 0123456789
+            <strong>الهاتف:</strong> +966 53 033 3218<br>
+            <strong>البريد الإلكتروني:</strong> info@hatf.sa
         </div>
 
         <div class="customer-info">
             <h3>بيانات العميل</h3>
-            <strong>الاسم:</strong> {{ $client->name }}<br>
-            <strong>الهاتف:</strong> {{ $client->phone }}<br>
-            <strong>البريد الإلكتروني:</strong> {{ $client->email }}
+            <strong>الاسم:</strong> {{ $user->name }}<br>
+            <strong>الهاتف:</strong> {{ $user->phone }}<br>
+            <strong>البريد الإلكتروني:</strong> {{ $user->email }}
         </div>
 
         <div class="invoice-info">
             <h3>تفاصيل الفاتورة</h3>
-            <strong>التاريخ:</strong> {{ $invoice->created_at->format('Y-m-d') }}<br>
-            <strong>رقم المعاملة:</strong> {{ $invoice->payment_uuid }}
+            <strong>التاريخ:</strong> {{ $payment->created_at->format('Y-m-d') }}<br>
+            <strong>رقم المعاملة:</strong> {{ $payment->payment_uuid }}<br>
+            <strong>حالة الدفع:</strong> {{ $payment->status == 1 ? 'مكتمل' : 'غير مكتمل' }}
         </div>
 
         <div class="items">
@@ -116,23 +118,20 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach($invoice->items as $item)
                     <tr>
-                        <td>{{ $item['description'] }}</td>
-                        <td>{{ $item['quantity'] }}</td>
-                        <td>{{ number_format($item['unit_price'], 2) }}</td>
-                        <td>{{ number_format($item['quantity'] * $item['unit_price'], 2) }}</td>
+                        <td>باقة الدعوات - {{ $user_package->invitation_id }}</td>
+                        <td>1</td>
+                        <td>{{ number_format($payment->value, 2) }} ر.س</td>
+                        <td>{{ number_format($payment->value, 2) }} ر.س</td>
                     </tr>
-                    @endforeach
                 </tbody>
             </table>
         </div>
 
         <div class="totals">
-            <div><span class="label">الإجمالي الفرعي:</span> {{ number_format($invoice->sub_total, 2) }} ر.س</div>
-            <div><span class="label">الضريبة ({{ $invoice->tax_rate }}%):</span> {{ number_format($invoice->tax_amount,
-                2) }} ر.س</div>
-            <div><span class="label">الإجمالي الكلي:</span> {{ number_format($invoice->total, 2) }} ر.س</div>
+            <div><span class="label">الإجمالي الفرعي:</span> {{ number_format($payment->value, 2) }} ر.س</div>
+            <div><span class="label">الضريبة (0%):</span> 0.00 ر.س</div>
+            <div><span class="label">الإجمالي الكلي:</span> {{ number_format($payment->value, 2) }} ر.س</div>
         </div>
 
         <div style="clear: both;"></div>

@@ -237,17 +237,25 @@ class UserPaymentController extends Controller
                 ]);
                }
 
+                $pdfPath = generateInvoicePDF($payment, $user, $userPackage);
+            if ($pdfPath) {
+                // Send the invoice via WhatsApp
+                $sent = sendInvoiceViaWhatsapp($user->phone, $pdfPath);
 
+                if ($sent) {
+                    Log::info('Invoice sent successfully to user phone: ' . $user->phone);
+                } else {
+                    Log::error('Failed to send invoice to user phone: ' . $user->phone);
+                }
+            } else {
+                Log::error('Failed to generate invoice PDF for payment ID: ' . $payment->id);
+            }
                 return response()->json([
                     'data' => [
                         'payment' => PaymentUserInvitation::where('payment_uuid',$payment_uuid)->first()
                     ],
                     'message' => 'تم الدفع بنجاح',
                     'status' => $status,
-                    'user' => $user,
-                    'payment' => $payment,
-                    'user_package' => $userPackage,
-
                 ], 200);
             }
             // Handle failure case
