@@ -226,12 +226,13 @@ class UserPaymentController extends Controller
                 ]);
 
 
-               $userPackage= UserPackage::where('payment_user_invitation_id',$payment->id)->first();
-               if($userPackage){
-                $payment=UserInvitation::where('user_package_id',$userPackage->id)->update([
-                    'is_active'=>1,
-                ]);
-               }
+            //    $userPackage= UserPackage::where('payment_user_invitation_id',$payment->id)->first();
+            //    if($userPackage){
+            //     $payment=UserInvitation::where('user_package_id',$userPackage->id)->update([
+            //         'is_active'=>1,
+            //     ]);
+            //    }
+            $userPackage = UserPackage::where('payment_user_invitation_id', $payment->id)->first();
 
                $user = User::where('id', $payment->user_id)->first();
 
@@ -244,7 +245,7 @@ class UserPaymentController extends Controller
                     'user' => $user,
                     'payment' => $payment,
                     'user_package' => $userPackage,
-                    
+
                 ], 200);
             }
             // Handle failure case
