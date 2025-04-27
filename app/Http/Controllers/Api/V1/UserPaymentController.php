@@ -68,27 +68,27 @@ class UserPaymentController extends Controller
         ]);
 
         // check if the user is authenticated
-        // $userInvitation = UserInvitation::findOrFail($validated['invitation_id']);
+        $userInvitation = UserInvitation::findOrFail($validated['invitation_id']);
 
         // check if the user is the owner of the invitation
-        // if ($userInvitation->user_id != auth('api')->id()) {
-        //     return errorResponse('لا تملك صلاحية لهذه الدعوة.', 403);
-        // }
+        if ($userInvitation->user_id != auth('api')->id()) {
+            return errorResponse('لا تملك صلاحية لهذه الدعوة.', 403);
+        }
 
         // check if the user has already paid for this invitation
-        // if (empty($userInvitation->getFirstMediaUrl('userInvitation')) && empty($request->file('file'))) {
-        //     return errorResponse('يجب إرفاق ملف دعوة صالح.');
-        // }
+        if (empty($userInvitation->getFirstMediaUrl('userInvitation')) && empty($request->file('file'))) {
+            return errorResponse('يجب إرفاق ملف دعوة صالح.');
+        }
 
         // check if the user has already paid for this invitation
-        // $totalAllowed = $userInvitation->number_invitees;
-        // $currentCount = InvitedUsers::where('user_invitations_id', $userInvitation->id)
-        //     ->where('send_status', 'send')
-        //     ->count();
+        $totalAllowed = $userInvitation->number_invitees;
+        $currentCount = InvitedUsers::where('user_invitations_id', $userInvitation->id)
+            ->where('send_status', 'send')
+            ->count();
 
-        // if (($currentCount + $validated['number_invitees']) > $totalAllowed) {
-        //     return errorResponse('عدد المدعوين يتجاوز الحد الأقصى المسموح به.');
-        // }
+        if (($currentCount + $validated['number_invitees']) > $totalAllowed) {
+            return errorResponse('عدد المدعوين يتجاوز الحد الأقصى المسموح به.');
+        }
 
         //  check if the user has already paid for this invitation
         $errors = [];

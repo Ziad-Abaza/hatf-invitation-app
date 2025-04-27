@@ -264,8 +264,8 @@ class UserPaymentService
             'user_package_id' => $data['user_package_id'],
         ]);
 
-        if ($data['image']) {
-            $userInvitation->addMedia($data['image'])->toMediaCollection('userInvitation');
+        if ($data['file']) {
+            $userInvitation->addMedia($data['file'])->toMediaCollection('userInvitation');
         }
 
         return $userInvitation;
