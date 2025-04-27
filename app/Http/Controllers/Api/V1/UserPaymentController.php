@@ -272,6 +272,7 @@ class UserPaymentController extends Controller
         }
     }
 
+    
 
     private function handlePaymentResponse($payment, $payment_uuid, $userInvitation)
     {
