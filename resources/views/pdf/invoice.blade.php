@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>فاتورة رقم {{ $invoice['id'] }}</title> <!-- تعديل هنا للوصول إلى المصفوفة -->
+    <title>فاتورة رقم {{ $invoice->id }}</title>
     <style>
         body {
             font-family: 'Arial', sans-serif;
@@ -94,16 +94,16 @@
     <div class="invoice-container">
         <!-- Header -->
         <div class="invoice-header">
-            <h2>فاتورة رقم {{ $invoice['id'] }}</h2> <!-- تعديل هنا للوصول إلى المصفوفة -->
-            <p>التاريخ: {{ $invoice['date'] }}</p> <!-- تعديل هنا للوصول إلى المصفوفة -->
+            <h2>فاتورة رقم {{ $invoice->id }}</h2>
+            <p>التاريخ: {{ $invoice->date }}</p>
         </div>
 
         <!-- Body -->
         <div class="invoice-body">
             <!-- Client Info -->
             <div class="client-info">
-                <p><strong>العميل:</strong> {{ $client['name'] }}</p> <!-- تعديل هنا للوصول إلى المصفوفة -->
-                <p><strong>البريد الإلكتروني:</strong> {{ $client['email'] }}</p> <!-- تعديل هنا للوصول إلى المصفوفة -->
+                <p><strong>العميل:</strong> {{ $client->name }}</p>
+                <p><strong>البريد الإلكتروني:</strong> {{ $client->email }}</p>
             </div>
 
             <!-- Items Table -->
@@ -117,20 +117,19 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach($invoice['items'] as $item)
-                    <!-- تعديل هنا للوصول إلى المصفوفة -->
+                    @foreach($invoice->items as $item)
                     <tr>
-                        <td>{{ $item['name'] }}</td> <!-- تعديل هنا للوصول إلى المصفوفة -->
-                        <td>{{ $item['quantity'] }}</td> <!-- تعديل هنا للوصول إلى المصفوفة -->
-                        <td>{{ $item['price'] }}</td> <!-- تعديل هنا للوصول إلى المصفوفة -->
-                        <td>{{ $item['total'] }}</td> <!-- تعديل هنا للوصول إلى المصفوفة -->
+                        <td>{{ $item->name }}</td>
+                        <td>{{ $item->quantity }}</td>
+                        <td>{{ $item->price }}</td>
+                        <td>{{ $item->total }}</td>
                     </tr>
                     @endforeach
                 </tbody>
             </table>
 
             <!-- Total -->
-            <p class="total">المجموع الكلي: {{ $invoice['total'] }} ريال</p> <!-- تعديل هنا للوصول إلى المصفوفة -->
+            <p class="total">المجموع الكلي: {{ $invoice->total }} ريال</p>
         </div>
 
         <!-- Footer -->
