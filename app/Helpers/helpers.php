@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\Log;
 use GreenApi\RestApi\GreenApiClient;
 use Illuminate\Support\Facades\Http;
 use Barryvdh\DomPDF\Facade\Pdf as PDF;
-use Illuminate\Support\Facades\Storage;
+use Dompdf\Dompdf;
 
 if (!function_exists('successResponse')) {
     function successResponse(string $message = 'Success Response', int $status = 200): JsonResponse
@@ -299,26 +299,34 @@ if (!function_exists('sendInvoiceViaWhatsapp')) {
     }
 }
 
+
 if (!function_exists('generateInvoicePDF')) {
     function generateInvoicePDF($invoice, $client)
     {
         try {
-            // اجمع البيانات التي ستمرر للقالب
-            $data = [
+            // إنشاء كائن Dompdf
+            $dompdf = new Dompdf();
+
+            // تحويل المتغيرات إلى بيانات يمكن استخدامها في القالب
+            $html = view('invoice_template', [
                 'invoice' => $invoice,
-                'client'  => $client,
-            ];
+                'client' => $client,
+            ])->render();
 
-            // حمّل القالب مع البيانات
-            $pdf = PDF::loadView('invoice', $data)->setPaper('a4', 'portrait');
+            // تحميل HTML إلى Dompdf
+            $dompdf->loadHtml($html);
 
-            // مسار حفظ الملف
-            $fileName = 'invoices/invoice_' . $invoice->payment_uuid . '.pdf';
-            Storage::disk('local')->put($fileName, $pdf->output());
+            // تعيين حجم الصفحة
+            $dompdf->setPaper('A4', 'portrait');
 
-            // مسار يمكن الوصول إليه من الكود
-            $filePath = storage_path('app/' . $fileName);
+            // إنشاء PDF
+            $dompdf->render();
 
+            // حفظ الملف في المسار المناسب
+            $filePath = storage_path('app/invoices/invoice_' . uniqid() . '.pdf');
+            file_put_contents($filePath, $dompdf->output());
+
+            // تسجيل النجاح
             Log::info('Invoice PDF generated successfully', [
                 'file_path' => $filePath,
             ]);

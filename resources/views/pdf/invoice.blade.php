@@ -3,143 +3,91 @@
 
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>فاتورة</title>
     <style>
         body {
-            font-family: "Tajawal", sans-serif;
+            font-family: Arial, sans-serif;
             margin: 0;
-            padding: 0;
+            padding: 20px;
+            background-color: #f9f9f9;
         }
 
-        .container {
-            width: 80%;
-            margin: auto;
+        .invoice {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #fff;
             padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
 
         .header {
             text-align: center;
-            margin-bottom: 30px;
+            margin-bottom: 20px;
         }
 
         .header h1 {
-            margin: 0;
-            font-size: 24px;
+            color: #333;
         }
 
-        .company-info {
-            text-align: left;
-            font-size: 12px;
+        .details {
             margin-bottom: 20px;
         }
 
-        .customer-info,
-        .invoice-info {
-            width: 48%;
-            display: inline-block;
-            vertical-align: top;
-            font-size: 12px;
-            margin-bottom: 20px;
-        }
-
-        .items table {
+        .details table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 20px;
         }
 
-        .items th,
-        .items td {
-            border: 1px solid #ddd;
+        .details table td {
             padding: 8px;
-            text-align: center;
-            font-size: 12px;
+            border-bottom: 1px solid #ddd;
         }
 
-        .items th {
-            background: #f5f5f5;
-        }
-
-        .totals {
-            float: left;
-            width: 100%;
-            text-align: right;
-            font-size: 14px;
-        }
-
-        .totals .label {
-            display: inline-block;
-            width: 200px;
+        .details table tr:last-child td {
+            border-bottom: none;
         }
 
         .footer {
             text-align: center;
-            font-size: 10px;
-            margin-top: 30px;
-            color: #666;
+            font-size: 12px;
+            color: #777;
         }
     </style>
 </head>
 
 <body>
-    <div class="container">
+    <div class="invoice">
         <div class="header">
-            <h1>فاتورة رقم {{ $invoice->id }}</h1>
+            <h1>فاتورة</h1>
         </div>
-
-        <div class="company-info">
-            <strong>اسم الشركة:</strong> شركتنا المحترمة<br>
-            <strong>العنوان:</strong> الرياض، السعودية<br>
-            <strong>الهاتف:</strong> 0123456789
-        </div>
-
-        <div class="customer-info">
-            <h3>بيانات العميل</h3>
-            <strong>الاسم:</strong> {{ $client->name }}<br>
-            <strong>الهاتف:</strong> {{ $client->phone }}<br>
-            <strong>البريد الإلكتروني:</strong> {{ $client->email }}
-        </div>
-
-        <div class="invoice-info">
-            <h3>تفاصيل الفاتورة</h3>
-            <strong>التاريخ:</strong> {{ $invoice->created_at->format('Y-m-d') }}<br>
-            <strong>رقم المعاملة:</strong> {{ $invoice->payment_uuid }}
-        </div>
-
-        <div class="items">
+        <div class="details">
             <table>
-                <thead>
-                    <tr>
-                        <th>الوصف</th>
-                        <th>الكمية</th>
-                        <th>السعر الوحدوي</th>
-                        <th>الإجمالي</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach($invoice->items as $item)
-                    <tr>
-                        <td>{{ $item['description'] }}</td>
-                        <td>{{ $item['quantity'] }}</td>
-                        <td>{{ number_format($item['unit_price'], 2) }}</td>
-                        <td>{{ number_format($item['quantity'] * $item['unit_price'], 2) }}</td>
-                    </tr>
-                    @endforeach
-                </tbody>
+                <tr>
+                    <td><strong>اسم العميل:</strong></td>
+                    <td>{{ $client['name'] }}</td>
+                </tr>
+                <tr>
+                    <td><strong>رقم الجوال:</strong></td>
+                    <td>{{ $client['phone'] }}</td>
+                </tr>
+                <tr>
+                    <td><strong>تاريخ العملية:</strong></td>
+                    <td>{{ $invoice['date'] }}</td>
+                </tr>
+                <tr>
+                    <td><strong>المبلغ المدفوع:</strong></td>
+                    <td>{{ $invoice['amount'] }} ريال</td>
+                </tr>
+                <tr>
+                    <td><strong>رقم العملية:</strong></td>
+                    <td>{{ $invoice['transaction_id'] }}</td>
+                </tr>
             </table>
         </div>
-
-        <div class="totals">
-            <div><span class="label">الإجمالي الفرعي:</span> {{ number_format($invoice->sub_total, 2) }} ر.س</div>
-            <div><span class="label">الضريبة ({{ $invoice->tax_rate }}%):</span> {{ number_format($invoice->tax_amount,
-                2) }} ر.س</div>
-            <div><span class="label">الإجمالي الكلي:</span> {{ number_format($invoice->total, 2) }} ر.س</div>
-        </div>
-
-        <div style="clear: both;"></div>
-
         <div class="footer">
-            شكرًا لتعاملكم معنا<br>
-            هذا المستند إلكتروني ولا يحتاج توقيع.
+            شكراً لاختياركم خدماتنا!
         </div>
     </div>
 </body>

@@ -192,104 +192,73 @@ class UserPaymentController extends Controller
 
     public function returnAction(Request $request)
     {
-        // try {
-            // Validate request
+        try {
+            // التحقق من البيانات
             $validatedData = $request->validate([
                 'data' => 'required|array',
                 'data.payment_uuid' => 'required|exists:payment_user_invitations,payment_uuid',
                 'data.id_payment' => 'nullable|string',
                 'data.message' => 'required|string',
                 'data.status' => 'required|integer',
-                'data.payment_return_response' => 'nullable|string',
             ]);
 
             $data = $validatedData['data'];
-
-            // Extract necessary fields
             $payment_uuid = $data['payment_uuid'] ?? null;
             $id_payment = $data['id_payment'] ?? null;
-            $message = $data['message'] ?? 'Unknown error';
             $status = $data['status'] ?? 500;
-            $payment_return_response = $data['payment_return_response'] ?? '';// for backend debug only
 
-            // Handle success case
             if ($status == 200 && $payment_uuid && $id_payment) {
-                $request->validate(['data.id_payment' => 'required|string']);
-                $payment=PaymentUserInvitation::where('payment_uuid',$payment_uuid)->first();
+                $payment = PaymentUserInvitation::where('payment_uuid', $payment_uuid)->first();
                 $payment->update([
-                    'status'=>1,
-                    'id_payment'=>$data['id_payment'],
-                    'created_at'=>Carbon::now(),
-                    'updated_at'=>Carbon::now(),
+                    'status' => 1,
+                    'id_payment' => $data['id_payment'],
+                    'created_at' => Carbon::now(),
+                    'updated_at' => Carbon::now(),
                 ]);
 
+                // جلب بيانات العميل والعملية
+                $userPackage = UserPackage::where('payment_user_invitation_id', $payment->id)->first();
+                $client = [
+                    'name' => $userPackage->user->name,
+                    'phone' => $userPackage->user->phone,
+                ];
+                $invoice = [
+                    'date' => now()->format('Y-m-d'),
+                    'amount' => $payment->amount,
+                    'transaction_id' => $payment->id_payment,
+                ];
 
-               $userPackage= UserPackage::where('payment_user_invitation_id',$payment->id)->first();
-               if($userPackage){
-                $payment=UserInvitation::where('user_package_id',$userPackage->id)->update([
-                    'is_active'=>1,
-                ]);
-               }
+                // إنشاء الفاتورة
+                $invoiceFilePath = generateInvoicePDF($invoice, $client);
 
-            $userInvitation = UserInvitation::where('user_package_id', $userPackage->id)->first();
-
-            $invoice = (object)[
-                'id'             => $payment->id,
-                'payment_uuid'   => $payment->payment_uuid,
-                'created_at'     => $payment->updated_at,
-                'items'          => [
-                    [
-                        'description' => $userInvitation->name,
-                        'quantity'    => $userInvitation->number_invitees,
-                        'unit_price'  => $payment->value / ($userInvitation->number_invitees ?: 1),
-                    ],
-                ],
-                'sub_total'      => $payment->value,
-                'tax_rate'       => 0,
-                'tax_amount'     => 0,
-                'total'          => $payment->value,
-            ];
-            $client = (object)[
-                'name'  => $userInvitation->name,
-                'phone' => $request->user()->phone,
-                'email' => $request->user()->email,
-            ];
-
-            // أنشئ الـ PDF
-            $pdfPath = generateInvoicePDF($invoice, $client);
-
-            if ($pdfPath) {
-                // أرسل الفاتورة عبر واتساب
-                $sent = sendInvoiceViaWhatsapp($client->phone, $pdfPath);
-                if (! $sent) {
-                    Log::error("Failed to send invoice via WhatsApp for {$client->phone}");
+                if ($invoiceFilePath) {
+                    // إرسال الفاتورة عبر WhatsApp
+                    $phone = $client['phone'];
+                    sendInvoiceViaWhatsapp($phone, $invoiceFilePath);
                 }
-            }
 
                 return response()->json([
                     'data' => [
-                        'payment' => PaymentUserInvitation::where('payment_uuid',$payment_uuid)->first()
+                        'payment' => PaymentUserInvitation::where('payment_uuid', $payment_uuid)->first()
                     ],
                     'message' => 'تم الدفع بنجاح',
                     'status' => $status,
                 ], 200);
-            }
-            // Handle failure case
-            elseif ($status == 400) {
-                $payment=PaymentUserInvitation::where('payment_uuid',$payment_uuid)->first();
+            } elseif ($status == 400) {
+                $payment = PaymentUserInvitation::where('payment_uuid', $payment_uuid)->first();
                 $payment->delete();
                 return response()->json([
                     'message' => 'فشل الدفع',
                     'status' => $status,
                 ], 400);
             }
-        // } catch (\Exception $e) {
-        //     Log::error('Payment return action error: ' . $e->getMessage());
-        //     return response()->json([
-        //         'message' => 'An error occurred while processing your request.',
-        //         'status' => 500,
-        //     ], 500);
-        // }
+        } catch (\Exception $e) {
+            Log::error('Payment return action error: ' . $e->getMessage());
+            return response()->json([
+                'message' => 'حدث خطأ أثناء معالجة الطلب.',
+                'status' => 500,
+            ], 500);
+        }
     }
 
 
