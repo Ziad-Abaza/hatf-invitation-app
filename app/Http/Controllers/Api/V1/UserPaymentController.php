@@ -55,73 +55,46 @@ class UserPaymentController extends Controller
 
     public function payment(Request $request)
     {
-        //check if the user is authenticated
+        // التحقق من صحة البيانات
         $validated = $request->validate([
-            'invitation_id'      => 'required|integer|exists:invitations,id',
-            'name'               => 'nullable|filled|string',
-            'number_invitees'    => 'required|integer',
-            'total_price'        => 'required|numeric',
-            'file'               => 'nullable|filled|file|mimes:png,jpg,pdf',
+            'invitation_id'      => ['required', 'integer', 'exists:invitations,id'],
+            'name'               => ['nullable', 'string', 'filled', 'max:255'],
+            'number_invitees'    => ['required', 'integer', 'min:1'], // مباشرة تحقق أن العدد أكبر من 0
+            'total_price'        => ['required', 'numeric', 'min:1'], // تحقق أن السعر موجب
+            'file'               => ['nullable', 'file', 'mimes:png,jpg,jpeg,pdf'], // 5MB حد أقصى للحجم
             'invitation_date'    => ['required', 'date', 'after_or_equal:today'],
             'invitation_time'    => ['required', 'date_format:H:i'],
-            'payment_uuid'       => 'nullable|string',
+            'payment_uuid'       => ['required', 'string', 'unique:payment_user_invitations,payment_uuid'],
         ]);
 
-        // check if the user is authenticated
-        $userInvitation = UserInvitation::where('invitation_id', $validated['invitation_id'])
-            ->where('user_id', auth('api')->id())
-            ->first();
-
-        if (!$userInvitation) {
+        // إذا كان هناك ملف تأكد من أنه صالح تمامًا
+        if ($request->hasFile('file') && !$request->file('file')->isValid()) {
             return response()->json([
-                'message' => 'UserInvitation غير موجود بهذه البيانات.',
-                'success' => false
-            ], 404);
-        }
-
-        // check if the user has already paid for this invitation
-        if (empty($userInvitation->getFirstMediaUrl('userInvitation')) && empty($request->file('file'))) {
-            return errorResponse('يجب إرفاق ملف دعوة صالح.');
-        }
-
-        // check if the user has already paid for this invitation
-        $totalAllowed = $userInvitation->number_invitees;
-        $currentCount = InvitedUsers::where('user_invitations_id', $userInvitation->id)
-            ->where('send_status', 'send')
-            ->count();
-
-        if (($currentCount + $validated['number_invitees']) > $totalAllowed) {
-            return errorResponse('عدد المدعوين يتجاوز الحد الأقصى المسموح به.');
-        }
-
-        //  check if the user has already paid for this invitation
-        $errors = [];
-
-        if ($validated['number_invitees'] <= 0) {
-            $errors[] = 'عدد المدعوين يجب أن يكون أكبر من صفر.';
-        }
-
-        if ($validated['total_price'] <= 0) {
-            $errors[] = 'السعر الإجمالي يجب أن يكون قيمة موجبة.';
-        }
-
-        if (!empty($errors)) {
-            return response()->json([
-                'message' => 'خطأ في البيانات.',
-                'errors' => $errors,
-                'success' => false
+                'message' => 'الملف المرفوع غير صالح.',
+                'errors'  => ['file' => 'الملف تالف أو غير مكتمل التحميل.'],
+                'success' => false,
             ], 422);
         }
 
-        // check if the user has already paid for this invitation
-        $payment = $this->paymentService->initiatePayment($validated, auth('api')->user());
+        try {
+            // بدء عملية الدفع
+            $payment = $this->paymentService->initiatePayment($validated, auth('api')->user());
 
-        if (is_array($payment)) {
-            return $this->handlePaymentResponse($payment['pay'], $payment['cart_id'], $payment['userInvitation']);
-        } else {
+            if (is_array($payment)) {
+                return $this->handlePaymentResponse($payment['pay'], $payment['cart_id'], $payment['userInvitation']);
+            }
+
             return $payment;
+        } catch (\Exception $e) {
+            // التقاط أي أخطاء غير متوقعة
+            return response()->json([
+                'message' => 'حدث خطأ أثناء معالجة الطلب.',
+                'errors'  => [$e->getMessage()],
+                'success' => false,
+            ], 500);
         }
     }
+
 
 
     // public function paymentP(Request $request)
