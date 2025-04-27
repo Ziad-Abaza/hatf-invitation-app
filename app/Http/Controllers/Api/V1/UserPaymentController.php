@@ -64,7 +64,7 @@ class UserPaymentController extends Controller
             'file'               => ['nullable', 'file', 'mimes:png,jpg,jpeg,pdf'], // 5MB حد أقصى للحجم
             'invitation_date'    => ['required', 'date', 'after_or_equal:today'],
             'invitation_time'    => ['required', 'date_format:H:i'],
-            'payment_uuid'       => ['required', 'string', 'unique:payment_user_invitations,payment_uuid'],
+            'payment_uuid'       => ['required', 'string'],
         ]);
 
         // إذا كان هناك ملف تأكد من أنه صالح تمامًا
