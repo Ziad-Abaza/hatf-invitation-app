@@ -68,9 +68,6 @@ Route::prefix('v1')->group(function () {
         // Route::post('user-invitation/{userInvitation}/validate', [UserInvitationController::class, 'validateInviteUsersBeforePayment']);
         // Route::post('user-invitation/{userPackage}/validate-private', [UserInvitationController::class, 'validateInviteUsersBeforePaymentP']);
 
-        Route::post('/send-invoice', [InvoiceController::class, 'sendInvoice']);
-
-
         // user invitationsInvitation_date
         Route::get('invitations/private/index', [InvitationController::class, 'indexPrivate']);
         Route::patch('user-invitations/{userInvitation}/archive', [UserInvitationController::class, 'userInvitationArchive']);//hide from user private invitation

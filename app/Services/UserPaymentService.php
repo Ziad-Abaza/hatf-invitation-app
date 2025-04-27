@@ -210,6 +210,10 @@ class UserPaymentService
                     return 'failedPayment';
                 }
 
+                $invoice = generateInvoicePDF($paymentUserInvitation->userInvitation, $paymentUserInvitation->user);
+                $phone = $paymentUserInvitation->user->phone; 
+                sendInvoiceViaWhatsapp($phone, $invoice);
+
                 return 'successPayment';
             }
 
