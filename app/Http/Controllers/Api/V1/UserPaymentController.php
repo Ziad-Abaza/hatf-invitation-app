@@ -60,7 +60,7 @@ class UserPaymentController extends Controller
             'invitation_id'    => ['required', 'integer', 'exists:invitations,id'],
             'name'             => ['nullable', 'string', 'filled', 'max:255'],
             'number_invitees'  => ['required', 'integer', 'min:1'],
-            'total_price'      => ['required', 'numeric', 'min:1'],
+            'total_price'      => ['required', 'numeric'],
             'file'             => ['nullable', 'file', 'mimes:png,jpg,jpeg,pdf'],
             'invitation_date'  => ['required', 'date', 'after_or_equal:today'],
             'invitation_time'  => ['required', 'date_format:H:i'],
