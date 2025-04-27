@@ -247,7 +247,6 @@ if (!function_exists('sendNotificationFireBase')) {
         return successResponse('Notification has been sent');
     }
 }
-
 if (!function_exists('sendInvoiceViaWhatsapp')) {
     function sendInvoiceViaWhatsapp($phone, $invoiceFilePath)
     {
@@ -255,6 +254,13 @@ if (!function_exists('sendInvoiceViaWhatsapp')) {
             $token = "EABIy7zT1dfYBOxGm8szUdvkFVeKCXEGx1CblxZBiR6gLgWatJntsBhZA650xXEYqiFDgCeiGsLbKfBfOHzv0zVlESk35WrpySMQZAwZAXlVOAZBSAcw98msi83y0VDpE6w5FiTtncoFG0eRPxHDGeZC4jeNz0MQMGH10nISmjUpqJ6kiCHYOOzXdRSTWestlzXeYgRztaWa2BZB11prnW3JalVt6menqxuHe3ihARj4ZCdA6jhqnMPOpSZB0WMk0G";
             $sender_id = "595577366971724";
             $url = "https://api.karzoun.app/CloudApi.php";
+
+            // Log request details for troubleshooting
+            Log::info('Sending PDF via WhatsApp', [
+                'phone' => $phone,
+                'invoiceFilePath' => $invoiceFilePath,
+                'url' => $url,
+            ]);
 
             $response = Http::get($url, [
                 'token' => $token,
@@ -270,14 +276,22 @@ if (!function_exists('sendInvoiceViaWhatsapp')) {
             ]);
 
             if ($response->successful()) {
-                Log::info('PDF sent successfully', ['response' => $response->json()]);
+                Log::info('PDF sent successfully via WhatsApp', ['response' => $response->json()]);
                 return true;
             }
 
-            Log::error('Error sending PDF', ['response' => $response->json()]);
+            Log::error('Error sending PDF via WhatsApp', [
+                'response' => $response->json(),
+                'phone' => $phone,
+                'invoiceFilePath' => $invoiceFilePath
+            ]);
             return false;
         } catch (\Exception $e) {
-            Log::error('Exception in sendInvoiceViaWhatsapp', ['error' => $e->getMessage()]);
+            Log::error('Exception in sendInvoiceViaWhatsapp', [
+                'error' => $e->getMessage(),
+                'phone' => $phone,
+                'invoiceFilePath' => $invoiceFilePath
+            ]);
             return false;
         }
     }
@@ -286,14 +300,34 @@ if (!function_exists('sendInvoiceViaWhatsapp')) {
 if (!function_exists('generateInvoicePDF')) {
     function generateInvoicePDF($invoice, $client)
     {
-        $pdf = PDF::loadView('pdf/invoice', [
-            'invoice' => $invoice,
-            'client' => $client,
-        ]);
+        try {
+            // Log the start of PDF generation
+            Log::info('Generating invoice PDF', [
+                'invoice_id' => $invoice->id,
+                'client_id' => $client->id,
+            ]);
 
-        $filePath = storage_path('app/public/invoices/invoice_' . $invoice->id . '.pdf');
-        $pdf->save($filePath);
+            $pdf = PDF::loadView('pdf/invoice', [
+                'invoice' => $invoice,
+                'client' => $client,
+            ]);
 
-        return $filePath;
+            $filePath = storage_path('app/public/invoices/invoice_' . $invoice->id . '.pdf');
+            $pdf->save($filePath);
+
+            // Log success of PDF generation
+            Log::info('Invoice PDF generated successfully', [
+                'file_path' => $filePath,
+            ]);
+
+            return $filePath;
+        } catch (\Exception $e) {
+            Log::error('Exception generating invoice PDF', [
+                'error' => $e->getMessage(),
+                'invoice_id' => $invoice->id,
+                'client_id' => $client->id
+            ]);
+            return null;
+        }
     }
 }

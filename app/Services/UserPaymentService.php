@@ -169,6 +169,7 @@ class UserPaymentService
     {
         try {
             if (!$this->isValidRedirect($data)) {
+                Log::warning("Invalid redirect detected", ['data' => $data]);
                 return 'failedPayment';
             }
 
@@ -180,7 +181,7 @@ class UserPaymentService
                     $paymentUserInvitation = PaymentUserInvitation::where('payment_uuid', $cart_id)->first();
 
                     if (!$paymentUserInvitation) {
-                        Log::error("Payment User Invitation not found for cart ID: {$cart_id}");
+                        Log::error("Payment User Invitation not found for cart ID: {$cart_id}", ['data' => $data]);
                         return 'failedPayment';
                     }
 
@@ -189,6 +190,7 @@ class UserPaymentService
                         'id_payment' => $data['tranRef'],
                         'status'     => 1,
                     ]);
+                    Log::info("PaymentUserInvitation updated successfully for cart ID: {$cart_id}");
                 } catch (\Exception $e) {
                     Log::error("Failed to update PaymentUserInvitation: " . $e->getMessage(), [
                         'cart_id' => $cart_id,
@@ -203,6 +205,7 @@ class UserPaymentService
                         'is_active' => 1,
                         'created_at' => now(),
                     ]);
+                    Log::info("UserInvitation updated successfully for invitation ID: {$paymentUserInvitation->user_invitation_id}");
                 } catch (\Exception $e) {
                     Log::error("Failed to update UserInvitation status: " . $e->getMessage(), [
                         'user_invitation_id' => $paymentUserInvitation->user_invitation_id,
@@ -210,9 +213,24 @@ class UserPaymentService
                     return 'failedPayment';
                 }
 
-                $invoice = generateInvoicePDF($paymentUserInvitation->userInvitation, $paymentUserInvitation->user);
-                $phone = $paymentUserInvitation->user->phone; 
-                sendInvoiceViaWhatsapp($phone, $invoice);
+                // Generate and send the invoice
+                try {
+                    $invoice = generateInvoicePDF($paymentUserInvitation->userInvitation, $paymentUserInvitation->user);
+                    $phone = $paymentUserInvitation->user->phone;
+                    $sendStatus = sendInvoiceViaWhatsapp($phone, $invoice);
+
+                    if ($sendStatus) {
+                        Log::info("Invoice sent successfully to phone: {$phone}");
+                    } else {
+                        Log::error("Failed to send invoice via WhatsApp", ['phone' => $phone, 'invoice' => $invoice]);
+                    }
+                } catch (\Exception $e) {
+                    Log::error("Failed to generate/send invoice: " . $e->getMessage(), [
+                        'cart_id' => $cart_id,
+                        'user_invitation_id' => $paymentUserInvitation->user_invitation_id,
+                    ]);
+                    return 'failedPayment';
+                }
 
                 return 'successPayment';
             }
@@ -225,6 +243,7 @@ class UserPaymentService
             return 'failedPayment';
         }
     }
+
 
 
     private function calculatePaymentValue($invitation, $user, $invitationValue)
