@@ -192,93 +192,89 @@ class UserPaymentController extends Controller
 
     public function returnAction(Request $request)
     {
-        // Validate request
-        $validatedData = $request->validate([
-            'data' => 'required|array',
-            'data.payment_uuid' => 'required|exists:payment_user_invitations,payment_uuid',
-            'data.id_payment' => 'nullable|string',
-            'data.message' => 'required|string',
-            'data.status' => 'required|integer',
-            'data.payment_return_response' => 'nullable|string',
-        ]);
-
-        $data = $validatedData['data'];
-
-        // Extract necessary fields
-        $payment_uuid = $data['payment_uuid'] ?? null;
-        $id_payment = $data['id_payment'] ?? null;
-        $message = $data['message'] ?? 'Unknown error';
-        $status = $data['status'] ?? 500;
-        $payment_return_response = $data['payment_return_response'] ?? ''; // for backend debug only
-
-        // Handle success case
-        if ($status == 200 && $payment_uuid && $id_payment) {
-            $request->validate(['data.id_payment' => 'required|string']);
-
-            // Fetch payment with related data (UserPackage and User)
-            $payment = PaymentUserInvitation::with(['userPackage.user', 'userPackage.invitation'])
-                ->where('payment_uuid', $payment_uuid)
-                ->first();
-
-            if (!$payment) {
-                return response()->json([
-                    'message' => 'Payment not found',
-                    'status' => 404,
-                ], 404);
-            }
-
-            // Update payment status and ID
-            $payment->update([
-                'status' => 1,
-                'id_payment' => $data['id_payment'],
-                'created_at' => Carbon::now(),
-                'updated_at' => Carbon::now(),
+        try {
+            // Validate request
+            $validatedData = $request->validate([
+                'data' => 'required|array',
+                'data.payment_uuid' => 'required|exists:payment_user_invitations,payment_uuid',
+                'data.id_payment' => 'nullable|string',
+                'data.message' => 'required|string',
+                'data.status' => 'required|integer',
+                'data.payment_return_response' => 'nullable|string',
             ]);
 
-            // Activate the user invitation if a package exists
-            $userPackage = $payment->userPackage;
-            if ($userPackage) {
-                UserInvitation::where('user_package_id', $userPackage->id)->update([
-                    'is_active' => 1,
+            $data = $validatedData['data'];
+
+            // Extract necessary fields
+            $payment_uuid = $data['payment_uuid'] ?? null;
+            $id_payment = $data['id_payment'] ?? null;
+            $message = $data['message'] ?? 'Unknown error';
+            $status = $data['status'] ?? 500;
+            $payment_return_response = $data['payment_return_response'] ?? ''; // for backend debug only
+
+            // Handle success case
+            if ($status == 200 && $payment_uuid && $id_payment) {
+                $request->validate(['data.id_payment' => 'required|string']);
+
+                // Get payment with related models (user package and user)
+                $payment = PaymentUserInvitation::with(['userPackage.user', 'userPackage.invitation'])
+                    ->where('payment_uuid', $payment_uuid)
+                    ->first();
+
+                if (!$payment) {
+                    return response()->json([
+                        'message' => 'Payment not found',
+                        'status' => 404,
+                    ], 404);
+                }
+
+                // Update payment status and details
+                $payment->update([
+                    'status' => 1,
+                    'id_payment' => $data['id_payment'],
+                    'created_at' => Carbon::now(),
+                    'updated_at' => Carbon::now(),
                 ]);
+
+                // Activate the user invitation if it exists
+                $userPackage = $payment->userPackage;
+                if ($userPackage) {
+                    UserInvitation::where('user_package_id', $userPackage->id)->update([
+                        'is_active' => 1,
+                    ]);
+                }
+
+                // Prepare response data
+                $responseData = [
+                    'user' => $userPackage ? $userPackage->user : null, // User data
+                    'package' => $userPackage ? $userPackage->invitation : null, // Package data
+                    'payment' => $payment, // Payment data
+                ];
+
+                return response()->json([
+                    'data' => $responseData,
+                    'message' => 'تم الدفع بنجاح',
+                    'status' => $status,
+                ], 200);
             }
 
-            // Prepare response data
-            $responseData = [
-                'payment' => [
-                    'id' => $payment->id,
-                    'value' => $payment->value,
-                    'status' => $payment->status,
-                    'created_at' => $payment->created_at,
-                    'updated_at' => $payment->updated_at,
-                ],
-                'user' => $userPackage ? $userPackage->user : null,
-                'package' => $userPackage ? [
-                    'id' => $userPackage->id,
-                    'invitation_id' => $userPackage->invitation_id,
-                    'user_id' => $userPackage->user_id,
-                    'invitation' => $userPackage->invitation,
-                ] : null,
-            ];
-
-            return response()->json([
-                'data' => $responseData,
-                'message' => 'تم الدفع بنجاح',
-                'status' => $status,
-            ], 200);
-        }
-
-        // Handle failure case
-        elseif ($status == 400) {
-            $payment = PaymentUserInvitation::where('payment_uuid', $payment_uuid)->first();
-            if ($payment) {
-                $payment->delete();
+            // Handle failure case
+            elseif ($status == 400) {
+                $payment = PaymentUserInvitation::where('payment_uuid', $payment_uuid)->first();
+                if ($payment) {
+                    $payment->delete();
+                }
+                return response()->json([
+                    'message' => 'فشل الدفع',
+                    'status' => $status,
+                ], 400);
             }
-
+        } catch (\Exception $e) {
+            Log::error('Payment return action error: ' . $e->getMessage());
             return response()->json([
-                'message' => 'فشل الدفع',
-                'status' => $status,
-            ], 400);
+                'message' => 'An error occurred while processing your request.',
+                'status' => 500,
+            ], 500);
         }
     }
 
