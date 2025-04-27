@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>فاتورة رقم {{ $invoice->id }}</title>
+    <title>فاتورة رقم {{ $invoice['id'] }}</title> <!-- تعديل هنا للوصول إلى المصفوفة -->
     <style>
         body {
             font-family: 'Arial', sans-serif;
@@ -87,12 +87,6 @@
             font-size: 14px;
             color: #7f8c8d;
         }
-
-        /* To format currency */
-        .currency {
-            direction: ltr;
-            font-family: 'Arial', sans-serif;
-        }
     </style>
 </head>
 
@@ -100,16 +94,16 @@
     <div class="invoice-container">
         <!-- Header -->
         <div class="invoice-header">
-            <h2>فاتورة رقم {{ $invoice->id }}</h2>
-            <p>التاريخ: {{ \Carbon\Carbon::parse($invoice->date)->format('d/m/Y') }}</p>
+            <h2>فاتورة رقم {{ $invoice['id'] }}</h2> <!-- تعديل هنا للوصول إلى المصفوفة -->
+            <p>التاريخ: {{ $invoice['date'] }}</p> <!-- تعديل هنا للوصول إلى المصفوفة -->
         </div>
 
         <!-- Body -->
         <div class="invoice-body">
             <!-- Client Info -->
             <div class="client-info">
-                <p><strong>العميل:</strong> {{ $client->name }}</p>
-                <p><strong>البريد الإلكتروني:</strong> {{ $client->email }}</p>
+                <p><strong>العميل:</strong> {{ $client['name'] }}</p> <!-- تعديل هنا للوصول إلى المصفوفة -->
+                <p><strong>البريد الإلكتروني:</strong> {{ $client['email'] }}</p> <!-- تعديل هنا للوصول إلى المصفوفة -->
             </div>
 
             <!-- Items Table -->
@@ -123,20 +117,20 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach($invoice->items as $item)
+                    @foreach($invoice['items'] as $item)
+                    <!-- تعديل هنا للوصول إلى المصفوفة -->
                     <tr>
-                        <td>{{ $item->name }}</td>
-                        <td>{{ $item->quantity }}</td>
-                        <td class="currency">{{ number_format($item->price, 2) }} ريال</td>
-                        <td class="currency">{{ number_format($item->total, 2) }} ريال</td>
+                        <td>{{ $item['name'] }}</td> <!-- تعديل هنا للوصول إلى المصفوفة -->
+                        <td>{{ $item['quantity'] }}</td> <!-- تعديل هنا للوصول إلى المصفوفة -->
+                        <td>{{ $item['price'] }}</td> <!-- تعديل هنا للوصول إلى المصفوفة -->
+                        <td>{{ $item['total'] }}</td> <!-- تعديل هنا للوصول إلى المصفوفة -->
                     </tr>
                     @endforeach
                 </tbody>
             </table>
 
             <!-- Total -->
-            <p class="total">المجموع الكلي: <span class="currency">{{ number_format($invoice->total, 2) }} ريال</span>
-            </p>
+            <p class="total">المجموع الكلي: {{ $invoice['total'] }} ريال</p> <!-- تعديل هنا للوصول إلى المصفوفة -->
         </div>
 
         <!-- Footer -->
