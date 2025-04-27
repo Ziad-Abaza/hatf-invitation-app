@@ -10,8 +10,8 @@ class InvoiceController extends Controller
     public function sendInvoice(Request $request)
     {
         // بيانات الفاتورة والعميل
-        $invoiceData = $request->invoice;
-        $clientData = $request->client;
+        $invoiceData = (object) $request->invoice;  // تحويل إلى كائن
+        $clientData = (object) $request->client;    // تحويل إلى كائن
         $phone = $request->phone;
 
         $pdfFilePath = generateInvoicePDF($invoiceData, $clientData);
