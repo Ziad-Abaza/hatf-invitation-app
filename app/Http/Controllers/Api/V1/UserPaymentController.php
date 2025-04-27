@@ -216,10 +216,8 @@ class UserPaymentController extends Controller
             if ($status == 200 && $payment_uuid && $id_payment) {
                 $request->validate(['data.id_payment' => 'required|string']);
 
-                // Get payment with related models (user package and user)
-                $payment = PaymentUserInvitation::with(['userPackage.user', 'userPackage.invitation'])
-                    ->where('payment_uuid', $payment_uuid)
-                    ->first();
+                // Get payment data
+                $payment = PaymentUserInvitation::where('payment_uuid', $payment_uuid)->first();
 
                 if (!$payment) {
                     return response()->json([
@@ -236,8 +234,10 @@ class UserPaymentController extends Controller
                     'updated_at' => Carbon::now(),
                 ]);
 
+                // Get UserPackage data manually (without relying on incorrect relationship)
+                $userPackage = UserPackage::where('payment_user_invitation_id', $payment->id)->first();
+
                 // Activate the user invitation if it exists
-                $userPackage = $payment->userPackage;
                 if ($userPackage) {
                     UserInvitation::where('user_package_id', $userPackage->id)->update([
                         'is_active' => 1,
@@ -246,8 +246,8 @@ class UserPaymentController extends Controller
 
                 // Prepare response data
                 $responseData = [
-                    'user' => $userPackage ? $userPackage->user : null, // User data
-                    'package' => $userPackage ? $userPackage->invitation : null, // Package data
+                    'user' => $userPackage ? User::find($userPackage->user_id) : null, // Fetch user manually
+                    'package' => $userPackage ? Invitation::find($userPackage->invitation_id) : null, // Fetch package manually
                     'payment' => $payment, // Payment data
                 ];
 
