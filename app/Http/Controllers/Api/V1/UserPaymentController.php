@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Api\V1;
 
 use Carbon\Carbon;
 use App\Models\UserPackage;
+use App\Models\Invitation;
+use App\Models\User;
 use Illuminate\Http\Request;
 use App\Models\UserInvitation;
 use App\Models\InvitedUsers;
@@ -231,13 +233,18 @@ class UserPaymentController extends Controller
                 ]);
                }
 
+               $user = User::where('id', $payment->user_id)->first();
+
                 return response()->json([
                     'data' => [
                         'payment' => PaymentUserInvitation::where('payment_uuid',$payment_uuid)->first()
                     ],
                     'message' => 'تم الدفع بنجاح',
-                    'user_id' => $payment->user_id,
                     'status' => $status,
+                    'user' => $user,
+                    'payment' => $payment,
+                    'user_package' => $userPackage,
+                    
                 ], 200);
             }
             // Handle failure case
