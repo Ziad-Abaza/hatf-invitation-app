@@ -286,7 +286,7 @@ if (!function_exists('sendInvoiceViaWhatsapp')) {
 if (!function_exists('generateInvoicePDF')) {
     function generateInvoicePDF($invoice, $client)
     {
-        $pdf = PDF::loadView('invoice', [
+        $pdf = PDF::loadView('pdf/invoice', [
             'invoice' => $invoice,
             'client' => $client,
         ]);
