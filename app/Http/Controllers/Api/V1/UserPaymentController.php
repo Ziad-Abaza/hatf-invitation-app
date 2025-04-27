@@ -236,8 +236,8 @@ class UserPaymentController extends Controller
                     'is_active'=>1,
                 ]);
                }
-
-                $pdfPath = generateInvoicePDF($payment, $user, $userPackage);
+               $paymentData = PaymentUserInvitation::where('payment_uuid', $payment_uuid)->first();
+                $pdfPath = generateInvoicePDF($paymentData, $user, $userPackage);
             if ($pdfPath) {
                 // Send the invoice via WhatsApp
                 $sent = sendInvoiceViaWhatsapp($user->phone, $pdfPath);
