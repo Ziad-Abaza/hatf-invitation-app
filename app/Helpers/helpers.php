@@ -5,6 +5,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
 use GreenApi\RestApi\GreenApiClient;
 use Illuminate\Support\Facades\Http;
+use Barryvdh\DomPDF\Facade\Pdf as PDF;
 
 if (!function_exists('successResponse')) {
     function successResponse(string $message = 'Success Response', int $status = 200): JsonResponse
@@ -244,5 +245,55 @@ if (!function_exists('sendNotificationFireBase')) {
             return errorResponse('Error: ' . $response->json());
 
         return successResponse('Notification has been sent');
+    }
+}
+
+if (!function_exists('sendInvoiceViaWhatsapp')) {
+    function sendInvoiceViaWhatsapp($phone, $invoiceFilePath)
+    {
+        try {
+            $token = "EABIy7zT1dfYBOxGm8szUdvkFVeKCXEGx1CblxZBiR6gLgWatJntsBhZA650xXEYqiFDgCeiGsLbKfBfOHzv0zVlESk35WrpySMQZAwZAXlVOAZBSAcw98msi83y0VDpE6w5FiTtncoFG0eRPxHDGeZC4jeNz0MQMGH10nISmjUpqJ6kiCHYOOzXdRSTWestlzXeYgRztaWa2BZB11prnW3JalVt6menqxuHe3ihARj4ZCdA6jhqnMPOpSZB0WMk0G";
+            $sender_id = "595577366971724";
+            $url = "https://api.karzoun.app/CloudApi.php";
+
+            $response = Http::get($url, [
+                'token' => $token,
+                'sender_id' => $sender_id,
+                'phone' => $phone,
+                'template' => 'buy_the_invitation_pdf',
+                'pdf' => $invoiceFilePath,
+                'param_1' => "تأكيد الحجز",
+                'param_2' => "تأكيد الحجز",
+                'param_3' => "تأكيد الحجز",
+                'param_4' => "تأكيد الحجز",
+                'param_5' => "تأكيد الحجز",
+            ]);
+
+            if ($response->successful()) {
+                Log::info('PDF sent successfully', ['response' => $response->json()]);
+                return true;
+            }
+
+            Log::error('Error sending PDF', ['response' => $response->json()]);
+            return false;
+        } catch (\Exception $e) {
+            Log::error('Exception in sendInvoiceViaWhatsapp', ['error' => $e->getMessage()]);
+            return false;
+        }
+    }
+}
+
+if (!function_exists('generateInvoicePDF')) {
+    function generateInvoicePDF($invoice, $client)
+    {
+        $pdf = PDF::loadView('invoice', [
+            'invoice' => $invoice,
+            'client' => $client,
+        ]);
+
+        $filePath = storage_path('app/public/invoices/invoice_' . $invoice->id . '.pdf');
+        $pdf->save($filePath);
+
+        return $filePath;
     }
 }

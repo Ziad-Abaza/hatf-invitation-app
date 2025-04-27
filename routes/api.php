@@ -16,6 +16,7 @@ use App\Http\Controllers\Api\V1\NotificationController;
 use App\Http\Controllers\Api\V1\PrivacyPolicyController;
 use App\Http\Controllers\Api\V1\UserInvitationController;
 use App\Http\Controllers\TestController;
+use App\Http\Controllers\InvoiceController;
 
 Route::prefix('v1')->group(function () {
     //settings
@@ -66,6 +67,9 @@ Route::prefix('v1')->group(function () {
         // Validate user invitations before payment
         // Route::post('user-invitation/{userInvitation}/validate', [UserInvitationController::class, 'validateInviteUsersBeforePayment']);
         // Route::post('user-invitation/{userPackage}/validate-private', [UserInvitationController::class, 'validateInviteUsersBeforePaymentP']);
+
+        Route::post('/send-invoice', [InvoiceController::class, 'sendInvoice']);
+
 
         // user invitationsInvitation_date
         Route::get('invitations/private/index', [InvitationController::class, 'indexPrivate']);
