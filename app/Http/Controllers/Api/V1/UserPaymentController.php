@@ -55,19 +55,19 @@ class UserPaymentController extends Controller
 
     public function payment(Request $request)
     {
-        // التحقق من صحة البيانات
-        $validated = $request->validate([
-            'invitation_id'      => ['required', 'integer', 'exists:invitations,id'],
-            'name'               => ['nullable', 'string', 'filled', 'max:255'],
-            'number_invitees'    => ['required', 'integer', 'min:1'], // مباشرة تحقق أن العدد أكبر من 0
-            'total_price'        => ['required', 'numeric', 'min:1'], // تحقق أن السعر موجب
-            'file'               => ['nullable', 'file', 'mimes:png,jpg,jpeg,pdf'], // 5MB حد أقصى للحجم
-            'invitation_date'    => ['required', 'date', 'after_or_equal:today'],
-            'invitation_time'    => ['required', 'date_format:H:i'],
-            'payment_uuid'       => ['required', 'string'],
+        // Validate request data
+        $validatedData = $request->validate([
+            'invitation_id'    => ['required', 'integer', 'exists:invitations,id'],
+            'name'             => ['nullable', 'string', 'filled', 'max:255'],
+            'number_invitees'  => ['required', 'integer', 'min:1'],
+            'total_price'      => ['required', 'numeric', 'min:1'],
+            'file'             => ['nullable', 'file', 'mimes:png,jpg,jpeg,pdf'],
+            'invitation_date'  => ['required', 'date', 'after_or_equal:today'],
+            'invitation_time'  => ['required', 'date_format:H:i'],
+            'payment_uuid'     => ['required', 'string', 'unique:payment_user_invitations,payment_uuid'],
         ]);
 
-        // إذا كان هناك ملف تأكد من أنه صالح تمامًا
+        // Check if file is uploaded and valid
         if ($request->hasFile('file') && !$request->file('file')->isValid()) {
             return response()->json([
                 'message' => 'الملف المرفوع غير صالح.',
@@ -77,16 +77,20 @@ class UserPaymentController extends Controller
         }
 
         try {
-            // بدء عملية الدفع
-            $payment = $this->paymentService->initiatePayment($validated, auth('api')->user());
+            // Initiate payment process
+            $payment = $this->paymentService->initiatePayment($validatedData, auth('api')->user());
 
             if (is_array($payment)) {
-                return $this->handlePaymentResponse($payment['pay'], $payment['cart_id'], $payment['userInvitation']);
+                return $this->handlePaymentResponse(
+                    $payment['pay'],
+                    $payment['cart_id'],
+                    $payment['userInvitation']
+                );
             }
 
             return $payment;
         } catch (\Exception $e) {
-            // التقاط أي أخطاء غير متوقعة
+            // Handle unexpected errors
             return response()->json([
                 'message' => 'حدث خطأ أثناء معالجة الطلب.',
                 'errors'  => [$e->getMessage()],
