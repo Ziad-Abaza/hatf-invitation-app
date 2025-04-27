@@ -87,6 +87,12 @@
             font-size: 14px;
             color: #7f8c8d;
         }
+
+        /* To format currency */
+        .currency {
+            direction: ltr;
+            font-family: 'Arial', sans-serif;
+        }
     </style>
 </head>
 
@@ -95,7 +101,7 @@
         <!-- Header -->
         <div class="invoice-header">
             <h2>فاتورة رقم {{ $invoice->id }}</h2>
-            <p>التاريخ: {{ $invoice->date }}</p>
+            <p>التاريخ: {{ \Carbon\Carbon::parse($invoice->date)->format('d/m/Y') }}</p>
         </div>
 
         <!-- Body -->
@@ -121,15 +127,16 @@
                     <tr>
                         <td>{{ $item->name }}</td>
                         <td>{{ $item->quantity }}</td>
-                        <td>{{ $item->price }}</td>
-                        <td>{{ $item->total }}</td>
+                        <td class="currency">{{ number_format($item->price, 2) }} ريال</td>
+                        <td class="currency">{{ number_format($item->total, 2) }} ريال</td>
                     </tr>
                     @endforeach
                 </tbody>
             </table>
 
             <!-- Total -->
-            <p class="total">المجموع الكلي: {{ $invoice->total }} ريال</p>
+            <p class="total">المجموع الكلي: <span class="currency">{{ number_format($invoice->total, 2) }} ريال</span>
+            </p>
         </div>
 
         <!-- Footer -->
