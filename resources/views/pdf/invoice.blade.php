@@ -3,139 +3,143 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>فاتورة رقم {{ $invoice->id }}</title>
     <style>
         body {
-            font-family: 'Arial', sans-serif;
-            direction: rtl;
+            font-family: "Tajawal", sans-serif;
             margin: 0;
-            padding: 20px;
-            background-color: #f9f9f9;
-            color: #333;
+            padding: 0;
         }
 
-        .invoice-container {
-            max-width: 800px;
-            margin: 0 auto;
-            background: #fff;
+        .container {
+            width: 80%;
+            margin: auto;
             padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
 
-        .invoice-header {
+        .header {
             text-align: center;
-            margin-bottom: 20px;
+            margin-bottom: 30px;
         }
 
-        .invoice-header h2 {
+        .header h1 {
+            margin: 0;
             font-size: 24px;
-            color: #2c3e50;
-            margin-bottom: 10px;
         }
 
-        .invoice-header p {
-            font-size: 14px;
-            color: #7f8c8d;
-        }
-
-        .invoice-body {
-            margin-top: 20px;
-        }
-
-        .client-info {
+        .company-info {
+            text-align: left;
+            font-size: 12px;
             margin-bottom: 20px;
         }
 
-        .client-info p {
-            font-size: 14px;
-            margin: 5px 0;
+        .customer-info,
+        .invoice-info {
+            width: 48%;
+            display: inline-block;
+            vertical-align: top;
+            font-size: 12px;
+            margin-bottom: 20px;
         }
 
-        table {
+        .items table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 10px;
+            margin-bottom: 20px;
         }
 
-        table th {
-            background-color: #2c3e50;
-            color: #fff;
-            padding: 10px;
-            text-align: center;
-            font-weight: bold;
-        }
-
-        table td {
-            padding: 10px;
-            text-align: center;
+        .items th,
+        .items td {
             border: 1px solid #ddd;
-        }
-
-        .total {
-            margin-top: 20px;
-            text-align: right;
-            font-size: 18px;
-            font-weight: bold;
-            color: #e74c3c;
-        }
-
-        .invoice-footer {
-            margin-top: 30px;
+            padding: 8px;
             text-align: center;
+            font-size: 12px;
+        }
+
+        .items th {
+            background: #f5f5f5;
+        }
+
+        .totals {
+            float: left;
+            width: 100%;
+            text-align: right;
             font-size: 14px;
-            color: #7f8c8d;
+        }
+
+        .totals .label {
+            display: inline-block;
+            width: 200px;
+        }
+
+        .footer {
+            text-align: center;
+            font-size: 10px;
+            margin-top: 30px;
+            color: #666;
         }
     </style>
 </head>
 
 <body>
-    <div class="invoice-container">
-        <!-- Header -->
-        <div class="invoice-header">
-            <h2>فاتورة رقم {{ $invoice->id }}</h2>
-            <p>التاريخ: {{ $invoice->date }}</p>
+    <div class="container">
+        <div class="header">
+            <h1>فاتورة رقم {{ $invoice->id }}</h1>
         </div>
 
-        <!-- Body -->
-        <div class="invoice-body">
-            <!-- Client Info -->
-            <div class="client-info">
-                <p><strong>العميل:</strong> {{ $client->name }}</p>
-                <p><strong>البريد الإلكتروني:</strong> {{ $client->email }}</p>
-            </div>
+        <div class="company-info">
+            <strong>اسم الشركة:</strong> شركتنا المحترمة<br>
+            <strong>العنوان:</strong> الرياض، السعودية<br>
+            <strong>الهاتف:</strong> 0123456789
+        </div>
 
-            <!-- Items Table -->
+        <div class="customer-info">
+            <h3>بيانات العميل</h3>
+            <strong>الاسم:</strong> {{ $client->name }}<br>
+            <strong>الهاتف:</strong> {{ $client->phone }}<br>
+            <strong>البريد الإلكتروني:</strong> {{ $client->email }}
+        </div>
+
+        <div class="invoice-info">
+            <h3>تفاصيل الفاتورة</h3>
+            <strong>التاريخ:</strong> {{ $invoice->created_at->format('Y-m-d') }}<br>
+            <strong>رقم المعاملة:</strong> {{ $invoice->payment_uuid }}
+        </div>
+
+        <div class="items">
             <table>
                 <thead>
                     <tr>
-                        <th>المنتج</th>
+                        <th>الوصف</th>
                         <th>الكمية</th>
-                        <th>السعر</th>
+                        <th>السعر الوحدوي</th>
                         <th>الإجمالي</th>
                     </tr>
                 </thead>
                 <tbody>
                     @foreach($invoice->items as $item)
                     <tr>
-                        <td>{{ $item->name }}</td>
-                        <td>{{ $item->quantity }}</td>
-                        <td>{{ $item->price }}</td>
-                        <td>{{ $item->total }}</td>
+                        <td>{{ $item['description'] }}</td>
+                        <td>{{ $item['quantity'] }}</td>
+                        <td>{{ number_format($item['unit_price'], 2) }}</td>
+                        <td>{{ number_format($item['quantity'] * $item['unit_price'], 2) }}</td>
                     </tr>
                     @endforeach
                 </tbody>
             </table>
-
-            <!-- Total -->
-            <p class="total">المجموع الكلي: {{ $invoice->total }} ريال</p>
         </div>
 
-        <!-- Footer -->
-        <div class="invoice-footer">
-            <p>شكراً لتعاملكم معنا! إذا كانت لديك أي استفسارات، يرجى التواصل معنا عبر البريد الإلكتروني:
-                support@example.com</p>
+        <div class="totals">
+            <div><span class="label">الإجمالي الفرعي:</span> {{ number_format($invoice->sub_total, 2) }} ر.س</div>
+            <div><span class="label">الضريبة ({{ $invoice->tax_rate }}%):</span> {{ number_format($invoice->tax_amount,
+                2) }} ر.س</div>
+            <div><span class="label">الإجمالي الكلي:</span> {{ number_format($invoice->total, 2) }} ر.س</div>
+        </div>
+
+        <div style="clear: both;"></div>
+
+        <div class="footer">
+            شكرًا لتعاملكم معنا<br>
+            هذا المستند إلكتروني ولا يحتاج توقيع.
         </div>
     </div>
 </body>

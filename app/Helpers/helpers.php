@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Log;
 use GreenApi\RestApi\GreenApiClient;
 use Illuminate\Support\Facades\Http;
 use Barryvdh\DomPDF\Facade\Pdf as PDF;
+use Illuminate\Support\Facades\Storage;
 
 if (!function_exists('successResponse')) {
     function successResponse(string $message = 'Success Response', int $status = 200): JsonResponse
@@ -247,6 +248,7 @@ if (!function_exists('sendNotificationFireBase')) {
         return successResponse('Notification has been sent');
     }
 }
+
 if (!function_exists('sendInvoiceViaWhatsapp')) {
     function sendInvoiceViaWhatsapp($phone, $invoiceFilePath)
     {
@@ -301,21 +303,22 @@ if (!function_exists('generateInvoicePDF')) {
     function generateInvoicePDF($invoice, $client)
     {
         try {
-            // Log the start of PDF generation
-            Log::info('Generating invoice PDF', [
-                'invoice_id' => $invoice->id,
-                'client_id' => $client->id,
-            ]);
-
-            $pdf = PDF::loadView('pdf/invoice', [
+            // اجمع البيانات التي ستمرر للقالب
+            $data = [
                 'invoice' => $invoice,
-                'client' => $client,
-            ]);
+                'client'  => $client,
+            ];
 
-            $filePath = storage_path('app/public/invoices/invoice_' . $invoice->id . '.pdf');
-            $pdf->save($filePath);
+            // حمّل القالب مع البيانات
+            $pdf = PDF::loadView('invoice', $data)->setPaper('a4', 'portrait');
 
-            // Log success of PDF generation
+            // مسار حفظ الملف
+            $fileName = 'invoices/invoice_' . $invoice->payment_uuid . '.pdf';
+            Storage::disk('local')->put($fileName, $pdf->output());
+
+            // مسار يمكن الوصول إليه من الكود
+            $filePath = storage_path('app/' . $fileName);
+
             Log::info('Invoice PDF generated successfully', [
                 'file_path' => $filePath,
             ]);
@@ -323,9 +326,8 @@ if (!function_exists('generateInvoicePDF')) {
             return $filePath;
         } catch (\Exception $e) {
             Log::error('Exception generating invoice PDF', [
-                'error' => $e->getMessage(),
-                'invoice_id' => $invoice->id,
-                'client_id' => $client->id
+                'message' => $e->getMessage(),
+                'status' => $e->getCode(),
             ]);
             return null;
         }

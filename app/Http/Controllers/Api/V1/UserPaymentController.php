@@ -231,6 +231,41 @@ class UserPaymentController extends Controller
                 ]);
                }
 
+            $userInvitation = UserInvitation::where('user_package_id', $userPackage->id)->first();
+
+            $invoice = (object)[
+                'id'             => $payment->id,
+                'payment_uuid'   => $payment->payment_uuid,
+                'created_at'     => $payment->updated_at,
+                'items'          => [
+                    [
+                        'description' => $userInvitation->name,
+                        'quantity'    => $userInvitation->number_invitees,
+                        'unit_price'  => $payment->value / ($userInvitation->number_invitees ?: 1),
+                    ],
+                ],
+                'sub_total'      => $payment->value,
+                'tax_rate'       => 0,
+                'tax_amount'     => 0,
+                'total'          => $payment->value,
+            ];
+            $client = (object)[
+                'name'  => $userInvitation->name,
+                'phone' => $request->user()->phone,
+                'email' => $request->user()->email,
+            ];
+
+            // أنشئ الـ PDF
+            $pdfPath = generateInvoicePDF($invoice, $client);
+
+            if ($pdfPath) {
+                // أرسل الفاتورة عبر واتساب
+                $sent = sendInvoiceViaWhatsapp($client->phone, $pdfPath);
+                if (! $sent) {
+                    Log::error("Failed to send invoice via WhatsApp for {$client->phone}");
+                }
+            }
+
                 return response()->json([
                     'data' => [
                         'payment' => PaymentUserInvitation::where('payment_uuid',$payment_uuid)->first()
