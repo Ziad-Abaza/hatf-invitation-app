@@ -227,15 +227,16 @@ class UserPaymentController extends Controller
 
 
             //    $userPackage= UserPackage::where('payment_user_invitation_id',$payment->id)->first();
-               $userPackage = UserPackage::where('payment_user_invitation_id', $payment->id)->first();
+            $user = User::where('id', $payment->user_id)->first();
 
-            // if($userPackage){
-            //     $payment=UserInvitation::where('user_package_id',$userPackage->id)->update([
-            //         'is_active'=>1,
-            //     ]);
-            //    }
 
-               $user = User::where('id', $payment->user_id)->first();
+            $userPackage = UserPackage::where('payment_user_invitation_id', $payment->id)->first();
+            if($userPackage){
+                $payment=UserInvitation::where('user_package_id',$userPackage->id)->update([
+                    'is_active'=>1,
+                ]);
+               }
+
 
                 return response()->json([
                     'data' => [
