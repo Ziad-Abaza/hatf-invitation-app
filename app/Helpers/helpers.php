@@ -324,16 +324,20 @@ if (!function_exists('generateInvoicePDF')) {
             // Render the HTML content
             $html = view('pdf.invoice', $data)->render();
 
-            // Generate PDF with options for Arabic support
+            // Generate PDF
             $pdf = Pdf::loadHTML($html);
 
-            // Set Arabic font
-            $fontPath = public_path('front/Tajawal.ttf'); // تأكد من المسار الصحيح
+            // Set the font options (using the Tajawal font)
             $pdf->setOptions([
                 'isHtml5ParserEnabled' => true,
-                'isRemoteEnabled' => true,
-                'defaultFont' => 'Tajawal',
+                'isPhpEnabled' => true,
+                'defaultFont' => 'tajawal',  // Set the default font as Tajawal
             ]);
+
+            // Add the font path for DomPDF
+            $fontPath = public_path('front/Tajawal.ttf');
+            $fontFamily = 'tajawal';
+            $pdf->getCanvas()->get_fontMetrics()->addFont($fontFamily, $fontPath);
 
             // Save the PDF to a temporary file
             $filePath = storage_path('app/public/invoices/invoice_' . $payment->id . '.pdf');
