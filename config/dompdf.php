@@ -180,7 +180,7 @@ return [
          * @var string
          */
 
-        'default_font' => 'Arial',
+        'default_font' => 'Tajawal',
         /**
          * Image DPI setting
          *

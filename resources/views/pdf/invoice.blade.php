@@ -5,15 +5,15 @@
     <meta charset="UTF-8">
     <style>
         @font-face {
-            font-family: 'Arial';
-            src: url('{{ public_path(' front/Arial.ttf') }}') format('truetype');
+            font-family: 'Tajawal';
+            src: url('{{ public_path(' front/Tajawal.ttf') }}') format('truetype');
             font-weight: normal;
             font-style: normal;
             font-display: swap;
         }
 
         body,* {
-            font-family: 'Arial', 'Tajawal', Arial;
+            font-family: 'Tajawal', Arial;
             margin: 0;
             padding: 0;
         }

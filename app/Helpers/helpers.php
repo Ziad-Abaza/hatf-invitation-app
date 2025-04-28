@@ -325,7 +325,7 @@ if (!function_exists('generateInvoicePDF')) {
             $html = view('pdf.invoice', $data)->render();
 
             // Generate PDF
-            $pdf = Pdf::loadHTML($html);
+            $pdf = Pdf::loadHTML($html, 'UTF-8');
             $pdf->setOptions([
                 'defaultFont' => 'Tajawal',
                 'isHtml5ParserEnabled' => true,
