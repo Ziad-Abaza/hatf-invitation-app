@@ -12,7 +12,7 @@
     }
 
     body {
-    font-family: 'Tajawal', sans-serif;
+    font-family: 'DejaVu Sans', 'Tajawal', Arial;
     margin: 0;
     padding: 0;
     }
