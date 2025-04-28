@@ -4,18 +4,19 @@
 <head>
     <meta charset="UTF-8">
     <style>
-    @font-face {
-    font-family: 'Tajawal';
-    src: url('{{ public_path('front/Tajawal.ttf') }}') format('truetype');
-    font-weight: normal;
-    font-style: normal;
-    }
+        @font-face {
+            font-family: 'Arial';
+            src: url('{{ public_path(' front/Arial.ttf') }}') format('truetype');
+            font-weight: normal;
+            font-style: normal;
+            font-display: swap;
+        }
 
-    body {
-    font-family: 'DejaVu Sans', 'Tajawal', Arial;
-    margin: 0;
-    padding: 0;
-    }
+        body {
+            font-family: 'Arial', 'Tajawal', Arial;
+            margin: 0;
+            padding: 0;
+        }
 
         .container {
             width: 80%;
@@ -34,7 +35,7 @@
         }
 
         .company-info {
-            text-align: left;
+            text-align: right;
             font-size: 12px;
             margin-bottom: 20px;
         }
