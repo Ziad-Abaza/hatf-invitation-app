@@ -4,11 +4,18 @@
 <head>
     <meta charset="UTF-8">
     <style>
-        body {
-            font-family: "Tajawal", sans-serif;
-            margin: 0;
-            padding: 0;
-        }
+    @font-face {
+    font-family: 'Tajawal';
+    src: url('{{ public_path('front/Tajawal.ttf') }}') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+    }
+
+    body {
+    font-family: 'Tajawal', sans-serif;
+    margin: 0;
+    padding: 0;
+    }
 
         .container {
             width: 80%;
