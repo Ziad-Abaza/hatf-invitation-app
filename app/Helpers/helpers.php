@@ -304,6 +304,7 @@ if (!function_exists('sendInvoiceViaWhatsapp')) {
     }
 }
 
+
 if (!function_exists('generateInvoicePDF')) {
     function generateInvoicePDF($payment, $user, $userPackage)
     {
@@ -313,7 +314,6 @@ if (!function_exists('generateInvoicePDF')) {
                 'user' => $user,
                 'userPackage' => $userPackage,
             ]);
-
             // Load the invoice template with data
             $data = [
                 'payment' => $payment,
@@ -326,19 +326,11 @@ if (!function_exists('generateInvoicePDF')) {
 
             // Generate PDF
             $pdf = Pdf::loadHTML($html);
-
-            // Set the font options (using the Tajawal font)
             $pdf->setOptions([
+                'defaultFont' => 'Tajawal',
                 'isHtml5ParserEnabled' => true,
-                'isPhpEnabled' => true,
-                'defaultFont' => 'tajawal',  // Set the default font as Tajawal
+                'isRemoteEnabled' => true,
             ]);
-
-            // Add the font path for DomPDF
-            $fontPath = public_path('front/Tajawal.ttf');
-            $fontFamily = 'tajawal';
-            $pdf->getCanvas()->get_fontMetrics()->addFont($fontFamily, $fontPath);
-
             // Save the PDF to a temporary file
             $filePath = storage_path('app/public/invoices/invoice_' . $payment->id . '.pdf');
             $pdf->save($filePath);
