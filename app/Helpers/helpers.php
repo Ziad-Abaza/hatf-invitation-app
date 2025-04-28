@@ -304,7 +304,6 @@ if (!function_exists('sendInvoiceViaWhatsapp')) {
     }
 }
 
-
 if (!function_exists('generateInvoicePDF')) {
     function generateInvoicePDF($payment, $user, $userPackage)
     {
@@ -314,6 +313,7 @@ if (!function_exists('generateInvoicePDF')) {
                 'user' => $user,
                 'userPackage' => $userPackage,
             ]);
+
             // Load the invoice template with data
             $data = [
                 'payment' => $payment,
@@ -324,8 +324,16 @@ if (!function_exists('generateInvoicePDF')) {
             // Render the HTML content
             $html = view('pdf.invoice', $data)->render();
 
-            // Generate PDF
+            // Generate PDF with options for Arabic support
             $pdf = Pdf::loadHTML($html);
+
+            // Set Arabic font
+            $fontPath = public_path('front/Tajawal.ttf'); // تأكد من المسار الصحيح
+            $pdf->setOptions([
+                'isHtml5ParserEnabled' => true,
+                'isRemoteEnabled' => true,
+                'defaultFont' => 'Tajawal',
+            ]);
 
             // Save the PDF to a temporary file
             $filePath = storage_path('app/public/invoices/invoice_' . $payment->id . '.pdf');
