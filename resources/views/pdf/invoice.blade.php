@@ -12,7 +12,7 @@
             font-display: swap;
         }
 
-        body {
+        body,* {
             font-family: 'Arial', 'Tajawal', Arial;
             margin: 0;
             padding: 0;
