@@ -256,11 +256,17 @@ if (!function_exists('sendInvoiceViaWhatsapp')) {
             $sender_id = "595577366971724";
             $url = "https://api.karzoun.app/CloudApi.php";
 
+            $invoiceUrl = str_replace(
+                storage_path('app/public'),
+                env('APP_URL') . '/storage',
+                $invoiceFilePath
+            );
             // Log request details for troubleshooting
             Log::info('Sending PDF via WhatsApp', [
                 'phone' => $phone,
                 'invoiceFilePath' => $invoiceFilePath,
-                'url' => $url,
+                'path' => $url,
+                'url' => $invoiceUrl,
             ]);
 
             $response = Http::get($url, [
@@ -268,7 +274,7 @@ if (!function_exists('sendInvoiceViaWhatsapp')) {
                 'sender_id' => $sender_id,
                 'phone' => $phone,
                 'template' => 'buy_the_invitation_pdf',
-                'pdf' => $invoiceFilePath,
+                'pdf' => $invoiceUrl,
                 'param_1' => "تأكيد الحجز",
                 'param_2' => "تأكيد الحجز",
                 'param_3' => "تأكيد الحجز",
