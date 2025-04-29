@@ -5,14 +5,14 @@
     <meta charset="UTF-8">
     <style>
         @font-face {
-        font-family: 'Arial';
-        src: url('{{ URL::asset('front/Arial.ttf') }}') format('truetype');
+        font-family: 'Lateef';
+        src: url('{{ URL::asset('front/Lateef.ttf') }}') format('truetype');
         font-weight: normal;
         font-style: normal;
         font-display: swap;
         }
         body,* {
-            font-family: Arial;
+            font-family: 'Lateef',Arial;
             margin: 0;
             padding: 0;
         }
