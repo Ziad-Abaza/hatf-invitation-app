@@ -4,24 +4,23 @@
 <head>
     <meta charset="UTF-8">
     <style>
-        /* @font-face {
+        @font-face {
             font-family: 'Tajawal';
             src: url('{{ public_path('front/Tajawal.ttf') }}') format('truetype');
             font-weight: normal;
             font-style: normal;
-            font-display: swap;
-        } */
-
+        }
         body,* {
             font-family: 'Tajawal', Arial;
             margin: 0;
             padding: 0;
-
         }
-body {
-direction: rtl;
-text-align: right;
-}
+
+        body {
+        direction: rtl;
+        text-align: right;
+        }
+
         .container {
             width: 80%;
             margin: auto;

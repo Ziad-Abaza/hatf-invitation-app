@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Log;
 use GreenApi\RestApi\GreenApiClient;
 use Illuminate\Support\Facades\Http;
 use Barryvdh\DomPDF\Facade\Pdf as PDF;
+use Mpdf\Mpdf;
 
 if (!function_exists('successResponse')) {
     function successResponse(string $message = 'Success Response', int $status = 200): JsonResponse
@@ -304,7 +305,6 @@ if (!function_exists('sendInvoiceViaWhatsapp')) {
     }
 }
 
-
 if (!function_exists('generateInvoicePDF')) {
     function generateInvoicePDF($payment, $user, $userPackage)
     {
@@ -314,26 +314,37 @@ if (!function_exists('generateInvoicePDF')) {
                 'user' => $user,
                 'userPackage' => $userPackage,
             ]);
-            // Load the invoice template with data
+
+            // تحميل HTML من الواجهة
             $data = [
                 'payment' => $payment,
                 'user' => $user,
                 'user_package' => $userPackage,
             ];
-
-            // Render the HTML content
             $html = view('pdf.invoice', $data)->render();
 
-            // Generate PDF
-            $pdf = Pdf::loadHTML($html, 'UTF-8');
-            $pdf->setOptions([
-                'defaultFont' => 'Tajawal',
-                'isHtml5ParserEnabled' => true,
-                'isRemoteEnabled' => true,
+            // إنشاء كائن MPDF مع دعم للغة العربية (RTL + خطوط)
+            $mpdf = new Mpdf([
+                'mode' => 'utf-8',
+                'format' => 'A4',
+                'directionality' => 'rtl', // دعم النصوص من اليمين لليسار
+                'margin_left' => 10,
+                'margin_right' => 10,
+                'default_font_size' => 14,
+                'default_font' => 'Tajawal', // اسم الخط الذي ستستخدمه
+                'autoScriptToLang' => true,
+                'autoLangToFont' => true,
             ]);
-            // Save the PDF to a temporary file
+
+            // تضمين الخط العربي (تأكد من وجود ملف الخط في المسار الصحيح)
+            $fontPath = public_path('front/Tajawal.ttf');
+            $mpdf->AddFont('Tajawal', '', $fontPath, true);
+            $mpdf->SetFont('Tajawal');
+
+            // كتابة المحتوى وحفظ PDF
+            $mpdf->WriteHTML($html);
             $filePath = storage_path('app/public/invoices/invoice_' . $payment->id . '.pdf');
-            $pdf->save($filePath);
+            $mpdf->Output($filePath, 'F'); // 'F' لحفظ الملف
 
             return $filePath;
         } catch (\Exception $e) {
