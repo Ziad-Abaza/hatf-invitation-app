@@ -231,11 +231,12 @@ class UserPaymentController extends Controller
 
 
             $userPackage = UserPackage::where('payment_user_invitation_id', $payment->id)->first();
-            if($userPackage){
-                $payment=UserInvitation::where('user_package_id',$userPackage->id)->update([
-                    'is_active'=>1,
+            if ($userPackage) {
+                // Update UserInvitation records related to the user package
+                UserInvitation::where('user_package_id', $userPackage->id)->update([
+                    'is_active' => 1,
                 ]);
-               }
+            }
                $paymentData = PaymentUserInvitation::where('payment_uuid', $payment_uuid)->first();
                 $pdfPath = generateInvoicePDF($paymentData, $user, $userPackage);
             if ($pdfPath) {
