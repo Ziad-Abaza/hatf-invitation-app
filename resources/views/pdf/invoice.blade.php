@@ -5,10 +5,11 @@
     <meta charset="UTF-8">
     <style>
         @font-face {
-            font-family: 'Tajawal';
-            src: url('{{ public_path('front/Tajawal.ttf') }}') format('truetype');
-            font-weight: normal;
-            font-style: normal;
+        font-family: 'Tajawal';
+        src: url('{{ URL::asset('front/Tajawal.ttf') }}') format('truetype');
+        font-weight: normal;
+        font-style: normal;
+        font-display: swap;
         }
         body,* {
             font-family: 'Tajawal', Arial;

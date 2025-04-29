@@ -323,28 +323,24 @@ if (!function_exists('generateInvoicePDF')) {
             ];
             $html = view('pdf.invoice', $data)->render();
 
-            // إنشاء كائن MPDF مع دعم للغة العربية (RTL + خطوط)
+            // إنشاء كائن MPDF
             $mpdf = new Mpdf([
                 'mode' => 'utf-8',
                 'format' => 'A4',
-                'directionality' => 'rtl', // دعم النصوص من اليمين لليسار
+                'directionality' => 'rtl',
                 'margin_left' => 10,
                 'margin_right' => 10,
                 'default_font_size' => 14,
-                'default_font' => 'Tajawal', // اسم الخط الذي ستستخدمه
                 'autoScriptToLang' => true,
                 'autoLangToFont' => true,
             ]);
 
-            // تضمين الخط العربي (تأكد من وجود ملف الخط في المسار الصحيح)
-            $fontPath = public_path('front/Tajawal.ttf');
-            $mpdf->AddFont('Tajawal', '', $fontPath, true);
-            $mpdf->SetFont('Tajawal');
+            $mpdf->SetDirectionality('rtl');
 
             // كتابة المحتوى وحفظ PDF
             $mpdf->WriteHTML($html);
             $filePath = storage_path('app/public/invoices/invoice_' . $payment->id . '.pdf');
-            $mpdf->Output($filePath, 'F'); // 'F' لحفظ الملف
+            $mpdf->Output($filePath, 'F');
 
             return $filePath;
         } catch (\Exception $e) {
