@@ -6,10 +6,6 @@ use Illuminate\Support\Facades\Log;
 use GreenApi\RestApi\GreenApiClient;
 use Illuminate\Support\Facades\Http;
 use Barryvdh\DomPDF\Facade\Pdf as PDF;
-use Mpdf\Mpdf;
-use ArPHP\I18N\Arabic;             // هنا استدعاء مكتبة ArPHP
-use Mpdf\Config\ConfigVariables;
-use Mpdf\Config\FontVariables;
 
 if (!function_exists('successResponse')) {
     function successResponse(string $message = 'Success Response', int $status = 200): JsonResponse
@@ -313,49 +309,35 @@ if (!function_exists('generateInvoicePDF')) {
     function generateInvoicePDF($payment, $user, $userPackage)
     {
         try {
-            // 1) معالجة النص العربي إذا احتجت (تصحيح اتجاه الحروف)
-            $arabic = new Arabic();
-            $rawHtml = view('pdf.invoice', compact('payment', 'user', 'userPackage'))->render();
-            $html = $arabic->utf8Glyphs($rawHtml);
-
-            // 2) تهيئة mPDF مع تسجيل خط Tajawal
-            $defaultConfig = (new ConfigVariables())->getDefaults();
-            $fontDirs      = $defaultConfig['fontDir'];
-            $defaultFonts  = (new FontVariables())->getDefaults()['fontdata'];
-
-            $mpdf = new Mpdf([
-                'mode'         => 'utf-8',
-                'format'       => 'A4',
-                'fontDir'      => array_merge($fontDirs, [storage_path('fonts')]),
-                'fontdata'     => array_merge($defaultFonts, [
-                    'tajawal' => [
-                        'R'  => 'Tajawal.ttf',
-                        'B'  => 'Tajawal.ttf',
-                        'I'  => 'Tajawal.ttf',
-                        'BI' => 'Tajawal.ttf',
-                    ]
-                ]),
-                'default_font' => 'tajawal',
+            Log::info('Generating invoice PDF', [
+                'payment' => $payment,
+                'user' => $user,
+                'userPackage' => $userPackage,
             ]);
+            // Load the invoice template with data
+            $data = [
+                'payment' => $payment,
+                'user' => $user,
+                'user_package' => $userPackage,
+            ];
 
-            // 3) تضمين CSS لتعريف الخط واتجاه الصفحة
-            $css = "@font-face {
-                    font-family: 'Tajawal';
-                    src: url('" . storage_path('fonts/Tajawal.ttf') . "') format('truetype');
-                }
-                body { font-family: 'Tajawal'; direction: rtl; text-align: right; }";
-            $mpdf->WriteHTML($css, \Mpdf\HTMLParserMode::HEADER_CSS);
+            // Render the HTML content
+            $html = view('pdf.invoice', $data)->render();
 
-            // 4) كتابة محتوى الفاتورة
-            $mpdf->WriteHTML($html, \Mpdf\HTMLParserMode::HTML_BODY);
-
-            // 5) حفظ الملف
+            // Generate PDF
+            $pdf = Pdf::loadHTML($html, 'UTF-8');
+            $pdf->setOptions([
+                'defaultFont' => 'Tajawal',
+                'isHtml5ParserEnabled' => true,
+                'isRemoteEnabled' => true,
+            ]);
+            // Save the PDF to a temporary file
             $filePath = storage_path('app/public/invoices/invoice_' . $payment->id . '.pdf');
-            $mpdf->Output($filePath, \Mpdf\Output\Destination::FILE);
+            $pdf->save($filePath);
 
             return $filePath;
         } catch (\Exception $e) {
-            Log::error('Error generating invoice PDF with mPDF', ['msg' => $e->getMessage()]);
+            Log::error('Error generating invoice PDF', ['message' => $e->getMessage()]);
             return null;
         }
     }
