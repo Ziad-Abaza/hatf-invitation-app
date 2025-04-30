@@ -250,7 +250,7 @@ if (!function_exists('sendNotificationFireBase')) {
 }
 
 if (!function_exists('sendInvoiceViaWhatsapp')) {
-    function sendInvoiceViaWhatsapp($phone, $invoiceFilePath)
+    function sendInvoiceViaWhatsapp($phone, $invoiceFilePath, $invitationData): bool
     {
         try {
             $token = "EABIy7zT1dfYBOxGm8szUdvkFVeKCXEGx1CblxZBiR6gLgWatJntsBhZA650xXEYqiFDgCeiGsLbKfBfOHzv0zVlESk35WrpySMQZAwZAXlVOAZBSAcw98msi83y0VDpE6w5FiTtncoFG0eRPxHDGeZC4jeNz0MQMGH10nISmjUpqJ6kiCHYOOzXdRSTWestlzXeYgRztaWa2BZB11prnW3JalVt6menqxuHe3ihARj4ZCdA6jhqnMPOpSZB0WMk0G";
@@ -270,13 +270,17 @@ if (!function_exists('sendInvoiceViaWhatsapp')) {
                 'url' => $invoiceUrl,
             ]);
 
+            $nameData = json_decode($invitationData['name']);
+            $invitationName = $nameData ? $nameData->name_ar : 'دعوة';
+            $param_1 = 'باقة ' . $invitationName . ' - عدد ' . $invitationData['number_of_users'] . ' دعوة';
+
             $response = Http::get($url, [
                 'token' => $token,
                 'sender_id' => $sender_id,
                 'phone' => $phone,
                 'template' => 'qr_invitation_app_invoice_pdf',
                 'pdf' => $invoiceUrl,
-                'param_1' => 'باقة إرسال الدعوات - عدد 2 دعوة',
+                'param_1' => $param_1,
             ]);
 
             if ($response->successful()) {
@@ -302,7 +306,7 @@ if (!function_exists('sendInvoiceViaWhatsapp')) {
 }
 
 if (!function_exists('generateInvoicePDF')) {
-    function generateInvoicePDF($payment, $user, $userPackage)
+    function generateInvoicePDF($payment, $user, $userPackage, $invitationData)
     {
         try {
             Log::info('Generating invoice PDF', [
@@ -316,6 +320,7 @@ if (!function_exists('generateInvoicePDF')) {
                 'payment' => $payment,
                 'user' => $user,
                 'user_package' => $userPackage,
+                'invitation_data' => $invitationData,
             ];
             $html = view('pdf.invoice', $data)->render();
 

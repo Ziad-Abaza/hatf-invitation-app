@@ -240,10 +240,10 @@ class UserPaymentController extends Controller
                 $invitationData = Invitation::where('id', $userPackage->invitation_id)->first();
             }
                $paymentData = PaymentUserInvitation::where('payment_uuid', $payment_uuid)->first();
-                $pdfPath = generateInvoicePDF($paymentData, $user, $userPackage);
+                $pdfPath = generateInvoicePDF($paymentData, $user, $userPackage, $invitationData);
             if ($pdfPath) {
                 // Send the invoice via WhatsApp
-                $sent = sendInvoiceViaWhatsapp($user->phone, $pdfPath);
+                $sent = sendInvoiceViaWhatsapp($user->phone, $pdfPath, $invitationData);
 
                 if ($sent) {
                     Log::info('Invoice sent successfully to user phone: ' . $user->phone);
