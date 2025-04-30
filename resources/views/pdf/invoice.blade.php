@@ -101,7 +101,7 @@
         <div class="company-info">
             <strong>اسم الشركة:</strong> هتْف<br>
             <strong>العنوان:</strong> الرياض، السعودية<br>
-            <strong>الهاتف:</strong> +966 53 033 3218<br>
+            <strong >الهاتف:</strong><p dir="ltf">+966 53 033 3218 </p><br>
             <strong>البريد الإلكتروني:</strong> info@hatf.sa
         </div>
 
@@ -150,7 +150,6 @@
 
         <div class="footer">
             شكرًا لتعاملكم معنا<br>
-            هذا المستند إلكتروني ولا يحتاج توقيع.
         </div>
     </div>
 </body>
