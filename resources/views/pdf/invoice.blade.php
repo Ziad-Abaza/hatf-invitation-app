@@ -134,18 +134,12 @@
                         <th>الإجمالي</th>
                     </tr>
                 </thead>
-                @php
-                    $invitationName = json_decode($invitation_data['name'])->name_ar;
-                    $usersCount = $invitation_data['number_of_users'];
-                    $unitPrice = number_format($invitation_data['prise'], 2);
-                    $totalPrice = number_format($payment->value, 2);
-                @endphp
                 <tbody>
                     <tr>
-                        <td>{{ $invitationName }} - عدد المستخدمين: {{ $usersCount }}</td>
+                        <td>باقة الدعوات - {{ $user_package->invitation_id }}</td>
                         <td>1</td>
-                        <td>{{ $unitPrice }} ر.س</td>
-                        <td>{{ $totalPrice }} ر.س</td>
+                        <td>{{ number_format($payment->value, 2) }} ر.س</td>
+                        <td>{{ number_format($payment->value, 2) }} ر.س</td>
                     </tr>
                 </tbody>
             </table>
