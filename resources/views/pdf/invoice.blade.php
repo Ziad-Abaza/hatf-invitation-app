@@ -71,6 +71,11 @@
             background: #f5f5f5;
         }
 
+        .tel{
+            display: flex;
+            gap: 3px;
+        }
+
         .totals {
             float: left;
             width: 100%;
@@ -101,8 +106,7 @@
         <div class="company-info">
             <strong>اسم الشركة:</strong> هتْف<br>
             <strong>العنوان:</strong> الرياض، السعودية<br>
-            <strong>الهاتف:</strong>
-            <span dir="ltr" style="direction: ltr; unicode-bidi: embed;">+966 53 033 3218</span><br>
+            <strong class="tel" >الهاتف: <p dir="ltr">+966 53 033 3218</p></strong><br>
             <strong>البريد الإلكتروني:</strong> info@hatf.sa
         </div>
 
