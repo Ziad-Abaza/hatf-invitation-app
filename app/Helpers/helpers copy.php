@@ -250,7 +250,7 @@ if (!function_exists('sendNotificationFireBase')) {
 }
 
 if (!function_exists('sendInvoiceViaWhatsapp')) {
-    function sendInvoiceViaWhatsapp($phone, $invoiceFilePath, $invitationData): bool
+    function sendInvoiceViaWhatsapp($phone, $invoiceFilePath)
     {
         try {
             $token = "EABIy7zT1dfYBOxGm8szUdvkFVeKCXEGx1CblxZBiR6gLgWatJntsBhZA650xXEYqiFDgCeiGsLbKfBfOHzv0zVlESk35WrpySMQZAwZAXlVOAZBSAcw98msi83y0VDpE6w5FiTtncoFG0eRPxHDGeZC4jeNz0MQMGH10nISmjUpqJ6kiCHYOOzXdRSTWestlzXeYgRztaWa2BZB11prnW3JalVt6menqxuHe3ihARj4ZCdA6jhqnMPOpSZB0WMk0G";
@@ -270,17 +270,17 @@ if (!function_exists('sendInvoiceViaWhatsapp')) {
                 'url' => $invoiceUrl,
             ]);
 
-            $nameData = json_decode($invitationData['name']);
-            $invitationName = $nameData ? $nameData->name_ar : 'دعوة';
-            $param_1 = 'باقة ' . $invitationName . ' - عدد ' . $invitationData['number_of_users'] . ' دعوة';
-
             $response = Http::get($url, [
                 'token' => $token,
                 'sender_id' => $sender_id,
                 'phone' => $phone,
-                'template' => 'qr_invitation_app_invoice_pdf',
+                'template' => 'buy_the_invitation_pdf',
                 'pdf' => $invoiceUrl,
-                'param_1' => $param_1,
+                'param_1' => "تأكيد الحجز",
+                'param_2' => "تأكيد الحجز",
+                'param_3' => "تأكيد الحجز",
+                'param_4' => "تأكيد الحجز",
+                'param_5' => "تأكيد الحجز",
             ]);
 
             if ($response->successful()) {
@@ -306,7 +306,7 @@ if (!function_exists('sendInvoiceViaWhatsapp')) {
 }
 
 if (!function_exists('generateInvoicePDF')) {
-    function generateInvoicePDF($payment, $user, $userPackage, $invitationData)
+    function generateInvoicePDF($payment, $user, $userPackage)
     {
         try {
             Log::info('Generating invoice PDF', [
@@ -320,7 +320,6 @@ if (!function_exists('generateInvoicePDF')) {
                 'payment' => $payment,
                 'user' => $user,
                 'user_package' => $userPackage,
-                'invitation_data' => $invitationData,
             ];
             $html = view('pdf.invoice', $data)->render();
 
