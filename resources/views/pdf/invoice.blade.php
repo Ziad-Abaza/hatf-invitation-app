@@ -95,7 +95,7 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>فاتورة رقم {{ $payment->id }}</h1>
+            <h1>فاتورة مبيعات</h1>
         </div>
 
         <div class="company-info">
@@ -114,8 +114,8 @@
 
         <div class="invoice-info">
             <h3>تفاصيل الفاتورة</h3>
-            <strong>التاريخ:</strong> {{ $payment->created_at->format('Y-m-d') }}<br>
-            <strong>رقم المعاملة:</strong> {{ $payment->payment_uuid }}<br>
+            <strong>التاريخ:</strong> {{ \Carbon\Carbon::now()->format('Y-m-d') }}<br>
+            <strong>رقم الفاتورة:</strong> {{ $payment->payment_uuid }}<br>
             <strong>حالة الدفع:</strong> {{ $payment->status == 1 ? 'مكتمل' : 'غير مكتمل' }}
         </div>
 
