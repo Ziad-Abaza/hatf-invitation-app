@@ -259,10 +259,6 @@ class UserPaymentController extends Controller
                     ],
                     'message' => 'تم الدفع بنجاح',
                     'status' => $status,
-                'userPackage' => $userPackage,
-                'payment' => $payment,
-                'user' => $user,
-                'invitationData' => $invitationData,
                 ], 200);
             }
             // Handle failure case
