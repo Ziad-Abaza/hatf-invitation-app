@@ -236,6 +236,8 @@ class UserPaymentController extends Controller
                 UserInvitation::where('user_package_id', $userPackage->id)->update([
                     'is_active' => 1,
                 ]);
+
+                $invitationData = Invitation::where('id', $userPackage->invitation_id)->first();
             }
                $paymentData = PaymentUserInvitation::where('payment_uuid', $payment_uuid)->first();
                 $pdfPath = generateInvoicePDF($paymentData, $user, $userPackage);
@@ -260,6 +262,7 @@ class UserPaymentController extends Controller
                 'userPackage' => $userPackage,
                 'payment' => $payment,
                 'user' => $user,
+                'invitationData' => $invitationData,
                 ], 200);
             }
             // Handle failure case
