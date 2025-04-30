@@ -280,7 +280,7 @@ if (!function_exists('sendInvoiceViaWhatsapp')) {
                 'phone' => $phone,
                 'template' => 'qr_invitation_app_invoice_pdf',
                 'pdf' => $invoiceUrl,
-                'param_1' => $param_1,
+                'param_1' => 'test',
             ]);
 
             if ($response->successful()) {
