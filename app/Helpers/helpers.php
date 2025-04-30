@@ -274,9 +274,13 @@ if (!function_exists('sendInvoiceViaWhatsapp')) {
                 'token' => $token,
                 'sender_id' => $sender_id,
                 'phone' => $phone,
-                'template' => 'qr_invitation_app_invoice_pdf',
+                'template' => 'buy_the_invitation_pdf',
                 'pdf' => $invoiceUrl,
-                'param_1' => 'باقة إرسال الدعوات - عدد 2 دعوة',
+                'param_1' => "تأكيد الحجز",
+                'param_2' => "تأكيد الحجز",
+                'param_3' => "تأكيد الحجز",
+                'param_4' => "تأكيد الحجز",
+                'param_5' => "تأكيد الحجز",
             ]);
 
             if ($response->successful()) {
