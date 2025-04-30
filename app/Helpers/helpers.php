@@ -339,7 +339,7 @@ if (!function_exists('generateInvoicePDF')) {
 
             // كتابة المحتوى وحفظ PDF
             $mpdf->WriteHTML($html);
-            $filePath = storage_path('app/public/invoices/فاتورة مبيعات.pdf');
+            $filePath = storage_path('app/public/invoices/invoice.pdf');
             $mpdf->Output($filePath, 'F');
 
             return $filePath;
