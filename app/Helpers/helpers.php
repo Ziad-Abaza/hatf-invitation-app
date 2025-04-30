@@ -269,10 +269,7 @@ if (!function_exists('sendInvoiceViaWhatsapp')) {
                 'path' => $url,
                 'url' => $invoiceUrl,
             ]);
-
-            $nameData = json_decode($invitationData['name']);
-            $invitationName = $nameData ? $nameData->name_ar : 'دعوة';
-            $param_1 = 'باقة ' . $invitationName . ' - عدد ' . $invitationData['number_of_users'] . ' دعوة';
+            
 
             $response = Http::get($url, [
                 'token' => $token,
@@ -280,7 +277,7 @@ if (!function_exists('sendInvoiceViaWhatsapp')) {
                 'phone' => $phone,
                 'template' => 'qr_invitation_app_invoice_pdf',
                 'pdf' => $invoiceUrl,
-                'param_1' => 'اختبار'
+                'param_1' => 'باقة إرسال الدعوات - عدد 2 دعوة',
             ]);
 
             if ($response->successful()) {
