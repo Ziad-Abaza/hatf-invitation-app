@@ -339,7 +339,7 @@ if (!function_exists('generateInvoicePDF')) {
 
             // write the HTML content to the PDF
             $mpdf->WriteHTML($html);
-            $filePath = storage_path('app/public/invoices/invoice_' . $payment->id_payment . '.pdf');
+            $filePath = storage_path('app/public/invoices/%D9%81%D8%A7%D8%AA%D9%88%D8%B1%D8%A9_%D9%85%D8%A8%D9%8A%D8%B9%D8%A7%D8%AA.pdf');
             $mpdf->Output($filePath, 'F');
 
             return $filePath;
