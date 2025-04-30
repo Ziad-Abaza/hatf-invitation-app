@@ -315,7 +315,7 @@ if (!function_exists('generateInvoicePDF')) {
                 'userPackage' => $userPackage,
             ]);
 
-            // تحميل HTML من الواجهة
+            // Data to be passed to the view
             $data = [
                 'payment' => $payment,
                 'user' => $user,
@@ -323,7 +323,7 @@ if (!function_exists('generateInvoicePDF')) {
             ];
             $html = view('pdf.invoice', $data)->render();
 
-            // إنشاء كائن MPDF
+            // Load the HTML content into DomPDF
             $mpdf = new Mpdf([
                 'mode' => 'utf-8',
                 'format' => 'A4',
@@ -337,9 +337,9 @@ if (!function_exists('generateInvoicePDF')) {
 
             $mpdf->SetDirectionality('rtl');
 
-            // كتابة المحتوى وحفظ PDF
+            // write the HTML content to the PDF
             $mpdf->WriteHTML($html);
-            $filePath = storage_path('app/public/invoices/فاتورة_مبيعات.pdf');
+            $filePath = storage_path('app/public/invoices/invoice_' . $payment->id_payment . '.pdf');
             $mpdf->Output($filePath, 'F');
 
             return $filePath;
