@@ -52,7 +52,7 @@ if (!function_exists('getIamgesMediaUrl')) {
 }
 
 if (! function_exists('sendWhatsappQR')) {
-    function sendWhatsappQR($phone, $qrImageUrl): bool
+    function sendWhatsappQR($phone, $qrImageUrl, $invitationName, $userName, $inviterPhone,$date, $time): bool
     {
         try {
             $token = "EABIy7zT1dfYBOxGm8szUdvkFVeKCXEGx1CblxZBiR6gLgWatJntsBhZA650xXEYqiFDgCeiGsLbKfBfOHzv0zVlESk35WrpySMQZAwZAXlVOAZBSAcw98msi83y0VDpE6w5FiTtncoFG0eRPxHDGeZC4jeNz0MQMGH10nISmjUpqJ6kiCHYOOzXdRSTWestlzXeYgRztaWa2BZB11prnW3JalVt6menqxuHe3ihARj4ZCdA6jhqnMPOpSZB0WMk0G";
@@ -67,7 +67,11 @@ if (! function_exists('sendWhatsappQR')) {
                 'phone' => $phone,
                 'template' => 'buy_the_invitation_image',
                 'image'   => $qrImageUrl,
-                'param_1' => '✨ يرجى الاحتفاظ بهذه الصورة 😊 ونأمل لك وقتًا ممتعًا! 🌟',
+                'param_1' => $invitationName,
+                'param_2' => $userName,
+                'param_3' => $inviterPhone,
+                'param_4' => $date,
+                'param_5' => $time,
             ]);
 
             Log::info('QR WhatsApp API Response', [
@@ -119,7 +123,7 @@ if (! function_exists('sendWhatsappImage')) {
 
             // Check if the QR code is provided and send it
             if (!empty($qr)) {
-                $qrSent = sendWhatsappQR($phone, $qr);
+                $qrSent = sendWhatsappQR($phone, $qr, $invitationName, $userName, $inviterPhone, $date, $time);
                 Log::info('QR sent result:', ['success' => $qrSent]);
             }
 
@@ -132,10 +136,6 @@ if (! function_exists('sendWhatsappImage')) {
                         'phone' => $phone,
                         'template' => $isPdf ? 'buy_the_invitation_pdf' : 'single_entry_card_new',
                         'param_1' => $invitationName,
-                        'param_2' => $userName,
-                        'param_3' => $inviterPhone,
-                        'param_4' => $date,
-                        'param_5' => $time,
                         $isPdf ? 'pdf' : 'image' => $fileUrl,
                     ]);
 
