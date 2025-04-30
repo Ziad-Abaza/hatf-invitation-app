@@ -236,14 +236,12 @@ class UserPaymentController extends Controller
                 UserInvitation::where('user_package_id', $userPackage->id)->update([
                     'is_active' => 1,
                 ]);
-
-                $invitationData = Invitation::where('id', $userPackage->invitation_id)->first();
             }
                $paymentData = PaymentUserInvitation::where('payment_uuid', $payment_uuid)->first();
-                $pdfPath = generateInvoicePDF($paymentData, $user, $userPackage, $invitationData);
+                $pdfPath = generateInvoicePDF($paymentData, $user, $userPackage);
             if ($pdfPath) {
                 // Send the invoice via WhatsApp
-                $sent = sendInvoiceViaWhatsapp($user->phone, $pdfPath, $invitationData);
+                $sent = sendInvoiceViaWhatsapp($user->phone, $pdfPath);
 
                 if ($sent) {
                     Log::info('Invoice sent successfully to user phone: ' . $user->phone);
@@ -259,6 +257,9 @@ class UserPaymentController extends Controller
                     ],
                     'message' => 'تم الدفع بنجاح',
                     'status' => $status,
+                'userPackage' => $userPackage,
+                'payment' => $payment,
+                'user' => $user,
                 ], 200);
             }
             // Handle failure case
