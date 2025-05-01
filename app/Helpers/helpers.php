@@ -315,7 +315,6 @@ if (!function_exists('generateInvoicePDF')) {
                 'userPackage' => $userPackage,
             ]);
 
-            // Data to be passed to the view
             $data = [
                 'payment' => $payment,
                 'user' => $user,
@@ -324,8 +323,7 @@ if (!function_exists('generateInvoicePDF')) {
             ];
             $html = view('pdf.invoice', $data)->render();
 
-            // Load the HTML content into DomPDF
-            $mpdf = new Mpdf([
+            $mpdf = new \Mpdf\Mpdf([
                 'mode' => 'utf-8',
                 'format' => 'A4',
                 'directionality' => 'rtl',
@@ -337,10 +335,38 @@ if (!function_exists('generateInvoicePDF')) {
             ]);
 
             $mpdf->SetDirectionality('rtl');
-
-            // write the HTML content to the PDF
             $mpdf->WriteHTML($html);
-            $filePath = storage_path('app/public/invoices/invoice_' . $payment->id_payment . '.pdf');
+
+            $now = now();
+            $yearDigit = substr($now->year, -1); // last digit of the year
+            $month = str_pad($now->month, 2, '0', STR_PAD_LEFT); // month
+            $day = str_pad($now->day, 2, '0', STR_PAD_LEFT);     // day
+
+            $prefix = "invoice_{$yearDigit}{$month}{$day}";
+
+            // find the next available invoice number
+            $invoiceDir = storage_path('app/public/invoices/');
+            if (!file_exists($invoiceDir)) {
+                mkdir($invoiceDir, 0755, true);
+            }
+
+            $files = glob($invoiceDir . '/' . $prefix . '*.pdf');
+
+            $maxCounter = 0;
+            foreach ($files as $file) {
+                if (preg_match("/{$prefix}(\d{3})\.pdf$/", $file, $matches)) {
+                    $counter = (int)$matches[1];
+                    if ($counter > $maxCounter) {
+                        $maxCounter = $counter;
+                    }
+                }
+            }
+
+            // increment the counter
+            $newCounter = str_pad($maxCounter + 1, 3, '0', STR_PAD_LEFT);
+            $fileName = "{$prefix}{$newCounter}.pdf";
+
+            $filePath = $invoiceDir . '/' . $fileName;
             $mpdf->Output($filePath, 'F');
 
             return $filePath;
