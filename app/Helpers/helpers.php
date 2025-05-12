@@ -81,6 +81,11 @@ if (! function_exists('sendWhatsappQR')) {
                 'template' => 'buy_the_invitation_image',
                 'phone' => $phone,
                 'qrImageUrl' => $qrImageUrl,
+                'param_1' => $invitationName,
+                'param_2' => $userName,
+                'param_3' => $inviterPhone,
+                'param_4' => $date,
+                'param_5' => $time,
             ]);
 
             if ($response->successful()) {

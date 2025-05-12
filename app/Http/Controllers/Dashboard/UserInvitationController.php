@@ -35,8 +35,7 @@ class UserInvitationController extends Controller
      */
     public function store(StoreRequest $request)
     {
-        // $user_invitation = Invitation::create($request->validated());
-        // return redirect()->route('dashboard.user_invitation.index');
+        
     }
 
     /**
@@ -60,8 +59,7 @@ class UserInvitationController extends Controller
      */
     public function update(UpdateRequest $request, Invitation $user_invitation)
     {
-        // $user_invitation->update($request->validated());
-        // return redirect()->route('dashboard.user_invitation.index');
+
     }
 
     /**
@@ -69,7 +67,6 @@ class UserInvitationController extends Controller
      */
     public function destroy(Invitation $user_invitation)
     {
-        // $user_invitation->delete();
-        // return redirect()->route('dashboard.user_invitation.index');
+
     }
 }

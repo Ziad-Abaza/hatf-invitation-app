@@ -25,36 +25,8 @@ class UserPaymentController extends Controller
 
     public function paymentTest()
     {
-        // $pay = $this->paymentService->initiatePayment([
-        //     'invitation_id' => 10,
-        //     'invitation_value' => 15.5
-        // ], auth('api')->user());
 
-        // return $this->handlePaymentResponse($pay);
     }
-
-    // public function payment(Request $request)
-    // {
-    //     $validated = $request->validate([
-    //         'invitation_id'      => 'required|integer|exists:invitations,id',
-    //         'name'               => 'nullable|filled|string',
-    //         'number_invitees'    => 'required|integer',
-    //         'total_price'        => 'required|numeric',
-    //         'image'              => 'nullable|filled|file|mimes:png,jpg,pdf',
-    //         'invitation_date'    => ['required', 'date', 'after_or_equal:today'],
-    //         'invitation_time'    => ['required', 'date_format:H:i'],
-    //         'payment_uuid'       => 'required|string|unique:payment_user_invitations,payment_uuid',
-    //     ]);
-
-    //     $payment = $this->paymentService->initiatePayment($validated, auth('api')->user());
-
-    //     if (is_array($payment)) {
-    //         return $this->handlePaymentResponse($payment['pay'], $payment['cart_id'], $payment['userInvitation']);
-    //     }else{
-    //         return $payment ;
-    //     }
-    // }
-
     public function payment(Request $request)
     {
         // Validate request data
@@ -100,25 +72,6 @@ class UserPaymentController extends Controller
             ], 500);
         }
     }
-
-
-
-    // public function paymentP(Request $request)
-    // {
-    //     $validated = $request->validate([
-    //         'invitation_id'      => 'required|integer|exists:invitations,id',
-    //         'total_price'        => 'required|numeric',
-    //         'payment_uuid'       => 'required|string|unique:payment_user_invitations,payment_uuid',
-    //     ]);
-
-    //     $payment = $this->paymentService->initiatePaymentP($validated, auth('api')->user());
-
-    //     if (is_array($payment)) {
-    //         return $this->handlePaymentResponseP($payment['pay'], $payment['cart_id'], $payment['user_package']);
-    //     }else{
-    //         return $payment ;
-    //     }
-    // }
 
     public function paymentP(Request $request)
     {
@@ -167,30 +120,6 @@ class UserPaymentController extends Controller
             return $payment;
         }
     }
-
-    //*response shoud send in success case and in fail case*//
-    // {
-    //     "data": {
-    //         "payment_uuid": "the set id when you generate url payment",
-    //         "id_payment": "the id returned from gatpayment after successful payment",
-    //         "message": "success",
-    //         "status": 200,
-    //         "payment_return_response": ""
-    //     },
-    //     "status": 200
-    // }
-
-
-    // {
-    //     "data": {
-    //         "payment_uuid": null,
-    //         "message": "fail",
-    //         "status": 400,
-    //         "payment_return_response": ""
-    //     },
-    //     "status": 400
-    // }
-
 
     public function returnAction(Request $request)
     {
@@ -270,13 +199,6 @@ class UserPaymentController extends Controller
                     'status' => $status,
                 ], 400);
             }
-        // } catch (\Exception $e) {
-        //     Log::error('Payment return action error: ' . $e->getMessage());
-        //     return response()->json([
-        //         'message' => 'An error occurred while processing your request.',
-        //         'status' => 500,
-        //     ], 500);
-        // }
     }
 
 

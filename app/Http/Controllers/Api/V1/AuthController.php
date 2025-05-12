@@ -46,44 +46,6 @@ class AuthController extends Controller
         return successResponseDataWithMessage(UserResource::make($user->refresh()));
     }
 
-    // public function registerWithGoogle(RegisterRequest $request): JsonResponse
-    // {
-    //     $otp = random_int(1000, 9999);
-
-    //     $user = User::firstOrCreate([
-    //         'email' => $request->email
-    //     ], [
-    //         'name'     => $request->name,
-    //         'email'    => $request->email,
-    //         'password' => bcrypt($request->password ?? Str::random(15)),
-    //         'phone'    => $request->phone,
-    //         'otp'      => $otp
-    //     ]);
-
-    //     // Send Otp number
-
-    //     return successResponseDataWithMessage($user);
-    // }
-
-    // public function registerWithApple(RegisterRequest $request): JsonResponse
-    // {
-    //     $otp = random_int(1000, 9999);
-
-    //     $user = User::firstOrCreate([
-    //         'email' => $request->email
-    //     ], [
-    //         'name'     => $request->name,
-    //         'email'    => $request->email,
-    //         'password' => bcrypt($request->password ?? Str::random(15)),
-    //         'phone'    => $request->phone,
-    //         'otp'      => $otp
-    //     ]);
-
-    //     // Send Otp number
-
-    //     return successResponseDataWithMessage($user);
-    // }
-
     public function login(LoginRequest $request): JsonResponse
     {
         do {

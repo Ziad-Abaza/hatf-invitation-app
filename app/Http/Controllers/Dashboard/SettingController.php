@@ -18,30 +18,6 @@ class SettingController extends Controller
         return view('dashboard.setting.index', compact('settings'));
     }
 
-    // /**
-    //  * Show the form for creating a new resource.
-    //  */
-    // public function create()
-    // {
-    //     //
-    // }
-
-    // /**
-    //  * Store a newly created resource in storage.
-    //  */
-    // public function store(Request $request)
-    // {
-    //     //
-    // }
-
-    // /**
-    //  * Display the specified resource.
-    //  */
-    // public function show(string $id)
-    // {
-    //     //
-    // }
-
     /**
      * Show the form for editing the specified resource.
      */
@@ -58,12 +34,5 @@ class SettingController extends Controller
         $setting->update($request->validated());
         return redirect()->route('dashboard.setting.index');
     }
-
-    // /**
-    //  * Remove the specified resource from storage.
-    //  */
-    // public function destroy(string $id)
-    // {
-    //     //
-    // }
+  
 }

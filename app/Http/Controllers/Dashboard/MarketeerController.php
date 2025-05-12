@@ -61,32 +61,6 @@ class MarketeerController extends Controller
         return redirect()->back()->with('success','تم اضافة مسوق بنجاح');
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    // public function edit(User $user)
-    // {
-    //     return view('dashboard.Marketeer.edit', compact('marketeer'));
-    // }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    // public function update(Request $request, User $user)
-    // {
-    //     $user->update($request->validated());
-    //     return redirect()->route('dashboard.marketeer.index');
-    // }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    // public function destroy(User $marketeer)
-    // {
-    //     $marketeer->delete();
-    //     return redirect()->route('dashboard.marketeer.index');
-    // }
-
     public function getCustomers(User $user)
     {
         $customers = User::where('referral_id', $user->id)->get();
