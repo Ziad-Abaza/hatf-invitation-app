@@ -184,7 +184,10 @@ class UserPaymentController extends Controller
             }
                 return response()->json([
                     'data' => [
-                        'payment' => PaymentUserInvitation::where('payment_uuid',$payment_uuid)->first()
+                        'payment' => PaymentUserInvitation::where('payment_uuid',$payment_uuid)->first(),
+                        'user' => $user,
+                        'user_package' => $userPackage,
+                        'invitation' => $invitationData,
                     ],
                     'message' => 'تم الدفع بنجاح',
                     'status' => $status,
