@@ -106,7 +106,7 @@
         <div class="company-info">
             <strong>اسم الشركة:</strong> وكالة هتف لخدمات الأعمال ( تطبيق دعوة qr )<br>
             <strong>العنوان:</strong> المملكة العربية السعودية<br>
-            <strong >الهاتف:</strong> 053 033 3218<br>
+            <strong>الهاتف:</strong> +966530333218<br>
             <strong>البريد الإلكتروني:</strong> info@hatf.sa
         </div>
 
@@ -120,8 +120,7 @@
         <div class="invoice-info">
             <h3>تفاصيل الفاتورة</h3>
             <strong>التاريخ:</strong> {{ \Carbon\Carbon::now()->format('d-m-Y') }}<br>
-            <strong>رقم الفاتورة:</strong> {{ $payment->id_payment }}<br>
-            <strong>معرف الدعوة:</strong> {{ $invitation_data->number_invitees }}<br>
+            <strong>رقم الفاتورة:</strong> {{ $payment->id }}<br>
             <strong>حالة الدفع:</strong> {{ $payment->status == 1 ? 'مكتمل' : 'غير مكتمل' }}
         </div>
 
