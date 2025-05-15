@@ -18,7 +18,7 @@ return new class extends Migration
             $table->string('code');
             $table->string('qr');
             $table->boolean('status')->default(0);
-            $table->enum('send_status', ['pending', 'sent', 'failed'])->default('pending');
+            $table->enum('send_status', ['pending', 'sent', 'failed', 'rejected', 'accepted'])->default('pending');
             $table->text('error_message')->nullable();
             $table->unsignedBigInteger('user_invitations_id');
             $table->foreign('user_invitations_id')->references('id')->on('user_invitations')->cascadeOnUpdate()->cascadeOnDelete();

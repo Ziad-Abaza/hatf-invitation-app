@@ -15,6 +15,7 @@ use App\Http\Controllers\Api\V1\UserPaymentController;
 use App\Http\Controllers\Api\V1\NotificationController;
 use App\Http\Controllers\Api\V1\PrivacyPolicyController;
 use App\Http\Controllers\Api\V1\UserInvitationController;
+use App\Http\Controllers\Api\V1\InvitationWebhookController;
 use App\Http\Controllers\TestController;
 use App\Http\Controllers\InvoiceController;
 
@@ -82,6 +83,10 @@ Route::prefix('v1')->group(function () {
 
         Route::post('user-invitation/{userInvitation}/scan-qr', [UserInvitationController::class, 'scanQr']);
         Route::post('user-invitations/{paymentUserInvitation}/success-payment', [UserInvitationController::class, 'successPaymentUserInvitation']);
+
+        //user webhook invitation
+        Route::post('/invitation/webhook', [InvitationWebhookController::class, 'handle'])
+            ->name('invitation.webhook');
 
         //user payment
         Route::post('user-invitations/payment', [UserPaymentController::class, 'payment']);//1

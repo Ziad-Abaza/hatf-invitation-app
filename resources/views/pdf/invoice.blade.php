@@ -106,7 +106,7 @@
         <div class="company-info">
             <strong>اسم الشركة:</strong> وكالة هتف لخدمات الأعمال ( تطبيق دعوة qr )<br>
             <strong>العنوان:</strong> المملكة العربية السعودية<br>
-            <strong>الهاتف:</strong> +966530333218<br>
+            <strong>الهاتف:</strong> 966530333218<br>
             <strong>البريد الإلكتروني:</strong> info@hatf.sa
         </div>
 
