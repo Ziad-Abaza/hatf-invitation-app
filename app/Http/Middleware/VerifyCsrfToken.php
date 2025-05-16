@@ -15,5 +15,7 @@ class VerifyCsrfToken extends Middleware
         //
         'payment/return',
         'payment/return/*',
+        'invitation/webhook',
+        'invitation/webhook/*',
     ];
 }
