@@ -7,33 +7,45 @@ use Illuminate\Http\Request;
 use App\Models\InvitedUsers;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpFoundation\Response;
 
 class InvitationWebhookController extends Controller
 {
+
     public function handle(Request $request)
     {
         Log::info("======================\ Start Invitation webhook payload /======================");
         Log::info('Invitation Webhook Payload', $request->all());
 
-        // تأكد من وجود الرسائل
         $messages = $request->input('messages');
         if (!is_array($messages) || empty($messages)) {
             Log::warning('No messages found in payload', $request->all());
             return response()->json(['error' => 'No messages in payload'], Response::HTTP_BAD_REQUEST);
         }
 
-        // استخرج الرسالة الأولى
         $message = $messages[0];
-        $fromPhone = $message['sender']['phone_number'] ?? null;
+        $rawPhone = $message['sender']['phone_number'] ?? null;
         $textBody = trim($message['processed_message_content'] ?? $message['content'] ?? '');
 
-        if (! $fromPhone || ! $textBody) {
-            Log::warning('Missing phone number or message content', compact('fromPhone', 'textBody'));
+        if (! $rawPhone || ! $textBody) {
+            Log::warning('Missing phone number or message content', compact('rawPhone', 'textBody'));
             return response()->json(['error' => 'Invalid payload'], Response::HTTP_BAD_REQUEST);
         }
 
-        // تحويل النص إلى حروف صغيرة ومعالجة القرار
+        // Normalize phone number by removing + and leading zeros
+        $normalizedPhone = ltrim(preg_replace('/[^0-9]/', '', $rawPhone), '0');
+
+        // convert the phone number to the format used in the database
+        $searchPhones = [
+            $normalizedPhone,                        // like: 201234573890
+            '+' . $normalizedPhone,                  // lie: +201134529890
+            preg_replace('/^20|^966/', '0', $normalizedPhone), // مثال: 01234937990
+            ltrim(preg_replace('/^20|^966/', '', $normalizedPhone), '0'), // 1234567890
+        ];
+
+        // to convert the message to lower case
+        // and check if it contains the keywords
         $lower = mb_strtolower($textBody, 'UTF-8');
         if (Str::contains($lower, 'أقبل الدعوة') || Str::contains($lower, 'accept')) {
             $newStatus = 'accepted';
@@ -44,18 +56,18 @@ class InvitationWebhookController extends Controller
             return response()->json(['message' => 'unknown action'], Response::HTTP_OK);
         }
 
-        // البحث عن المستخدم المدعو باستخدام رقم الهاتف
-        $invited = InvitedUsers::where('phone', $fromPhone)
+        // search for the invited user
+        $invited = InvitedUsers::whereIn('phone', $searchPhones)
             ->where('send_status', 'sent')
             ->latest()
             ->first();
 
         if (! $invited) {
-            Log::error("Invited user not found for phone {$fromPhone}");
+            Log::error("Invited user not found for phone {$rawPhone}");
             return response()->json(['error' => 'Invited user not found'], Response::HTTP_NOT_FOUND);
         }
 
-        // تحديث حالة الدعوة
+        // update the invited user status
         $invited->update([
             'send_status' => $newStatus
         ]);
