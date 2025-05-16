@@ -16,28 +16,35 @@ class InvitationWebhookController extends Controller
         Log::info("======================\ Start Invitation webhook payload /======================");
         Log::info('Invitation Webhook Payload', $request->all());
 
-        // extract the phone number and text body from the request
-        $fromPhone = $request->input('messages.0.from');          // sender's phone number
-        $textBody  = trim($request->input('messages.0.text.body')); // text message body
+        // تأكد من وجود الرسائل
+        $messages = $request->input('messages');
+        if (!is_array($messages) || empty($messages)) {
+            Log::warning('No messages found in payload', $request->all());
+            return response()->json(['error' => 'No messages in payload'], Response::HTTP_BAD_REQUEST);
+        }
+
+        // استخرج الرسالة الأولى
+        $message = $messages[0];
+        $fromPhone = $message['sender']['phone_number'] ?? null;
+        $textBody = trim($message['processed_message_content'] ?? $message['content'] ?? '');
 
         if (! $fromPhone || ! $textBody) {
-            Log::warning('Invalid webhook payload', $request->all());
+            Log::warning('Missing phone number or message content', compact('fromPhone', 'textBody'));
             return response()->json(['error' => 'Invalid payload'], Response::HTTP_BAD_REQUEST);
         }
 
-        // extract the invitation code from the text body
+        // تحويل النص إلى حروف صغيرة ومعالجة القرار
         $lower = mb_strtolower($textBody, 'UTF-8');
         if (Str::contains($lower, 'أقبل الدعوة') || Str::contains($lower, 'accept')) {
             $newStatus = 'accepted';
         } elseif (Str::contains($lower, 'أعتذر عن الحضور') || Str::contains($lower, 'decline')) {
             $newStatus = 'rejected';
         } else {
-            // if the text body does not contain the invitation code, return an error
             Log::info("Unknown invitation action: {$textBody}");
             return response()->json(['message' => 'unknown action'], Response::HTTP_OK);
         }
 
-        // find the invitation by the phone number
+        // البحث عن المستخدم المدعو باستخدام رقم الهاتف
         $invited = InvitedUsers::where('phone', $fromPhone)
             ->where('send_status', 'sent')
             ->latest()
@@ -48,14 +55,12 @@ class InvitationWebhookController extends Controller
             return response()->json(['error' => 'Invited user not found'], Response::HTTP_NOT_FOUND);
         }
 
-        // update the invitation status
+        // تحديث حالة الدعوة
         $invited->update([
             'send_status' => $newStatus
         ]);
 
         Log::info("Updated InvitedUsers#{$invited->id} to {$newStatus}");
-
-        // return a success response
         Log::info("======================\ End Invitation webhook payload /======================");
         return response()->json(['success' => true], Response::HTTP_OK);
     }
