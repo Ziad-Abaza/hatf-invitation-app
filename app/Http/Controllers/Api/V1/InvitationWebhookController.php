@@ -13,6 +13,27 @@ use Symfony\Component\HttpFoundation\Response;
 class InvitationWebhookController extends Controller
 {
 
+    public function verify(Request $request)
+    {
+        $verifyToken = 'your_custom_token';
+
+        $mode = $request->get('hub_mode');
+        $token = $request->get('hub_verify_token');
+        $challenge = $request->get('hub_challenge');
+
+        if ($mode && $token && $mode ) {
+            Log::info('Webhook verified successfully');
+            return response($challenge, 200);
+        } else {
+            Log::warning('Webhook verification failed', [
+                'mode' => $mode,
+                'token' => $token,
+                'expected' => $verifyToken
+            ]);
+            return response('Verification token mismatch', 403);
+        }
+    }
+
     public function handle(Request $request)
     {
         Log::info("======================\ Start Invitation webhook payload /======================");

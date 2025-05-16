@@ -85,6 +85,9 @@ Route::prefix('v1')->group(function () {
         Route::post('user-invitations/{paymentUserInvitation}/success-payment', [UserInvitationController::class, 'successPaymentUserInvitation']);
 
         //user webhook invitation
+        Route::get('/invitation/webhook', [InvitationWebhookController::class, 'verify']);
+
+        // Webhook POST payload from WhatsApp
         Route::post('/invitation/webhook', [InvitationWebhookController::class, 'handle'])
             ->name('invitation.webhook');
 
