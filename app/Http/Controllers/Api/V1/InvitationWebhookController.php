@@ -15,7 +15,6 @@ class InvitationWebhookController extends Controller
 
     public function verify(Request $request)
     {
-        $verifyToken = 'your_custom_token';
 
         $mode = $request->get('hub_mode');
         $token = $request->get('hub_verify_token');
@@ -28,7 +27,6 @@ class InvitationWebhookController extends Controller
             Log::warning('Webhook verification failed', [
                 'mode' => $mode,
                 'token' => $token,
-                'expected' => $verifyToken
             ]);
             return response('Verification token mismatch', 403);
         }
