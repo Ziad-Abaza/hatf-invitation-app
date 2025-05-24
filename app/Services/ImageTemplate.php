@@ -8,7 +8,7 @@ use App\Models\UserInvitation;
 use Intervention\Image\ImageManager;
 use Intervention\Image\Drivers\Gd\Driver;
 use ArPHP\I18N\Arabic;
-use Illuminate\Support\Facades\Log; 
+use Illuminate\Support\Facades\Log;
 
 
 class ImageTemplate
@@ -120,7 +120,7 @@ class ImageTemplate
         Log::info("========= بدء معالجة دعوة {$name} =========");
 
         // تحميل القالب الأساسي من الميديا
-        $baseImagePath = $userInvitation->getFirstMediaPath('default');
+        $baseImagePath = $userInvitation->getFirstMediaPath('userInvitation');
         if (!$baseImagePath || !file_exists($baseImagePath)) {
             Log::error("❌ القالب غير موجود: {$baseImagePath}");
             throw new \Exception('القالب غير موجود');
