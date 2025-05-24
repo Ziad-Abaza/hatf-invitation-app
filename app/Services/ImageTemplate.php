@@ -7,13 +7,11 @@ use Intervention\Image\ImageManagerStatic as Image;
 use App\Models\UserInvitation;
 use Intervention\Image\ImageManager;
 use Intervention\Image\Drivers\Gd\Driver;
-use ArPHP\I18N\Arabic;
+use ArPHP\I18N\Arabic; 
 use Illuminate\Support\Facades\Log;
-
 
 class ImageTemplate
 {
-
     public static function process($image, $name, $userInvitation)
     {
         if (!$image->isValid()) {
@@ -30,12 +28,18 @@ class ImageTemplate
         $canvas = Image::canvas($originalWidth, $newHeight, '#000000');
         $canvas->insert($img, 'top-left', 0, 30);
 
+        // إنشاء كائن Arabic لإعادة تشكيل النص العربي
+        $arabic = new Arabic();
+
         $isArabic = (bool) preg_match('/\p{Arabic}/u', $name);
         if ($isArabic) {
             $fontFile  = public_path('fonts/Amiri.ttf');
             $fontSize  =  22;
             $alignH    = 'right';
             $xPosition = $originalWidth - 10;
+
+            // إعادة تشكيل النص العربي ليظهر بشكل صحيح
+            $name = $arabic->utf8Glyphs($name);
         } else {
             $fontFile  = public_path('fonts/Cairo.ttf');
             $fontSize  = 30;
@@ -55,7 +59,6 @@ class ImageTemplate
             $font->valign('middle');
         });
 
-
         $canvas->save($tempPath);
         $userInvitation->addMedia($tempPath)
             ->toMediaCollection('qr');
@@ -71,12 +74,13 @@ class ImageTemplate
     ): string {
         Log::info("========= بدء معالجة دعوة {$name} =========");
 
+        $arabic = new Arabic();  // كائن لإعادة تشكيل النص العربي
+
         // upload the base image
         $baseImagePath = $userInvitation->getFirstMediaPath('userInvitation');
         if (!$baseImagePath || !file_exists($baseImagePath)) {
             Log::error("❌ القالب غير موجود: {$baseImagePath}");
             Log::info("the base image path: {$baseImagePath}");
-            // Log::info("the data user Invitation : {$userInvitation}");
             throw new \Exception('القالب غير موجود');
         }
         Log::info("✅ تم تحميل القالب من: {$baseImagePath}");
@@ -89,6 +93,11 @@ class ImageTemplate
         }
         Log::info("✅ تم تحميل الخط من: {$fontPath}");
 
+        // إعادة تشكيل النص العربي للاسم إذا كان عربي
+        if (preg_match('/\p{Arabic}/u', $name)) {
+            $name = $arabic->utf8Glyphs($name);
+        }
+
         // generate a unique name for the processed image
         $imageName = md5(uniqid()) . '.jpg';
         $tempPath  = public_path("processed_images/{$imageName}");
@@ -98,7 +107,7 @@ class ImageTemplate
         $img = Image::make($baseImagePath);
         Log::info("🖼️ تم تحميل صورة القالب بنجاح");
 
-        // add the date and time text
+        // add the date and time text (يمكنك إعادة تشكيلها إذا أردت، حسب الحاجة)
         $img->text(
             "{$userInvitation->invitation_date} | {$userInvitation->invitation_time}",
             150,
@@ -111,7 +120,7 @@ class ImageTemplate
         );
         Log::info("🕒 تم إضافة التاريخ والوقت");
 
-        // add the name text
+        // add the name text (مع النص المعاد تشكيله)
         $img->text(
             $name,
             $textSettings['x'],
@@ -141,4 +150,3 @@ class ImageTemplate
         return $media->getUrl();
     }
 }
-
