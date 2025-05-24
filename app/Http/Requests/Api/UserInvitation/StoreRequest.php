@@ -21,13 +21,13 @@ class StoreRequest extends BaseFormRequest
      */
     public function rules(): array
     {
-        
+
         return [
             'invitation_id'           => 'required|integer|exists:invitations,id',
             // 'image'                   => 'required|file|image|mimes:png,jpg',
             'file'                   => 'required|file|mimes:png,jpg,pdf',
-            'invitation_date'         => 'required|date', 
-            'invitation_time'         => 'required|date_format:H:i', 
+            'invitation_date'         => 'required|date',
+            'invitation_time'         => 'required|date_format:H:i',
             // 'phone'         => 'required|array',
             // 'name'          => 'required|array',
             // 'code'          => 'required|array',

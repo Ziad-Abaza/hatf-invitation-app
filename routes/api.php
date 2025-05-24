@@ -41,7 +41,7 @@ Route::prefix('v1')->group(function () {
     // Webhook POST payload from WhatsApp
     Route::post('/invitation/webhook', [InvitationWebhookController::class, 'handle'])
         ->name('invitation.webhook');
-        
+
     // Auth
     // Route::middleware('guest:api')->group(function () {
     Route::post('register', [AuthController::class, 'register']);
@@ -92,6 +92,10 @@ Route::prefix('v1')->group(function () {
         Route::post('user-invitation/{userInvitation}/scan-qr', [UserInvitationController::class, 'scanQr']);
         Route::post('user-invitations/{paymentUserInvitation}/success-payment', [UserInvitationController::class, 'successPaymentUserInvitation']);
 
+        Route::post('user-invitation/{userInvitation}/invite-opening', [
+            UserInvitationController::class,
+            'addInviteOpeningUsers'
+        ]);
 
         //user payment
         Route::post('user-invitations/payment', [UserPaymentController::class, 'payment']);//1

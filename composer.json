@@ -15,6 +15,7 @@
     ],
     "require": {
         "php": "^8.1",
+        "ar-php/ar-php": "^1.0",
         "barryvdh/laravel-dompdf": "^3.1",
         "dompdf/dompdf": "^3.1",
         "drsoft28/clickpay-package": "dev-main",

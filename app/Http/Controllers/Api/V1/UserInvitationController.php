@@ -14,8 +14,10 @@ use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 use App\Models\PaymentUserInvitation;
 use App\Services\UserInvitationService;
+use App\Jobs\SendOpeningInvitationJob;
 use App\Http\Requests\Api\UserInvitation\StoreRequest;
 use App\Http\Requests\Api\UserInvitation\InviteRequest;
+use App\Http\Requests\Api\UserInvitation\InviteOpeningRequest;
 use App\Http\Requests\Api\UserInvitation\InviteRequestP;
 use App\Http\Resources\UserInvitation\UserInvitationResource;
 use App\Http\Resources\UserInvitation\UserPrivateInvitationResource;
@@ -70,7 +72,7 @@ class UserInvitationController extends Controller
         $userInvitation = UserInvitationResource::make($userInvitation);
         return successResponseDataWithMessage($userInvitation);
     }
-    
+
     public function validateInviteUsersBeforePayment(InviteRequest $request, UserInvitation $userInvitation)
     {
         // check if the user has access to the invitation
@@ -158,11 +160,6 @@ class UserInvitationController extends Controller
                 $errors[] = "بيانات ناقصة في الدعوة رقم " . ($index + 1) . ".";
                 continue;
             }
-
-            // if (!preg_match('/^9665\d{8}$/', $request->phone[$index])) {
-            //     $errors[] = "رقم الهاتف في الدعوة رقم " . ($index + 1) . " غير صالح.";
-            //     continue;
-            // }
         }
 
         if (!empty($errors)) {
@@ -199,6 +196,105 @@ class UserInvitationController extends Controller
                     $invitedUser->id,
                     $userInvitation->id
                 ))->onQueue('high');
+            } catch (\Exception $e) {
+                Log::error('Error creating invited user: ' . $e->getMessage());
+            }
+        }
+
+        return response()->json([
+            'message' => 'جارٍ معالجة الدعوات في الخلفية...',
+            'total_queued' => $batchSize,
+            'success' => true
+        ]);
+    }
+
+    /*
+    |===============================================
+    |addInvite Opening Users
+    |===============================================
+    */
+
+    public function addInviteOpeningUsers(InviteOpeningRequest $request, UserInvitation $userInvitation)
+    {
+        if ($userInvitation->user_id != auth('api')->id()) {
+            return errorResponse('You do not have access', 403);
+        }
+
+        if ($userInvitation->userPackage->payment->status == 0) {
+            return response()->json(['message' => 'not payment'], 400);
+        }
+
+        if ($userInvitation->is_active == 0) {
+            return errorResponse('لم يتم الدفع بعد');
+        }
+
+        // Ensure the number of invitations doesn't exceed allowed limit
+        $totalAllowed = $userInvitation->number_invitees;
+        $currentCount = InvitedUsers::where('user_invitations_id', $userInvitation->id)
+            ->where('send_status', 'send')
+            ->count();
+        $remaining = $totalAllowed - $currentCount;
+
+        if ($totalAllowed <= $currentCount) {
+            return errorResponse('تم الوصول للحد الأقصى للدعوات');
+        }
+
+        // check if the number of invitations doesn't exceed allowed limit
+        $errors = [];
+
+        foreach ($request->name as $index => $name) {
+            if (!isset($request->name[$index], $request->phone[$index], $request->code[$index], $request->qr[$index])) {
+                $errors[] = "بيانات ناقصة في الدعوة رقم " . ($index + 1) . ".";
+                continue;
+            }
+
+            // if (!preg_match('/^9665\d{8}$/', $request->phone[$index])) {
+            //     $errors[] = "رقم الهاتف في الدعوة رقم " . ($index + 1) . " غير صالح.";
+            //     continue;
+            // }
+        }
+
+        if (!empty($errors)) {
+            return response()->json([
+                'message' => 'خطأ في البيانات.',
+                'errors' => $errors,
+                'success' => false
+            ], 422);
+        }
+
+        $batchSize = min($remaining, count($request->name));
+        $textSettings = $request->input('text');
+        $invitedIds = [];
+        foreach (range(0, $batchSize - 1) as $index) {
+            try {
+                // Check if all required fields are set
+                $imageName = ImageTemplate::process(
+                    $request->qr[$index],
+                    $request->name[$index],
+                    $userInvitation
+                );
+
+                $imageUrl = ImageTemplate::processOpening(
+                    $userInvitation,
+                    $request->name[$index],
+                    $textSettings
+                );
+                // Create a new invited user record
+                $invitedUser = InvitedUsers::create([
+                    'name' => $request->name[$index],
+                    'phone' => $request->phone[$index],
+                    'code' => $request->code[$index],
+                    'qr' => $imageName,
+                    'user_invitations_id' => $userInvitation->id,
+                    'send_status' => 'pending'
+                ]);
+
+                // Dispatch the job to send the opening invitation
+                dispatch(new SendOpeningInvitationJob(
+                    $invitedUser,
+                    $imageUrl
+                ))->onQueue('high');
+                $invitedIds[] = $invitedUser->id;
             } catch (\Exception $e) {
                 Log::error('Error creating invited user: ' . $e->getMessage());
             }
