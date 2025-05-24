@@ -7,7 +7,7 @@ use Intervention\Image\ImageManagerStatic as Image;
 use App\Models\UserInvitation;
 use Intervention\Image\ImageManager;
 use Intervention\Image\Drivers\Gd\Driver;
-use ArPHP\I18N\Arabic; 
+use ArPHP\I18N\Arabic;
 use Illuminate\Support\Facades\Log;
 
 class ImageTemplate
@@ -21,52 +21,56 @@ class ImageTemplate
         $imageName = time() . '.' . $image->extension();
         $tempPath  = public_path('processed_images/' . $imageName);
 
+        // تحميل الصورة الأصلية
         $img = Image::make($image->path());
         $originalWidth  = $img->width();
         $originalHeight = $img->height();
-        $newHeight      = $originalHeight + 30;
-        $canvas = Image::canvas($originalWidth, $newHeight, '#000000');
-        $canvas->insert($img, 'top-left', 0, 30);
 
-        // إنشاء كائن Arabic لإعادة تشكيل النص العربي
+        // كائن لإعادة تشكيل النص العربي
         $arabic = new Arabic();
 
+        // فحص وجود نص عربي وإعادة تشكيله إذا وجد
         $isArabic = (bool) preg_match('/\p{Arabic}/u', $name);
         if ($isArabic) {
-            $fontFile  = public_path('fonts/Amiri.ttf');
-            $fontSize  =  22;
+            $name = $arabic->utf8Glyphs($name);
+            $fontFile  = public_path('fonts/Cairo.ttf'); // أو الخط المناسب للعربي
+            $fontSize  = 22;
             $alignH    = 'right';
             $xPosition = $originalWidth - 10;
-
-            // إعادة تشكيل النص العربي ليظهر بشكل صحيح
-            $name = $arabic->utf8Glyphs($name);
+            $yPosition = 20; // يمكن تعديل حسب الحاجة
         } else {
-            $fontFile  = public_path('fonts/Cairo.ttf');
+            $fontFile  = public_path('fonts/Cairo.ttf'); // أو أي خط لاتيني
             $fontSize  = 30;
             $alignH    = 'center';
             $xPosition = $originalWidth / 2;
+            $yPosition = 20;
         }
 
-        $canvas->text($name, $xPosition, 10, function ($font) use ($fontFile, $fontSize, $alignH) {
+        // كتابة النص مباشرة على الصورة الأصلية
+        $img->text($name, $xPosition, $yPosition, function ($font) use ($fontFile, $fontSize, $alignH) {
             if (!file_exists($fontFile)) {
                 throw new \Exception("Font file not found at: " . $fontFile);
             }
-
             $font->file($fontFile);
             $font->size($fontSize);
             $font->color('#ffffff');
             $font->align($alignH);
-            $font->valign('middle');
+            $font->valign('top');
         });
 
-        $canvas->save($tempPath);
+        // حفظ الصورة بعد التعديل
+        $img->save($tempPath);
+
+        // رفع الصورة إلى الميديا
         $userInvitation->addMedia($tempPath)
             ->toMediaCollection('qr');
+
         @unlink($tempPath);
 
         return $imageName;
     }
 
+    // دالة processOpening كما هي، تعمل بشكل جيد
     public static function processOpening(
         UserInvitation $userInvitation,
         string $name,
@@ -76,16 +80,13 @@ class ImageTemplate
 
         $arabic = new Arabic();  // كائن لإعادة تشكيل النص العربي
 
-        // upload the base image
         $baseImagePath = $userInvitation->getFirstMediaPath('userInvitation');
         if (!$baseImagePath || !file_exists($baseImagePath)) {
             Log::error("❌ القالب غير موجود: {$baseImagePath}");
-            Log::info("the base image path: {$baseImagePath}");
             throw new \Exception('القالب غير موجود');
         }
         Log::info("✅ تم تحميل القالب من: {$baseImagePath}");
 
-        // font settings
         $fontPath = public_path("fonts/{$textSettings['font']}.ttf");
         if (!file_exists($fontPath)) {
             Log::error("❌ الخط غير موجود: {$textSettings['font']}");
@@ -93,21 +94,17 @@ class ImageTemplate
         }
         Log::info("✅ تم تحميل الخط من: {$fontPath}");
 
-        // إعادة تشكيل النص العربي للاسم إذا كان عربي
         if (preg_match('/\p{Arabic}/u', $name)) {
             $name = $arabic->utf8Glyphs($name);
         }
 
-        // generate a unique name for the processed image
         $imageName = md5(uniqid()) . '.jpg';
         $tempPath  = public_path("processed_images/{$imageName}");
         Log::info("📁 سيتم حفظ الصورة المؤقتة باسم: {$imageName}");
 
-        // upload the base image
         $img = Image::make($baseImagePath);
         Log::info("🖼️ تم تحميل صورة القالب بنجاح");
 
-        // add the date and time text (يمكنك إعادة تشكيلها إذا أردت، حسب الحاجة)
         $img->text(
             "{$userInvitation->invitation_date} | {$userInvitation->invitation_time}",
             150,
@@ -120,7 +117,6 @@ class ImageTemplate
         );
         Log::info("🕒 تم إضافة التاريخ والوقت");
 
-        // add the name text (مع النص المعاد تشكيله)
         $img->text(
             $name,
             $textSettings['x'],
@@ -134,16 +130,14 @@ class ImageTemplate
         );
         Log::info("👤 تم إضافة اسم المدعو: {$name}");
 
-        // save the processed image to a temporary path
         $img->save($tempPath);
         Log::info("💾 تم حفظ الصورة المؤقتة في: {$tempPath}");
 
-        // add the processed image to the media collection
         $media = $userInvitation->addMedia($tempPath)
             ->toMediaCollection('userInvitation');
         Log::info("☁️ تم رفع الصورة إلى ميديا: {$media->getUrl()}");
 
-        @unlink($tempPath); // delete the temporary file
+        @unlink($tempPath);
         Log::info("🗑️ تم حذف الصورة المؤقتة من المسار: {$tempPath}");
 
         Log::info("========= انتهاء معالجة دعوة {$name} =========");
