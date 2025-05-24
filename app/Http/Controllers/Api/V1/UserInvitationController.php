@@ -143,12 +143,20 @@ class UserInvitationController extends Controller
 
         // replace phone 966530000000 with 201006403927 for testing
         if ($request->has('phone')) {
-            foreach ($request->phone as $index => $phone) {
-                if ($phone === '966530000000') {
-                    $request->phone[$index] = '201006403927';
-                }
-            }
+    // 1. انسخ المصفوفة إلى متغيّر جديد
+    $phones = $request->input('phone');
+
+    // 2. عدّل على نسخة المصفوفة
+    foreach ($phones as $index => $phone) {
+        if ($phone === '966530000000') {
+            $phones[$index] = '201006403927';
         }
+    }
+
+    // 3. أعد دمج المصفوفة المعدلة في الـRequest
+    $request->merge(['phone' => $phones]);
+}
+
         // Ensure the number of invitations doesn't exceed allowed limit
         $totalAllowed = $userInvitation->number_invitees;
         $currentCount = InvitedUsers::where('user_invitations_id', $userInvitation->id)
@@ -240,12 +248,20 @@ class UserInvitationController extends Controller
 
         // replace phone 966530000000 with 201006403927 for testing
         if ($request->has('phone')) {
-            foreach ($request->phone as $index => $phone) {
-                if ($phone === '966530000000') {
-                    $request->phone[$index] = '201006403927';
-                }
-            }
+    // 1. انسخ المصفوفة إلى متغيّر جديد
+    $phones = $request->input('phone');
+
+    // 2. عدّل على نسخة المصفوفة
+    foreach ($phones as $index => $phone) {
+        if ($phone === '966530000000') {
+            $phones[$index] = '201006403927';
         }
+    }
+
+    // 3. أعد دمج المصفوفة المعدلة في الـRequest
+    $request->merge(['phone' => $phones]);
+}
+
 
         if ($userInvitation->userPackage->payment->status == 0) {
             Log::info('User has not paid yet', [
@@ -441,12 +457,20 @@ class UserInvitationController extends Controller
 
         // replace phone 966530000000 with 201006403927 for testing
         if ($request->has('phone')) {
-            foreach ($request->phone as $index => $phone) {
-                if ($phone === '966530000000') {
-                    $request->phone[$index] = '201006403927';
-                }
-            }
+    // 1. انسخ المصفوفة إلى متغيّر جديد
+    $phones = $request->input('phone');
+
+    // 2. عدّل على نسخة المصفوفة
+    foreach ($phones as $index => $phone) {
+        if ($phone === '966530000000') {
+            $phones[$index] = '201006403927';
         }
+    }
+
+    // 3. أعد دمج المصفوفة المعدلة في الـRequest
+    $request->merge(['phone' => $phones]);
+}
+
 
         try {
             PaymentUserInvitation::chickExpirartionPrivateInvitation($userPackage->id);
