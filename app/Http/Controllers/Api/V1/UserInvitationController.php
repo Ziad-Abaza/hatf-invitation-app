@@ -141,6 +141,14 @@ class UserInvitationController extends Controller
             return errorResponse('لم يتم الدفع بعد');
         }
 
+        // replace phone 966530000000 with 201006403927 for testing
+        if ($request->has('phone')) {
+            foreach ($request->phone as $index => $phone) {
+                if ($phone === '966530000000') {
+                    $request->phone[$index] = '201006403927';
+                }
+            }
+        }
         // Ensure the number of invitations doesn't exceed allowed limit
         $totalAllowed = $userInvitation->number_invitees;
         $currentCount = InvitedUsers::where('user_invitations_id', $userInvitation->id)
@@ -228,6 +236,15 @@ class UserInvitationController extends Controller
                 'owner_user_id' => $userInvitation->user_id
             ]);
             return errorResponse('You do not have access', 403);
+        }
+
+        // replace phone 966530000000 with 201006403927 for testing
+        if ($request->has('phone')) {
+            foreach ($request->phone as $index => $phone) {
+                if ($phone === '966530000000') {
+                    $request->phone[$index] = '201006403927';
+                }
+            }
         }
 
         if ($userInvitation->userPackage->payment->status == 0) {
@@ -420,6 +437,15 @@ class UserInvitationController extends Controller
     {
         if ($userPackage->payment->status == 0) {
             return response()->json(['message' => 'لم يتم الدفع'], 400);
+        }
+
+        // replace phone 966530000000 with 201006403927 for testing
+        if ($request->has('phone')) {
+            foreach ($request->phone as $index => $phone) {
+                if ($phone === '966530000000') {
+                    $request->phone[$index] = '201006403927';
+                }
+            }
         }
 
         try {

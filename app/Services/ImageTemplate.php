@@ -119,19 +119,17 @@ class ImageTemplate
     ): string {
         Log::info("========= بدء معالجة دعوة {$name} =========");
 
-        // تحميل القالب الأساسي من الميديا
+        // upload the base image
         $baseImagePath = $userInvitation->getFirstMediaPath('qr');
-        $baseImagePath2 = $userInvitation->getFirstMediaPath('default');
         if (!$baseImagePath || !file_exists($baseImagePath)) {
             Log::error("❌ القالب غير موجود: {$baseImagePath}");
             Log::info("the base image path: {$baseImagePath}");
-            Log::info("the base image path: {$baseImagePath2}");
             // Log::info("the data user Invitation : {$userInvitation}");
             throw new \Exception('القالب غير موجود');
         }
         Log::info("✅ تم تحميل القالب من: {$baseImagePath}");
 
-        // إعدادات الخط
+        // font settings
         $fontPath = public_path("fonts/{$textSettings['font']}.ttf");
         if (!file_exists($fontPath)) {
             Log::error("❌ الخط غير موجود: {$textSettings['font']}");
@@ -139,16 +137,16 @@ class ImageTemplate
         }
         Log::info("✅ تم تحميل الخط من: {$fontPath}");
 
-        // توليد اسم ملف فريد
+        // generate a unique name for the processed image
         $imageName = md5(uniqid()) . '.jpg';
         $tempPath  = public_path("processed_images/{$imageName}");
         Log::info("📁 سيتم حفظ الصورة المؤقتة باسم: {$imageName}");
 
-        // تحميل الصورة وتعديلها
+        // upload the base image
         $img = Image::make($baseImagePath);
         Log::info("🖼️ تم تحميل صورة القالب بنجاح");
 
-        // إضافة التاريخ والوقت في مكان ثابت
+        // add the date and time text
         $img->text(
             "{$userInvitation->invitation_date} | {$userInvitation->invitation_time}",
             150,
@@ -161,7 +159,7 @@ class ImageTemplate
         );
         Log::info("🕒 تم إضافة التاريخ والوقت");
 
-        // إضافة اسم المدعو
+        // add the name text
         $img->text(
             $name,
             $textSettings['x'],
@@ -175,20 +173,20 @@ class ImageTemplate
         );
         Log::info("👤 تم إضافة اسم المدعو: {$name}");
 
-        // حفظ الصورة المؤقتة
+        // save the processed image to a temporary path
         $img->save($tempPath);
         Log::info("💾 تم حفظ الصورة المؤقتة في: {$tempPath}");
 
-        // رفع الصورة إلى الميديا
+        // add the processed image to the media collection
         $media = $userInvitation->addMedia($tempPath)
             ->toMediaCollection('userInvitation');
         Log::info("☁️ تم رفع الصورة إلى ميديا: {$media->getUrl()}");
 
-        @unlink($tempPath); // حذف الصورة المؤقتة
+        @unlink($tempPath); // delete the temporary file
         Log::info("🗑️ تم حذف الصورة المؤقتة من المسار: {$tempPath}");
 
         Log::info("========= انتهاء معالجة دعوة {$name} =========");
-        return $media->getUrl(); // إرجاع رابط الصورة
+        return $media->getUrl();
     }
 }
 
