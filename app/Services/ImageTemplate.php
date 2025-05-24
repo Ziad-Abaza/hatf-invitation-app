@@ -121,9 +121,12 @@ class ImageTemplate
 
         // تحميل القالب الأساسي من الميديا
         $baseImagePath = $userInvitation->getFirstMediaPath('userInvitation');
+        $baseImagePath2 = $userInvitation->getFirstMediaPath('default');
         if (!$baseImagePath || !file_exists($baseImagePath)) {
             Log::error("❌ القالب غير موجود: {$baseImagePath}");
             Log::info("the base image path: {$baseImagePath}");
+            Log::info("the base image path: {$baseImagePath2}");
+            Log::info("the data user Invitation : {$userInvitation}");
             throw new \Exception('القالب غير موجود');
         }
         Log::info("✅ تم تحميل القالب من: {$baseImagePath}");
