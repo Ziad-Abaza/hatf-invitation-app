@@ -29,6 +29,7 @@ class UserPaymentController extends Controller
     }
     public function payment(Request $request)
     {
+        Log::info("================= Start Payment Request =================");
         // Validate request data
         $validatedData = $request->validate([
             'invitation_id'    => ['required', 'integer', 'exists:invitations,id'],
@@ -50,6 +51,9 @@ class UserPaymentController extends Controller
             ], 422);
         }
 
+        Log::info("Validated Data: ", $validatedData);
+
+
         try {
             // Initiate payment process
             $payment = $this->paymentService->initiatePayment($validatedData, auth('api')->user());
@@ -62,8 +66,14 @@ class UserPaymentController extends Controller
                 );
             }
 
+            Log::info("Payment Response: ", $payment->toArray());
+
             return $payment;
         } catch (\Exception $e) {
+            Log::error("Payment Error: " . $e->getMessage(), [
+                'request_data' => $request->all(),
+                'user_id'      => auth('api')->id(),
+            ]);
             // Handle unexpected errors
             return response()->json([
                 'message' => 'حدث خطأ أثناء معالجة الطلب.',
@@ -75,6 +85,7 @@ class UserPaymentController extends Controller
 
     public function paymentP(Request $request)
     {
+        Log::info("================= Start Payment Request P =================");
         // check if the user is authenticated
         $validated = $request->validate([
             'invitation_id'      => 'required|integer|exists:invitations,id',
@@ -102,8 +113,11 @@ class UserPaymentController extends Controller
             $errors[] = 'UUID الدفع مطلوب.';
         }
 
+        Log::info("Validated Data P: ", $validated);
+
         // check if the user has already paid for this package
         if (!empty($errors)) {
+            Log::error("Payment Validation Errors: ", $errors);
             return response()->json([
                 'message' => 'فشل التحقق من البيانات.',
                 'errors' => $errors
@@ -113,6 +127,7 @@ class UserPaymentController extends Controller
         // check if the user has already paid for this package
         $payment = $this->paymentService->initiatePaymentP($validated, auth('api')->user());
 
+        Log::info("Payment Response P: ", $payment->toArray());
         // check if the user has already paid for this package
         if (is_array($payment)) {
             return $this->handlePaymentResponseP($payment['pay'], $payment['cart_id'], $payment['user_package']);
@@ -123,6 +138,7 @@ class UserPaymentController extends Controller
 
     public function returnAction(Request $request)
     {
+        Log::info("================= Start Return Action =================");
         // try {
             // Validate request
             $validatedData = $request->validate([
@@ -143,6 +159,8 @@ class UserPaymentController extends Controller
             $status = $data['status'] ?? 500;
             $payment_return_response = $data['payment_return_response'] ?? '';// for backend debug only
 
+            Log::info("Return Action Data: ", $data);
+
             // Handle success case
             if ($status == 200 && $payment_uuid && $id_payment) {
                 $request->validate(['data.id_payment' => 'required|string']);
@@ -154,10 +172,11 @@ class UserPaymentController extends Controller
                     'updated_at'=>Carbon::now(),
                 ]);
 
-
+                Log::info("Payment Updated: ", $payment->toArray());
             //    $userPackage= UserPackage::where('payment_user_invitation_id',$payment->id)->first();
             $user = User::where('id', $payment->user_id)->first();
 
+            Log::info("User Found: ", $user->toArray());
 
             $userPackage = UserPackage::where('payment_user_invitation_id', $payment->id)->first();
             if ($userPackage) {
@@ -170,6 +189,7 @@ class UserPaymentController extends Controller
             }
                $paymentData = PaymentUserInvitation::where('payment_uuid', $payment_uuid)->first();
                 $pdfPath = generateInvoicePDF($paymentData, $user, $userPackage, $invitationData);
+            Log::info("PDF Path: ", ['pdf_path' => $pdfPath]);
             if ($pdfPath) {
                 // Send the invoice via WhatsApp
                 $sent = sendInvoiceViaWhatsapp($user->phone, $pdfPath, $invitationData);
@@ -196,7 +216,9 @@ class UserPaymentController extends Controller
             // Handle failure case
             elseif ($status == 400) {
                 $payment=PaymentUserInvitation::where('payment_uuid',$payment_uuid)->first();
+                Log::info("payment error: ", $payment->toArray());
                 $payment->delete();
+                Log::info("Payment Deleted: ", ['payment_uuid' => $payment_uuid]);
                 return response()->json([
                     'message' => 'فشل الدفع',
                     'status' => $status,
