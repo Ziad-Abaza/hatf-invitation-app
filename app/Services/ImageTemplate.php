@@ -64,54 +64,6 @@ class ImageTemplate
         return $imageName;
     }
 
-
-
-    // public static function processOpening($image, $name, $userInvitation, $textSettings)
-    // {
-    //     if (!$image->isValid()) {
-    //         throw new \Exception('Invalid image file.');
-    //     }
-
-    //     $imageName = time() . '.' . $image->extension();
-    //     $tempPath = public_path('processed_images/' . $imageName);
-
-    //     $img = Image::make($image->path());
-
-    //     $x = $textSettings['x'];
-    //     $y = $textSettings['y'];
-
-    //     $color = $textSettings['color'];
-    //     $size = $textSettings['size'];
-    //     $font = $textSettings['font'];
-
-    //     $fontPath = public_path('fonts/' . $font . '.ttf');
-    //     if (!file_exists($fontPath)) {
-    //         throw new \Exception('Font file not found: ' . $fontPath);
-    //     }
-
-    //     $img->text($userInvitation->invitation_date . ' | ' . $userInvitation->invitation_time, 150, 250, function ($fontObj) use ($fontPath, $size, $color) {
-    //         $fontObj->file($fontPath);
-    //         $fontObj->size($size);
-    //         $fontObj->color($color);
-    //     });
-
-    //     $img->text($name, $x, $y, function ($fontObj) use ($fontPath, $size, $color) {
-    //         $fontObj->file($fontPath);
-    //         $fontObj->size($size);
-    //         $fontObj->color($color);
-    //         $fontObj->align('center');
-    //         $fontObj->valign('top');
-    //     });
-
-    //     $img->save($tempPath);
-
-    //     $userInvitation->image = 'processed_images/' . $imageName;
-    //     $userInvitation->save();
-
-    //     return $userInvitation->image;
-    // }
-
-
     public static function processOpening(
         UserInvitation $userInvitation,
         string $name,
@@ -151,10 +103,10 @@ class ImageTemplate
             "{$userInvitation->invitation_date} | {$userInvitation->invitation_time}",
             150,
             250,
-            function ($font) use ($fontPath) {
+            function ($font) use ($fontPath, $textSettings) {
                 $font->file($fontPath);
-                $font->size(30);
-                $font->color('#ffffff');
+                $font->size($textSettings['size']);
+                $font->color($textSettings['color']);
             }
         );
         Log::info("🕒 تم إضافة التاريخ والوقت");
