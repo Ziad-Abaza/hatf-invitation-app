@@ -23,10 +23,7 @@ class UserPaymentController extends Controller
         $this->paymentService = $paymentService;
     }
 
-    public function paymentTest()
-    {
-
-    }
+    public function paymentTest() {}
     public function payment(Request $request)
     {
         Log::info("================= Start Payment Request =================");
@@ -52,7 +49,44 @@ class UserPaymentController extends Controller
         }
 
         Log::info("Validated Data: ", $validatedData);
+        // =============================================== for bypass payment for test ========================
+        $bypassResult = $this->bypassPaymentForTest($request);
 
+        if ($bypassResult['bypass']) {
+            $user = auth('api')->user();
+            $invitation = Invitation::find($request->input('invitation_id'));
+
+            $userInvitation = UserInvitation::create([
+                'state' => UserInvitation::AVAILABLE,
+                'user_id' => $user->id,
+                'invitation_id' => $invitation->id,
+                'invitation_date' => $request->input('invitation_date'),
+                'invitation_time' => $request->input('invitation_time'),
+                'is_active' => 1,
+                'number_invitees' => $request->input('number_invitees', 10)
+            ]);
+            $payment = PaymentUserInvitation::create([
+                'user_invitation_id' => $userInvitation->id,
+                'value' => $request->input('total_price', 0),
+                'status' => 1,
+                'payment_uuid' => 'test_payment_' . uniqid()
+            ]);
+
+            Log::info('تم تخطي الدفع بنجاح', ['phone' => $request->input('phone')]);
+
+            return response()->json([
+                'success' => true,
+                'message' => $bypassResult['message'],
+                'data' => [
+                    'payment' => $payment,
+                    'user_invitation' => $userInvitation,
+                    'payment_uuid' => $payment->payment_uuid
+                ]
+            ]);
+        }
+
+
+        // ================================= end for bypass payment for test ========================
 
         try {
             // Initiate payment process
@@ -105,6 +139,45 @@ class UserPaymentController extends Controller
         // check if the user has already paid for this package
         $errors = [];
 
+        // =============================================== for bypass payment for test ========================
+        $bypassResult = $this->bypassPaymentForTest($request);
+
+        if ($bypassResult['bypass']) {
+            $user = auth('api')->user();
+            $invitation = Invitation::find($request->input('invitation_id'));
+
+            $userInvitation = UserInvitation::create([
+                'state' => UserInvitation::AVAILABLE,
+                'user_id' => $user->id,
+                'invitation_id' => $invitation->id,
+                'invitation_date' => $request->input('invitation_date'),
+                'invitation_time' => $request->input('invitation_time'),
+                'is_active' => 1,
+                'number_invitees' => $request->input('number_invitees', 10)
+            ]);
+            $payment = PaymentUserInvitation::create([
+                'user_invitation_id' => $userInvitation->id,
+                'value' => $request->input('total_price', 0),
+                'status' => 1,
+                'payment_uuid' => 'test_payment_' . uniqid()
+            ]);
+
+            Log::info('تم تخطي الدفع بنجاح', ['phone' => $request->input('phone')]);
+
+            return response()->json([
+                'success' => true,
+                'message' => $bypassResult['message'],
+                'data' => [
+                    'payment' => $payment,
+                    'user_invitation' => $userInvitation,
+                    'payment_uuid' => $payment->payment_uuid
+                ]
+            ]);
+        }
+
+
+        // ================================= end for bypass payment for test ========================
+        
         if ($validated['total_price'] <= 0) {
             $errors[] = 'السعر الإجمالي يجب أن يكون قيمة موجبة.';
         }
@@ -140,39 +213,39 @@ class UserPaymentController extends Controller
     {
         Log::info("================= Start Return Action =================");
         // try {
-            // Validate request
-            $validatedData = $request->validate([
-                'data' => 'required|array',
-                'data.payment_uuid' => 'required|exists:payment_user_invitations,payment_uuid',
-                'data.id_payment' => 'nullable|string',
-                'data.message' => 'required|string',
-                'data.status' => 'required|integer',
-                'data.payment_return_response' => 'nullable|string',
+        // Validate request
+        $validatedData = $request->validate([
+            'data' => 'required|array',
+            'data.payment_uuid' => 'required|exists:payment_user_invitations,payment_uuid',
+            'data.id_payment' => 'nullable|string',
+            'data.message' => 'required|string',
+            'data.status' => 'required|integer',
+            'data.payment_return_response' => 'nullable|string',
+        ]);
+
+        $data = $validatedData['data'];
+
+        // Extract necessary fields
+        $payment_uuid = $data['payment_uuid'] ?? null;
+        $id_payment = $data['id_payment'] ?? null;
+        $message = $data['message'] ?? 'Unknown error';
+        $status = $data['status'] ?? 500;
+        $payment_return_response = $data['payment_return_response'] ?? ''; // for backend debug only
+
+        Log::info("Return Action Data: ", $data);
+
+        // Handle success case
+        if ($status == 200 && $payment_uuid && $id_payment) {
+            $request->validate(['data.id_payment' => 'required|string']);
+            $payment = PaymentUserInvitation::where('payment_uuid', $payment_uuid)->first();
+            $payment->update([
+                'status' => 1,
+                'id_payment' => $data['id_payment'],
+                'created_at' => Carbon::now(),
+                'updated_at' => Carbon::now(),
             ]);
 
-            $data = $validatedData['data'];
-
-            // Extract necessary fields
-            $payment_uuid = $data['payment_uuid'] ?? null;
-            $id_payment = $data['id_payment'] ?? null;
-            $message = $data['message'] ?? 'Unknown error';
-            $status = $data['status'] ?? 500;
-            $payment_return_response = $data['payment_return_response'] ?? '';// for backend debug only
-
-            Log::info("Return Action Data: ", $data);
-
-            // Handle success case
-            if ($status == 200 && $payment_uuid && $id_payment) {
-                $request->validate(['data.id_payment' => 'required|string']);
-                $payment=PaymentUserInvitation::where('payment_uuid',$payment_uuid)->first();
-                $payment->update([
-                    'status'=>1,
-                    'id_payment'=>$data['id_payment'],
-                    'created_at'=>Carbon::now(),
-                    'updated_at'=>Carbon::now(),
-                ]);
-
-                Log::info("Payment Updated: ", $payment->toArray());
+            Log::info("Payment Updated: ", $payment->toArray());
             //    $userPackage= UserPackage::where('payment_user_invitation_id',$payment->id)->first();
             $user = User::where('id', $payment->user_id)->first();
 
@@ -187,8 +260,8 @@ class UserPaymentController extends Controller
 
                 $invitationData = Invitation::where('id', $userPackage->invitation_id)->first();
             }
-               $paymentData = PaymentUserInvitation::where('payment_uuid', $payment_uuid)->first();
-                $pdfPath = generateInvoicePDF($paymentData, $user, $userPackage, $invitationData);
+            $paymentData = PaymentUserInvitation::where('payment_uuid', $payment_uuid)->first();
+            $pdfPath = generateInvoicePDF($paymentData, $user, $userPackage, $invitationData);
             Log::info("PDF Path: ", ['pdf_path' => $pdfPath]);
             if ($pdfPath) {
                 // Send the invoice via WhatsApp
@@ -202,28 +275,28 @@ class UserPaymentController extends Controller
             } else {
                 Log::error('Failed to generate invoice PDF for payment ID: ' . $payment->id);
             }
-                return response()->json([
-                    'data' => [
-                        'payment' => PaymentUserInvitation::where('payment_uuid',$payment_uuid)->first(),
-                        'user' => $user,
-                        'user_package' => $userPackage,
-                        'invitation' => $invitationData,
-                    ],
-                    'message' => 'تم الدفع بنجاح',
-                    'status' => $status,
-                ], 200);
-            }
-            // Handle failure case
-            elseif ($status == 400) {
-                $payment=PaymentUserInvitation::where('payment_uuid',$payment_uuid)->first();
-                Log::info("payment error: ", $payment->toArray());
-                $payment->delete();
-                Log::info("Payment Deleted: ", ['payment_uuid' => $payment_uuid]);
-                return response()->json([
-                    'message' => 'فشل الدفع',
-                    'status' => $status,
-                ], 400);
-            }
+            return response()->json([
+                'data' => [
+                    'payment' => PaymentUserInvitation::where('payment_uuid', $payment_uuid)->first(),
+                    'user' => $user,
+                    'user_package' => $userPackage,
+                    'invitation' => $invitationData,
+                ],
+                'message' => 'تم الدفع بنجاح',
+                'status' => $status,
+            ], 200);
+        }
+        // Handle failure case
+        elseif ($status == 400) {
+            $payment = PaymentUserInvitation::where('payment_uuid', $payment_uuid)->first();
+            Log::info("payment error: ", $payment->toArray());
+            $payment->delete();
+            Log::info("Payment Deleted: ", ['payment_uuid' => $payment_uuid]);
+            return response()->json([
+                'message' => 'فشل الدفع',
+                'status' => $status,
+            ], 400);
+        }
     }
 
 
@@ -239,7 +312,7 @@ class UserPaymentController extends Controller
         ], 200); // url
     }
 
-    private function handlePaymentResponseP( $payment, $payment_uuid, $userPackage)
+    private function handlePaymentResponseP($payment, $payment_uuid, $userPackage)
     {
         return response()->json([
             'success' => true,
@@ -249,5 +322,24 @@ class UserPaymentController extends Controller
             'invitation_date' => request('invitation_date'),
             'invitation_time' => request('invitation_time')
         ], 200); // url
+    }
+
+
+    private function bypassPaymentForTest(Request $request)
+    {
+        if ($request->has('phone') && $request->input('phone') === '966530000000') {
+            Log::info('تم تفعيل تخطي الدفع لرقم الاختبار', ['phone' => $request->input('phone')]);
+
+            return [
+                'bypass' => true,
+                'message' => 'تم تخطي الدفع - رقم اختبار',
+                'payment_status' => true
+            ];
+        }
+
+        return [
+            'bypass' => false,
+            'payment_status' => false
+        ];
     }
 }
