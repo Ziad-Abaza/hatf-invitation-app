@@ -28,7 +28,6 @@ class ImageTemplate
         $canvas = Image::canvas($originalWidth, $newHeight, '#000000');
         $canvas->insert($img, 'top-left', 0, 30);
 
-        // إنشاء كائن Arabic لإعادة تشكيل النص العربي
         $arabic = new Arabic();
 
         $isArabic = (bool) preg_match('/\p{Arabic}/u', $name);
@@ -38,7 +37,6 @@ class ImageTemplate
             $alignH    = 'right';
             $xPosition = $originalWidth - 10;
 
-            // إعادة تشكيل النص العربي ليظهر بشكل صحيح
             $name = $arabic->utf8Glyphs($name);
         } else {
             $fontFile  = public_path('fonts/Cairo.ttf');
@@ -74,7 +72,7 @@ class ImageTemplate
     ): string {
         Log::info("========= بدء معالجة دعوة {$name} =========");
 
-        $arabic = new Arabic();  // كائن لإعادة تشكيل النص العربي
+        $arabic = new Arabic();
 
         // upload the base image
         $baseImagePath = $userInvitation->getFirstMediaPath('userInvitation');
@@ -93,7 +91,6 @@ class ImageTemplate
         }
         Log::info("✅ تم تحميل الخط من: {$fontPath}");
 
-        // إعادة تشكيل النص العربي للاسم إذا كان عربي
         if (preg_match('/\p{Arabic}/u', $name)) {
             $name = $arabic->utf8Glyphs($name);
         }
@@ -107,7 +104,7 @@ class ImageTemplate
         $img = Image::make($baseImagePath);
         Log::info("🖼️ تم تحميل صورة القالب بنجاح");
 
-        // add the date and time text (يمكنك إعادة تشكيلها إذا أردت، حسب الحاجة)
+        // add the date and time text
         $img->text(
             "{$userInvitation->invitation_date} | {$userInvitation->invitation_time}",
             150,
@@ -120,7 +117,7 @@ class ImageTemplate
         );
         Log::info("🕒 تم إضافة التاريخ والوقت");
 
-        // add the name text (مع النص المعاد تشكيله)
+        // add the name text
         $img->text(
             $name,
             $textSettings['x'],

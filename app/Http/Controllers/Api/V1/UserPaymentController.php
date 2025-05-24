@@ -127,7 +127,7 @@ class UserPaymentController extends Controller
         // check if the user has already paid for this package
         $payment = $this->paymentService->initiatePaymentP($validated, auth('api')->user());
 
-        Log::info("Payment Response P: ", $payment->toArray());
+        Log::info("Payment Response P: ", $payment);
         // check if the user has already paid for this package
         if (is_array($payment)) {
             return $this->handlePaymentResponseP($payment['pay'], $payment['cart_id'], $payment['user_package']);
@@ -250,5 +250,5 @@ class UserPaymentController extends Controller
             'invitation_time' => request('invitation_time')
         ], 200); // url
     }
-    
+
 }
