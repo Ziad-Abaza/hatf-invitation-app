@@ -340,9 +340,8 @@ class UserInvitationController extends Controller
                 );
 
                 $imageUrl = ImageTemplate::processOpening(
-                    $request->qr[$index],
-                    $request->name[$index],
                     $userInvitation,
+                    $request->name[$index],
                     $textSettings
                 );
 

@@ -112,50 +112,81 @@ class ImageTemplate
     // }
 
 
-    public static function processOpening($image, $name, UserInvitation $userInvitation, array $textSettings): string
-    {
-        // التحقق من صحة الصورة
-        if (!$image->isValid()) {
-            throw new \Exception('الصورة غير صالحة');
-        }
+    public static function processOpening(
+        UserInvitation $userInvitation,
+        string $name,
+        array $textSettings
+    ): string {
+        Log::info("========= بدء معالجة دعوة {$name} =========");
 
-        // مسار القالب الأساسي
+        // upload the base image
         $baseImagePath = $userInvitation->getFirstMediaPath('userInvitation');
         if (!$baseImagePath || !file_exists($baseImagePath)) {
+            Log::error("❌ القالب غير موجود: {$baseImagePath}");
+            Log::info("the base image path: {$baseImagePath}");
+            // Log::info("the data user Invitation : {$userInvitation}");
             throw new \Exception('القالب غير موجود');
         }
+        Log::info("✅ تم تحميل القالب من: {$baseImagePath}");
 
-        // التحقق من توفر الخط
+        // font settings
         $fontPath = public_path("fonts/{$textSettings['font']}.ttf");
         if (!file_exists($fontPath)) {
+            Log::error("❌ الخط غير موجود: {$textSettings['font']}");
             throw new \Exception("الخط {$textSettings['font']} غير موجود");
         }
+        Log::info("✅ تم تحميل الخط من: {$fontPath}");
 
-        // إنشاء اسم فريد للصورة
+        // generate a unique name for the processed image
         $imageName = md5(uniqid()) . '.jpg';
-        $tempPath = public_path("processed_images/{$imageName}");
+        $tempPath  = public_path("processed_images/{$imageName}");
+        Log::info("📁 سيتم حفظ الصورة المؤقتة باسم: {$imageName}");
 
-        // معالجة الصورة
+        // upload the base image
         $img = Image::make($baseImagePath);
+        Log::info("🖼️ تم تحميل صورة القالب بنجاح");
 
-        // إضافة النص (الاسم) على الصورة
-        $img->text($name, $textSettings['x'], $textSettings['y'], function ($font) use ($fontPath, $textSettings) {
-            $font->file($fontPath);
-            $font->size($textSettings['size']);
-            $font->color($textSettings['color']);
-            $font->align('center');
-        });
+        // add the date and time text
+        $img->text(
+            "{$userInvitation->invitation_date} | {$userInvitation->invitation_time}",
+            150,
+            250,
+            function ($font) use ($fontPath) {
+                $font->file($fontPath);
+                $font->size(30);
+                $font->color('#ffffff');
+            }
+        );
+        Log::info("🕒 تم إضافة التاريخ والوقت");
 
-        // حفظ الصورة المعالجة
+        // add the name text
+        $img->text(
+            $name,
+            $textSettings['x'],
+            $textSettings['y'],
+            function ($font) use ($fontPath, $textSettings) {
+                $font->file($fontPath);
+                $font->size($textSettings['size']);
+                $font->color($textSettings['color']);
+                $font->align('center');
+            }
+        );
+        Log::info("👤 تم إضافة اسم المدعو: {$name}");
+
+        // save the processed image to a temporary path
         $img->save($tempPath);
+        Log::info("💾 تم حفظ الصورة المؤقتة في: {$tempPath}");
 
-        // رفع الصورة إلى قاعدة البيانات
-        $userInvitation->addMedia($tempPath)->toMediaCollection('userInvitation');
+        // add the processed image to the media collection
+        $media = $userInvitation->addMedia($tempPath)
+            ->toMediaCollection('userInvitation');
+        Log::info("☁️ تم رفع الصورة إلى ميديا: {$media->getUrl()}");
 
-        // حذف الملف المؤقت
-        @unlink($tempPath);
+        @unlink($tempPath); // delete the temporary file
+        Log::info("🗑️ تم حذف الصورة المؤقتة من المسار: {$tempPath}");
 
-        return $imageName;
+        Log::info("========= انتهاء معالجة دعوة {$name} =========");
+        return $media->getUrl();
     }
 }
 
