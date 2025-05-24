@@ -16,7 +16,6 @@ class SendOpeningInvitationJob implements ShouldQueue
     public function __construct(
         protected InvitedUsers $invitedUser,
         protected string $imageUrl,
-        protected string $qr,
     ) {}
 
     public function handle(): void
@@ -29,12 +28,12 @@ class SendOpeningInvitationJob implements ShouldQueue
             $sent = sendWhatsappImage(
                 $this->invitedUser->phone,
                 $this->imageUrl,
-                $this->invitedUser->userInvitation->user->phone,
-                $this->invitedUser->userInvitation->name,
-                $this->invitedUser->name,
-                $this->invitedUser->userInvitation->invitation_date,
-                $this->invitedUser->userInvitation->invitation_time,
-                $this->qr
+                $this->invitedUser->userInvitation->user->phone?? 'غير متوفر',
+                $this->invitedUser->userInvitation->name?? 'غير متوفر',
+                $this->invitedUser->name?? 'غير متوفر',
+                $this->invitedUser->userInvitation->invitation_date?? 'غير متوفر',
+                $this->invitedUser->userInvitation->invitation_time?? 'غير متوفر',
+                $this->invitedUser->userInvitation->getFirstMediaUrl('qr')
             );
 
             if (!$sent) {
