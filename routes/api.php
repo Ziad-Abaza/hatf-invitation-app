@@ -98,8 +98,8 @@ Route::prefix('v1')->group(function () {
         ]);
 
         //user payment
-        Route::post('user-invitations/payment', [UserPaymentController::class, 'testPayment']);//1
-        Route::post('user-invitations/payment-private', [UserPaymentController::class, 'testPayment']);//1//
+        Route::post('user-invitations/payment', [UserPaymentController::class, 'payment']);//1
+        Route::post('user-invitations/payment-private', [UserPaymentController::class, 'paymentP']);//1//
 
         Route::post('user-invitations/returnAction', [UserPaymentController::class, 'returnAction']);//2
         Route::post('user-invitations/payment/check', [UserPaymentController::class, 'checkAction']);
