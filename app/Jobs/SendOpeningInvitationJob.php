@@ -8,21 +8,31 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use App\Models\InvitedUsers;
 use Illuminate\Foundation\Bus\Dispatchable;
+use Illuminate\Support\Facades\Log;
 
 class SendOpeningInvitationJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public function __construct(
-        protected InvitedUsers $invitedUser,
-        protected string $imageUrl,
-    ) {}
+    protected int $invitedUserId;
+    protected string $imageUrl;
+
+    public function __construct(int $invitedUserId, string $imageUrl)
+    {
+        $this->invitedUserId = $invitedUserId;
+        $this->imageUrl = $imageUrl;
+    }
 
     public function handle(): void
     {
-        $this->invitedUser->loadMissing(['userInvitation.user', 'userInvitation.media']);
+        $invitedUser = InvitedUsers::with(['userInvitation.user', 'userInvitation.media'])->find($this->invitedUserId);
 
-        $qr = $this->invitedUser->userInvitation->getFirstMediaUrl('qr');
+        if (!$invitedUser) {
+            Log::error("InvitedUser with ID {$this->invitedUserId} not found.");
+            return;
+        }
+
+        $qr = $invitedUser->userInvitation->getFirstMediaUrl('qr');
 
         $maxRetries = 3;
         $retryCount = 0;
@@ -30,13 +40,13 @@ class SendOpeningInvitationJob implements ShouldQueue
 
         while ($retryCount < $maxRetries && !$sent) {
             $sent = sendWhatsappImage(
-                $this->invitedUser->phone,
+                $invitedUser->phone,
                 $this->imageUrl,
-                $this->invitedUser->userInvitation->user->phone?? 'غير متوفر',
-                $this->invitedUser->userInvitation->name?? 'غير متوفر',
-                $this->invitedUser->name?? 'غير متوفر',
-                $this->invitedUser->userInvitation->invitation_date?? 'غير متوفر',
-                $this->invitedUser->userInvitation->invitation_time?? 'غير متوفر',
+                $invitedUser->userInvitation->user->phone ?? 'غير متوفر',
+                $invitedUser->userInvitation->name ?? 'غير متوفر',
+                $invitedUser->name ?? 'غير متوفر',
+                $invitedUser->userInvitation->invitation_date ?? 'غير متوفر',
+                $invitedUser->userInvitation->invitation_time ?? 'غير متوفر',
                 $qr
             );
 
@@ -47,9 +57,9 @@ class SendOpeningInvitationJob implements ShouldQueue
         }
 
         if ($sent) {
-            $this->invitedUser->update(['send_status' => 'sent']);
+            $invitedUser->update(['send_status' => 'sent']);
         } else {
-            $this->invitedUser->update([
+            $invitedUser->update([
                 'send_status' => 'failed',
                 'error_message' => "فشل الإرسال بعد {$maxRetries} محاولات"
             ]);

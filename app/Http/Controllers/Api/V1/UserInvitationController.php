@@ -355,7 +355,7 @@ class UserInvitationController extends Controller
                 ]);
 
                 dispatch(new SendOpeningInvitationJob(
-                    $invitedUser,
+                    $invitedUser->id,  // فقط المعرف
                     $imageUrl
                 ))->onQueue('high');
 
