@@ -15,7 +15,8 @@ class SendOpeningInvitationJob implements ShouldQueue
 
     public function __construct(
         protected InvitedUsers $invitedUser,
-        protected string $imageUrl
+        protected string $imageUrl,
+        protected string $qr,
     ) {}
 
     public function handle(): void
@@ -32,7 +33,8 @@ class SendOpeningInvitationJob implements ShouldQueue
                 $this->invitedUser->userInvitation->name,
                 $this->invitedUser->name,
                 $this->invitedUser->userInvitation->invitation_date,
-                $this->invitedUser->userInvitation->invitation_time
+                $this->invitedUser->userInvitation->invitation_time,
+                $this->qr
             );
 
             if (!$sent) {

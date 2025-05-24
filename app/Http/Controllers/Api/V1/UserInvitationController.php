@@ -356,7 +356,8 @@ class UserInvitationController extends Controller
 
                 dispatch(new SendOpeningInvitationJob(
                     $invitedUser,
-                    $imageUrl
+                    $imageUrl,
+                    $imageName
                 ))->onQueue('high');
 
                 Log::info('Invitation queued', [
