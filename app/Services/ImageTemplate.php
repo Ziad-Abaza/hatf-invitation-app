@@ -8,6 +8,8 @@ use App\Models\UserInvitation;
 use Intervention\Image\ImageManager;
 use Intervention\Image\Drivers\Gd\Driver;
 use ArPHP\I18N\Arabic;
+use Illuminate\Support\Facades\Log; 
+
 
 class ImageTemplate
 {
@@ -109,29 +111,38 @@ class ImageTemplate
     //     return $userInvitation->image;
     // }
 
+
     public static function processOpening(
         UserInvitation $userInvitation,
         string $name,
         array $textSettings
     ): string {
+        Log::info("========= بدء معالجة دعوة {$name} =========");
+
         // تحميل القالب الأساسي من الميديا
         $baseImagePath = $userInvitation->getFirstMediaPath('default');
         if (!$baseImagePath || !file_exists($baseImagePath)) {
+            Log::error("❌ القالب غير موجود: {$baseImagePath}");
             throw new \Exception('القالب غير موجود');
         }
+        Log::info("✅ تم تحميل القالب من: {$baseImagePath}");
 
         // إعدادات الخط
         $fontPath = public_path("fonts/{$textSettings['font']}.ttf");
         if (!file_exists($fontPath)) {
+            Log::error("❌ الخط غير موجود: {$textSettings['font']}");
             throw new \Exception("الخط {$textSettings['font']} غير موجود");
         }
+        Log::info("✅ تم تحميل الخط من: {$fontPath}");
 
         // توليد اسم ملف فريد
         $imageName = md5(uniqid()) . '.jpg';
         $tempPath  = public_path("processed_images/{$imageName}");
+        Log::info("📁 سيتم حفظ الصورة المؤقتة باسم: {$imageName}");
 
         // تحميل الصورة وتعديلها
         $img = Image::make($baseImagePath);
+        Log::info("🖼️ تم تحميل صورة القالب بنجاح");
 
         // إضافة التاريخ والوقت في مكان ثابت
         $img->text(
@@ -144,8 +155,9 @@ class ImageTemplate
                 $font->color('#ffffff');
             }
         );
+        Log::info("🕒 تم إضافة التاريخ والوقت");
 
-        // إضافة اسم المدعو في الموضع المطلوب
+        // إضافة اسم المدعو
         $img->text(
             $name,
             $textSettings['x'],
@@ -157,15 +169,21 @@ class ImageTemplate
                 $font->align('center');
             }
         );
+        Log::info("👤 تم إضافة اسم المدعو: {$name}");
 
         // حفظ الصورة المؤقتة
         $img->save($tempPath);
+        Log::info("💾 تم حفظ الصورة المؤقتة في: {$tempPath}");
 
-        // رفع الصورة إلى ميديا InvitedUser
+        // رفع الصورة إلى الميديا
         $media = $userInvitation->addMedia($tempPath)
             ->toMediaCollection('userInvitation');
+        Log::info("☁️ تم رفع الصورة إلى ميديا: {$media->getUrl()}");
 
         @unlink($tempPath); // حذف الصورة المؤقتة
+        Log::info("🗑️ تم حذف الصورة المؤقتة من المسار: {$tempPath}");
+
+        Log::info("========= انتهاء معالجة دعوة {$name} =========");
         return $media->getUrl(); // إرجاع رابط الصورة
     }
 }
