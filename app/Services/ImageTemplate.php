@@ -123,6 +123,7 @@ class ImageTemplate
         $baseImagePath = $userInvitation->getFirstMediaPath('userInvitation');
         if (!$baseImagePath || !file_exists($baseImagePath)) {
             Log::error("❌ القالب غير موجود: {$baseImagePath}");
+            Log::info("the base image path: {$baseImagePath}");
             throw new \Exception('القالب غير موجود');
         }
         Log::info("✅ تم تحميل القالب من: {$baseImagePath}");
