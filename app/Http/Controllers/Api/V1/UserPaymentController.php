@@ -23,6 +23,108 @@ class UserPaymentController extends Controller
         $this->paymentService = $paymentService;
     }
 
+    public function testPayment(Request $request)
+    {
+        Log::info("================= Start Test Payment (Fake Payment) =================");
+        Log::warning('Processing test payment - THIS IS FOR TESTING PURPOSES ONLY');
+
+        try {
+            // التحقق من المستخدم
+            $user = auth('api')->user();
+            if (!$user) {
+                return response()->json(['message' => 'غير مصدق عليه', 'success' => false], 401);
+            }
+
+            // التحقق من البيانات المطلوبة
+            $validatedData = $request->validate([
+                'invitation_id' => ['required', 'integer', 'exists:invitations,id'],
+                'name' => ['nullable', 'string', 'filled', 'max:255'],
+                'number_invitees' => ['required', 'integer', 'min:1'],
+                'total_price' => ['required', 'numeric'],
+                'invitation_date' => ['required', 'date'],
+                'invitation_time' => ['required', 'date_format:H:i']
+            ]);
+
+            // الحصول على أو إنشاء UserPackage
+            $invitation = Invitation::find($request->input('invitation_id'));
+
+            // محاولة العثور على UserPackage موجود
+            $userPackage = UserPackage::where('user_id', $user->id)
+                ->where('invitation_id', $invitation->id)
+                ->whereHas('payment', function ($query) {
+                    $query->where('status', 1);
+                })
+                ->first();
+
+            // إذا لم يكن موجودًا، إنشاء واحد جديد
+            if (!$userPackage) {
+                $userPackage = UserPackage::create([
+                    'user_id' => $user->id,
+                    'invitation_id' => $invitation->id,
+                    'created_at' => now(),
+                    'updated_at' => now()
+                ]);
+
+                // إنشاء دفع وهمي لربطه بالباقة
+                PaymentUserInvitation::create([
+                    'user_package_id' => $userPackage->id,
+                    'value' => 0,
+                    'status' => 1,
+                    'payment_uuid' => 'test_payment_' . uniqid(),
+                    'payment_method' => 'test_mode'
+                ]);
+            }
+
+            // إنشاء دعوة مستخدم مع ربط الباقة
+            $userInvitation = UserInvitation::create([
+                'state' => UserInvitation::AVAILABLE,
+                'user_id' => $user->id,
+                'invitation_id' => $invitation->id,
+                'invitation_date' => $request->input('invitation_date'),
+                'invitation_time' => $request->input('invitation_time'),
+                'is_active' => 1,
+                'number_invitees' => $request->input('number_invitees'),
+                'user_package_id' => $userPackage->id // ربط الباقة هنا
+            ]);
+
+            // إنشاء دفع افتراضي ناجح
+            $payment = PaymentUserInvitation::create([
+                'user_invitation_id' => $userInvitation->id,
+                'value' => $request->input('total_price', 0),
+                'status' => 1,
+                'payment_uuid' => 'test_payment_' . uniqid(),
+                'id_payment' => 'FAKE_PAYMENT_ID',
+                'payment_method' => 'test_mode'
+            ]);
+
+            Log::info('تم إنشاء دفع وهمي ناجح', [
+                'user_id' => $user->id,
+                'payment_uuid' => $payment->payment_uuid
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'تم الدفع بنجاح (اختباري)',
+                'data' => [
+                    'payment' => $payment,
+                    'user_invitation' => $userInvitation,
+                    'payment_uuid' => $payment->payment_uuid
+                ]
+            ], 200);
+        } catch (\Exception $e) {
+            Log::error("Error in testPayment: " . $e->getMessage(), [
+                'request_data' => $request->all(),
+                'user_id' => auth('api')->id()
+            ]);
+
+            return response()->json([
+                'message' => 'حدث خطأ أثناء معالجة الطلب.',
+                'errors' => [$e->getMessage()],
+                'success' => false
+            ], 500);
+        }
+    }
+    
     public function payment(Request $request)
     {
         Log::info("================= Start Payment Request =================");
