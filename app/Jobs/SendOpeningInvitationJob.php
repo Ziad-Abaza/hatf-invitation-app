@@ -20,6 +20,10 @@ class SendOpeningInvitationJob implements ShouldQueue
 
     public function handle(): void
     {
+        $this->invitedUser->loadMissing(['userInvitation.user', 'userInvitation.media']);
+
+        $qr = $this->invitedUser->userInvitation->getFirstMediaUrl('qr');
+
         $maxRetries = 3;
         $retryCount = 0;
         $sent = false;
@@ -33,7 +37,7 @@ class SendOpeningInvitationJob implements ShouldQueue
                 $this->invitedUser->name?? 'غير متوفر',
                 $this->invitedUser->userInvitation->invitation_date?? 'غير متوفر',
                 $this->invitedUser->userInvitation->invitation_time?? 'غير متوفر',
-                $this->invitedUser->userInvitation->getFirstMediaUrl('qr')
+                $qr
             );
 
             if (!$sent) {
