@@ -100,20 +100,15 @@ class ImageTemplate
         $tempPath  = public_path("processed_images/{$imageName}");
         Log::info("📁 سيتم حفظ الصورة المؤقتة باسم: {$imageName}");
 
-
         // upload the base image
         $img = Image::make($baseImagePath);
         Log::info("🖼️ تم تحميل صورة القالب بنجاح");
-
-        $x = $textSettings['x'] * $img->width();
-        $y = $textSettings['y'] * $img->height(); 
         // add the name text
         $img->text(
             $name,
-                $x,
-                $y,
+            $textSettings['x'],
+            $textSettings['y'],
             function ($font) use ($fontPath, $textSettings) {
-                $font->
                 $font->file($fontPath);
                 $font->size($textSettings['size']);
                 $font->color($textSettings['color']);
