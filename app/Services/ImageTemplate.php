@@ -118,8 +118,8 @@ class ImageTemplate
                 $font->file($fontPath);
                 $font->size($textSettings['size']);
                 $font->color($textSettings['color']);
-                $font->align('center'); // يمكن تعديله حسب الحاجة
-                $font->valign('top');   // مهم للتحكم الرأسي بشكل أدق
+                $font->align('center');
+                $font->valign('top');  
             }
         );
 

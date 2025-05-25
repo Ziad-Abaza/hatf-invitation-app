@@ -68,6 +68,13 @@ class UserInvitationController extends Controller
             return errorResponse('غير مصرح بشراء هذه الباقة', 404);
         }
 
+        $userPackage = UserPackage::where('user_id', auth('api')->id())
+            ->where('invitation_id', $invitation->id)
+            ->whereHas('payment', function ($query) {
+                $query->where('status', '=', 1);
+            })
+            ->first();
+
         try {
             $userInvitation = UserInvitation::create([
                 'state'           => UserInvitation::AVAILABLE,
@@ -76,6 +83,7 @@ class UserInvitationController extends Controller
                 'invitation_id'   => $invitation->getKey(),
                 'invitation_date' => $request->invitation_date,
                 'invitation_time' => $request->invitation_time,
+                'user_package_id' => $userPackage ? $userPackage->id : null,
             ]);
             Log::info("تم إنشاء UserInvitation", ['user_invitation_id' => $userInvitation->id]);
 
