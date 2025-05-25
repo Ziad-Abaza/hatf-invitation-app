@@ -105,21 +105,24 @@ class ImageTemplate
         $img = Image::make($baseImagePath);
         Log::info("🖼️ تم تحميل صورة القالب بنجاح");
 
+        // حساب الإحداثيات بناءً على النسبة
         $x = $textSettings['x'] * $img->width();
-        $y = $textSettings['y'] * $img->height(); 
-        // add the name text
+        $y = $textSettings['y'] * $img->height();
+
+        // إضافة النص
         $img->text(
             $name,
-                $x,
-                $y,
+            $x,
+            $y,
             function ($font) use ($fontPath, $textSettings) {
-                $font->
                 $font->file($fontPath);
                 $font->size($textSettings['size']);
                 $font->color($textSettings['color']);
-                $font->align('center');
+                $font->align('center'); // يمكن تعديله حسب الحاجة
+                $font->valign('top');   // مهم للتحكم الرأسي بشكل أدق
             }
         );
+
         Log::info("👤 تم إضافة اسم المدعو: {$name}");
 
         // save the processed image to a temporary path
