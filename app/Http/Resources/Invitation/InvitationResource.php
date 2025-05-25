@@ -21,6 +21,7 @@ class InvitationResource extends JsonResource
                 'number_of_users' => $this->number_of_users,
                 'prise'           => $this->prise,
                 'image'           => $this->getFirstMediaUrl('default'),
+                'type'            => $this->type,
                 'created_at'      => $this->created_at,
                 'updated_at'      => $this->updated_at,
             ];
@@ -31,12 +32,13 @@ class InvitationResource extends JsonResource
                 'number_of_users' => $this->number_of_users,
                 'prise'           => $this->prise,
                 'image'           => $this->getFirstMediaUrl('default'),
+                'type'            => $this->type,
                 'max_date'        =>  $this->max_date,
                 'created_at'      => $this->created_at,
                 'updated_at'      => $this->updated_at,
             ];
         }
-        
+
 
     }
 }

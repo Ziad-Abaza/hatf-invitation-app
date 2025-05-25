@@ -15,7 +15,8 @@ class Invitation extends Model implements HasMedia
         'name',
         'number_of_users',
         'prise',
-        'max_date'
+        'max_date',
+        'type', // 'opening', 'general', 'limited'
     ];
 
     protected $hidden = ['max_date'];

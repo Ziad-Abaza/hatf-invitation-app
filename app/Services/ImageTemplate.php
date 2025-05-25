@@ -103,20 +103,6 @@ class ImageTemplate
         // upload the base image
         $img = Image::make($baseImagePath);
         Log::info("🖼️ تم تحميل صورة القالب بنجاح");
-
-        // add the date and time text
-        $img->text(
-            "{$userInvitation->invitation_date} | {$userInvitation->invitation_time}",
-            150,
-            250,
-            function ($font) use ($fontPath, $textSettings) {
-                $font->file($fontPath);
-                $font->size($textSettings['size']);
-                $font->color($textSettings['color']);
-            }
-        );
-        Log::info("🕒 تم إضافة التاريخ والوقت");
-
         // add the name text
         $img->text(
             $name,

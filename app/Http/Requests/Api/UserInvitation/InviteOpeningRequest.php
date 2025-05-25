@@ -31,8 +31,8 @@ class InviteOpeningRequest extends BaseFormRequest
             'text.color' => 'required|string',
             'text.size' => 'required|integer',
             'text.font' => 'required|string',
-            'text.x' => 'required|integer',
-            'text.y' => 'required|integer',
+            'text.x' => 'required',
+            'text.y' => 'required',
         ];
     }
 }

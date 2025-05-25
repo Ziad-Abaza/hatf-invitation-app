@@ -14,7 +14,7 @@ class InvitationController extends Controller
      */
     public function index()
     {
-        $invitations = Invitation::where('max_date', '=', 'unlimited')->get();
+        $invitations = Invitation::where('type', '=', 'general')->get();
         $invitations = InvitationResource::collection($invitations);
         return successResponseDataWithMessage($invitations);
     }
@@ -26,6 +26,13 @@ class InvitationController extends Controller
         }
         $invitations=new Invitation();
         $invitations =$invitations::showMaxDate($invitations)::where('max_date', '!=', 'unlimited')->get();
+        $invitations = InvitationResource::collection($invitations);
+        return successResponseDataWithMessage($invitations);
+    }
+
+    public function indexOpening()
+    {
+        $invitations = Invitation::where('type', '=', 'opening')->get();
         $invitations = InvitationResource::collection($invitations);
         return successResponseDataWithMessage($invitations);
     }

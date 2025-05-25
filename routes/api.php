@@ -58,6 +58,7 @@ Route::prefix('v1')->group(function () {
     // Invitation
     Route::get('invitations', [InvitationController::class, 'index']);
     Route::get('invitations/{invitation}', [InvitationController::class, 'show']);
+    Route::get('invitations-opening', [InvitationController::class, 'indexOpening']);
 
     Route::middleware('auth:api')->group(function () {
         Route::post('profiles/logout', [AuthController::class, 'logout']);
