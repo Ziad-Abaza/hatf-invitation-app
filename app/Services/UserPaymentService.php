@@ -72,8 +72,10 @@ class UserPaymentService
 
     public function initiatePayment($requestData, $user)
     {
+        Log::info('=========================== Start Initiating Payment ===========================');
 
         $invitation = Invitation::find($requestData['invitation_id']);
+        Log::info('Invitation found:', ['invitation_id' => $requestData['invitation_id']]);
 
         // Check payment and handle potential errors
         if ($user->phone !== $this->MOAZ_PHONE) {
@@ -85,6 +87,18 @@ class UserPaymentService
                     'error' => 'The total price must equal the invitation price based on the invitation type' . ' ' . 'total_price:' . $requestData['total_price'] . ' ' . 'expectedPrice:' . $expectedPrice
                 ], 400);
             }
+        }
+
+        $existingInvitation = null;
+        if (isset($requestData['user_invitation_id'])) {
+            $existingInvitation = UserInvitation::find($requestData['user_invitation_id']);
+            if (!$existingInvitation) {
+                Log::info('User Invitation not found for ID:', ['user_invitation_id' => $requestData['user_invitation_id']]);
+            }
+        }
+
+        if($existingInvitation != null && $existingInvitation->user_id == $user->id) {
+            
         }
 
         $paymentUserInvitation = PaymentUserInvitation::create([
@@ -100,10 +114,22 @@ class UserPaymentService
             'invitation_id' => $invitation->id,
         ]);
 
+        Log::info('payment user invitation & user package created:', [
+            'value' => $paymentUserInvitation->value,
+            'status' => $paymentUserInvitation->status,
+            'payment_uuid' => $paymentUserInvitation->payment_uuid,
+            'invitation_id' => $invitation->id,
+            'user_package_id' => $UserPackage->id,
+            "payment_user_invitation_id" => $paymentUserInvitation->id
+        ]);
+
 
         $requestData['user_package_id'] = $UserPackage->id;
         $userInvitation = $this->createUserInvitation($requestData, $user, $invitation);
 
+        Log::info('User invitation data:', [
+            'userInvitation' => $userInvitation->toArray(),
+        ]);
         return [
             'pay' => $paymentUserInvitation,
             'cart_id' => $requestData['payment_uuid'],
@@ -113,6 +139,7 @@ class UserPaymentService
 
     public function initiatePaymentP($requestData, $user)
     {
+        Log::info('============ Start Initiating Payment for Private Invitation ===========');
 
         $invitation = Invitation::find($requestData['invitation_id']);
 
@@ -130,10 +157,10 @@ class UserPaymentService
 
 
         $paymentUserInvitation = PaymentUserInvitation::create([
-            'value'              => $requestData['total_price'],
+            'value'               => $requestData['total_price'],
             'status'              => 0,
-            'payment_uuid'       => $requestData['payment_uuid'],
-            'id_payment'       => null, // will set after pay in success
+            'payment_uuid'        => $requestData['payment_uuid'],
+            'id_payment'          => null, // will set after pay in success
         ]);
 
 
@@ -142,7 +169,14 @@ class UserPaymentService
             'invitation_id' => $invitation->id,
 
         ]);
-
+        Log::info("Payment User Invitation & User Package created:", [
+            'value' => $paymentUserInvitation->value,
+            'status' => $paymentUserInvitation->status,
+            'payment_uuid' => $paymentUserInvitation->payment_uuid,
+            'invitation_id' => $invitation->id,
+            'user_package_id' => $UserPackage->id,
+            "payment_user_invitation_id" => $paymentUserInvitation->id
+        ]);
 
         return [
             'pay' => $paymentUserInvitation,
