@@ -42,18 +42,36 @@ class UserInvitationController extends Controller
             return $item->invitation_id . '-' . $item->invitation_date . '-' . $item->name;
         });
 
-        // تحويل المجموعات إلى شكل جديد
-        $merged = $grouped->map(function ($group) {
-            $mergedItem = $group->first()->toArray(); // أخذ بيانات الدعوة الأولى
-            $mergedItem['invitedUsers'] = $group->flatMap(function ($invitation) {
-                return $invitation->invitedUsers->toArray();
-            });
-            $mergedItem['number_invitees'] = count($mergedItem['invitedUsers']);
-            return $mergedItem;
+        // تحويل المجموعات إلى نماذج UserInvitation جديدة
+        $mergedModels = $grouped->map(function ($group) {
+            // أخذ أول نموذج في المجموعة
+            $firstModel = $group->first();
+
+            // دمج invitedUsers من كل نموذج في المجموعة
+            $mergedInvitedUsers = $group->flatMap->invitedUsers;
+
+            // إنشاء نموذج جديد مع البيانات المطلوبة
+            $mergedModel = new UserInvitation();
+            $mergedModel->id = $firstModel->id;
+            $mergedModel->state = $firstModel->state;
+            $mergedModel->name = $firstModel->name;
+            $mergedModel->invitation_id = $firstModel->invitation_id;
+            $mergedModel->invitation_date = $firstModel->invitation_date;
+            $mergedModel->invitation_time = $firstModel->invitation_time;
+            $mergedModel->userPackage = $firstModel->userPackage;
+            $mergedModel->invitation = $firstModel->invitation;
+
+            // تحويل invitedUsers إلى Collection
+            $mergedModel->setRelation('invitedUsers', $mergedInvitedUsers);
+
+            // تحديث عدد المدعوين
+            $mergedModel->number_invitees = $mergedInvitedUsers->count();
+
+            return $mergedModel;
         });
 
         // استخدام الـ Resource لتوليد الاستجابة
-        $data = UserInvitationResource::collection($merged->values());
+        $data = UserInvitationResource::collection($mergedModels->values());
 
         return successResponseDataWithMessage($data);
     }
