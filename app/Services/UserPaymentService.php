@@ -88,18 +88,7 @@ class UserPaymentService
                 ], 400);
             }
         }
-
-        $existingInvitation = null;
-        if (isset($requestData['user_invitation_id'])) {
-            $existingInvitation = UserInvitation::find($requestData['user_invitation_id']);
-            if (!$existingInvitation) {
-                Log::info('User Invitation not found for ID:', ['user_invitation_id' => $requestData['user_invitation_id']]);
-            }
-        }
-
-        if($existingInvitation != null && $existingInvitation->user_id == $user->id) {
-            
-        }
+        
 
         $paymentUserInvitation = PaymentUserInvitation::create([
             'value'              => $requestData['total_price'],

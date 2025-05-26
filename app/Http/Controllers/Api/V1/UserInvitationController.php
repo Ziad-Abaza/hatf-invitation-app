@@ -32,9 +32,21 @@ class UserInvitationController extends Controller
 {
     public function index()
     {
-        $userInvitation = UserInvitation::where('user_id', auth('api')->id())->with('invitedUsers', 'invitation', 'userPackage.payment')->get();
-        $userInvitation = UserInvitationResource::collection($userInvitation);
-        return successResponseDataWithMessage($userInvitation);
+        // جلب جميع الدعوات للمستخدم
+        $userInvitations = UserInvitation::where('user_id', auth('api')->id())
+            ->with('invitedUsers', 'invitation', 'userPackage.payment')
+            ->get();
+
+        // تجميع الدعوات حسب user_invitation_id
+        $grouped = $userInvitations->groupBy('user_invitation_id');
+
+        // تحويل كل مجموعة إلى مورد جديد
+        $groupedResources = $grouped->map(function ($group) {
+            return new UserInvitationResource($group);
+        });
+
+        // إرجاع النتيجة
+        return successResponseDataWithMessage($groupedResources->values());
     }
 
     public function show(UserInvitation $userInvitation)

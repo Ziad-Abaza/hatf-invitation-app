@@ -139,6 +139,7 @@ class UserPaymentController extends Controller
             'invitation_date'  => ['required', 'date', 'after_or_equal:today'],
             'invitation_time'  => ['required', 'date_format:H:i'],
             'payment_uuid'     => ['required', 'string', 'unique:payment_user_invitations,payment_uuid'],
+            'user_invitation_id' => ['nullable', 'integer', 'exists:user_invitations,id'],
         ]);
 
         // Check if file is uploaded and valid
