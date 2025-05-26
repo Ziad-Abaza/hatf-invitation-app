@@ -30,32 +30,25 @@ class UserInvitationResource extends JsonResource
             'image_user_invitation'    => optional($this->getFirstMedia('userInvitation'))->getFullUrl(),
             'image_qr'                 => optional($this->getFirstMedia('qr'))->getFullUrl(),
             'invitation'               => InvitationResource::make($this->invitation),
-            'invitedUsersGrouped' => $this->invitedUsers
-                ->groupBy('user_invitations_id')
-                ->map(function ($group, $key) {
-                    return [
-                        'user_invitations_id' => $key,
-                        'users' => $group->map(function ($user) {
-                            return [
-                                'id'                    => $user->id,
-                                'name'                  => $user->name,
-                                'phone'                 => $user->phone,
-                                'code'                  => $user->code,
-                                'qr'                    => $user->qr,
-                                'note'                  => $user->note,
-                                'error_message'         => $user->error_message,
-                                'created_at'            => $user->created_at,
-                                'updated_at'            => $user->updated_at,
-                                'status'                => $this->getInvitationStatus($user),
-                                'status_ar'             => $this->getStatusAr($user),
-                                'description_en'        => $this->getDescriptionEn($user),
-                                'description_ar'        => $this->getDescriptionAr($user),
-                                'color'                 => $this->getColor($user),
-                            ];
-                        }),
-                    ];
-                })->values(),
-
+            'invitedUsers'             => $this->invitedUsers->map(function ($user) {
+                return [
+                    'id'                    => $user->id,
+                    'name'                  => $user->name,
+                    'phone'                 => $user->phone,
+                    'code'                  => $user->code,
+                    'qr'                    => $user->qr,
+                    'user_invitations_id'   => $user->user_invitations_id,
+                    'note'                  => $user->note,
+                    'error_message'         => $user->error_message,
+                    'created_at'            => $user->created_at,
+                    'updated_at'            => $user->updated_at,
+                    'status'                => $this->getInvitationStatus($user),
+                    'status_ar'             => $this->getStatusAr($user),
+                    'description_en'        => $this->getDescriptionEn($user),
+                    'description_ar'        => $this->getDescriptionAr($user),
+                    'color'                 => $this->getColor($user),
+                ];
+            }),
             'payment_user_invitations' => $this->userPackage->payment,
         ];
     }
