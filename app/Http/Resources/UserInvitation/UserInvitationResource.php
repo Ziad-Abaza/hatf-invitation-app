@@ -5,6 +5,7 @@ namespace App\Http\Resources\UserInvitation;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use App\Http\Resources\Invitation\InvitationResource;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 class UserInvitationResource extends JsonResource
 {
@@ -15,111 +16,64 @@ class UserInvitationResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        // أول دعوة في المجموعة لتستخدم كمصدر للبيانات الأساسية
-        $firstInvitation = $this->resource->first();
-
         return [
-            'id'                       => $firstInvitation->user_invitation_id ?? $firstInvitation->id,
-            'state'                    => $this->getState(),
-            'name'                     => $firstInvitation->name,
-            'number_invitees'          => $this->getTotalInvitees(),
-            'attendance_number'        => $this->getTotalAttendance(),
-            'created_at'               => $firstInvitation->created_at,
-            'updated_at'               => $firstInvitation->updated_at,
-            'invitation_date'          => $firstInvitation->invitation_date,
-            'invitation_time'          => $firstInvitation->invitation_time,
-            'image_default'            => optional($firstInvitation->getFirstMedia('default'))->getFullUrl(),
-            'image_user_invitation'    => optional($firstInvitation->getFirstMedia('userInvitation'))->getFullUrl(),
-            'image_qr'                 => optional($firstInvitation->getFirstMedia('qr'))->getFullUrl(),
-            'invitation'               => InvitationResource::make($firstInvitation->invitation),
-            'invitedUsers'             => $this->getAllInvitedUsers(),
-            'payment_user_invitations' => $this->getPaymentInfo(),
+            'id'                       => $this->id,
+            'state'                    => $this->state,
+            'name'                     => $this->name,
+            'number_invitees'          => $this->number_invitees,
+            'attendance_number'        => $this->invitedUsers->where('status', 1)->count(),
+            'created_at'               => $this->created_at,
+            'updated_at'               => $this->updated_at,
+            'invitation_date'          => $this->invitation_date,
+            'invitation_time'          => $this->invitation_time,
+            'image_default'            => optional($this->getFirstMedia('default'))->getFullUrl(),
+            'image_user_invitation'    => optional($this->getFirstMedia('userInvitation'))->getFullUrl(),
+            'image_qr'                 => optional($this->getFirstMedia('qr'))->getFullUrl(),
+            'invitation'               => InvitationResource::make($this->invitation),
+            'invitedUsers'             => $this->invitedUsers->map(function ($user) {
+                return [
+                    'id'                    => $user->id,
+                    'name'                  => $user->name,
+                    'phone'                 => $user->phone,
+                    'code'                  => $user->code,
+                    'qr'                    => $user->qr,
+                    'user_invitations_id'   => $user->user_invitations_id,
+                    'note'                  => $user->note,
+                    'error_message'         => $user->error_message,
+                    'created_at'            => $user->created_at,
+                    'updated_at'            => $user->updated_at,
+                    'status'                => $this->getInvitationStatus($user),
+                    'status_ar'             => $this->getStatusAr($user),
+                    'description_en'        => $this->getDescriptionEn($user),
+                    'description_ar'        => $this->getDescriptionAr($user),
+                    'color'                 => $this->getColor($user),
+                ];
+            }),
+            'payment_user_invitations' => $this->userPackage->payment,
         ];
     }
 
     /**
-     * تحديد حالة الدعوة بناءً على أي دعوة متاحة في المجموعة
-     */
-    protected function getState()
-    {
-        return $this->resource->contains('state', \App\Models\UserInvitation::AVAILABLE)
-            ? \App\Models\UserInvitation::AVAILABLE
-            : \App\Models\UserInvitation::FULL;
-    }
-
-    /**
-     * جمع عدد المدعوين من جميع الدعوات في المجموعة
-     */
-    protected function getTotalInvitees()
-    {
-        return $this->resource->sum('number_invitees');
-    }
-
-    /**
-     * جمع عدد الحضور من جميع الدعوات في المجموعة
-     */
-    protected function getTotalAttendance()
-    {
-        return $this->resource->sum(function ($invitation) {
-            return $invitation->invitedUsers
-                ->where('status', 1)
-                ->count();
-        });
-    }
-
-    /**
-     * جمع جميع المدعوين من كل الدعوات في المجموعة
-     */
-    protected function getAllInvitedUsers()
-    {
-        return $this->resource->flatMap(function ($invitation) {
-            return $invitation->invitedUsers;
-        })->map(function ($user) {
-            return [
-                'id'                    => $user->id,
-                'name'                  => $user->name,
-                'phone'                 => $user->phone,
-                'code'                  => $user->code,
-                'qr'                    => $user->qr,
-                'user_invitations_id'   => $user->user_invitations_id,
-                'note'                  => $user->note,
-                'error_message'         => $user->error_message,
-                'created_at'            => $user->created_at,
-                'updated_at'            => $user->updated_at,
-                'status'                => $this->getInvitationStatus($user),
-                'status_ar'             => $this->getStatusAr($user),
-                'description_en'        => $this->getDescriptionEn($user),
-                'description_ar'        => $this->getDescriptionAr($user),
-                'color'                 => $this->getColor($user),
-            ];
-        });
-    }
-
-    /**
-     * جمع معلومات الدفع من أول دعوة في المجموعة
-     */
-    protected function getPaymentInfo()
-    {
-        $firstPayment = $this->resource->first()?->userPackage?->payment;
-        return $firstPayment ? $firstPayment : null;
-    }
-
-    /**
-     * تحديد حالة الدعوة للمدعو
+     *  function to get the status of the invitation
      */
     private function getInvitationStatus($user)
     {
-        if ($user->status == 1) return 'attended';
+        // check if the user has attended
+        if ($user->status == 1) {
+            return 'attended';
+        }
 
+        // control the status of the invitation
         if (in_array($user->send_status, ['rejected', 'accepted', 'failed', 'sent'])) {
             return $user->send_status;
         }
 
+        // if the user has not attended and the status is not in the above array, return pending
         return 'pending';
     }
 
     /**
-     * تحويل الحالة إلى العربية
+     * translate status to Arabic
      */
     private function getStatusAr($user)
     {
@@ -136,7 +90,7 @@ class UserInvitationResource extends JsonResource
     }
 
     /**
-     * وصف الحالة بالإنجليزية
+     *  description of the status in English
      */
     private function getDescriptionEn($user)
     {
@@ -153,7 +107,7 @@ class UserInvitationResource extends JsonResource
     }
 
     /**
-     * وصف الحالة بالعربية
+     * description of the status in Arabic
      */
     private function getDescriptionAr($user)
     {
@@ -170,17 +124,17 @@ class UserInvitationResource extends JsonResource
     }
 
     /**
-     * لون يمثل الحالة
+     *  function to get the color based on the status
      */
     private function getColor($user)
     {
         $colorMap = [
-            'rejected'  => 'd00202',
-            'accepted'  => '28a745',
-            'failed'    => 'ffc107',
-            'sent'      => '007bff',
-            'attended'  => '17a2b8',
-            'pending'   => '6c757d',
+            'rejected'  => 'd00202',  // red
+            'accepted'  => '28a745',  // green
+            'failed'    => 'ffc107',  // yellow
+            'sent'      => '007bff',  // blue
+            'attended'  => '17a2b8',  // cyan
+            'pending'   => '6c757d',  // silver
         ];
 
         return $colorMap[$this->getInvitationStatus($user)] ?? '6c757d';
