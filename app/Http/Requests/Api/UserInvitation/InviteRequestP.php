@@ -28,7 +28,6 @@ class InviteRequestP extends BaseFormRequest
             'invitation_time'         => 'required|date_format:H:i',
             'number_invitees'         => 'required|numeric',
             'file'                   => 'nullable|file|max:15000',
-            // 'image'                   => 'nullable|file|max:15000',
 
             'phone'   => 'required|array',
             'name'    => 'required|array',

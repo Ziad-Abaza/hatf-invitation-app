@@ -24,17 +24,17 @@ class StoreRequest extends BaseFormRequest
 
         return [
             'invitation_id'           => 'required|integer|exists:invitations,id',
-            // 'image'                   => 'required|file|image|mimes:png,jpg',
-            'file'                   => 'required|file|mimes:png,jpg,pdf',
+            'file'                    => 'required|file|mimes:png,jpg,pdf',
             'invitation_date'         => 'required|date',
             'invitation_time'         => 'required|date_format:H:i',
-            // 'phone'         => 'required|array',
-            // 'name'          => 'required|array',
-            // 'code'          => 'required|array',
-            // 'phone.*'       => 'required|numeric',
-            // 'name.*'        => 'required|string',
-            // 'code.*'        => 'required|numeric',
-            // 'qr' => 'required|array',
+            'text'                    => 'nullable|array',
+
+            'text.color'              => 'nullable|string',
+            'text.size'               => 'nullable|integer',
+            'text.font'               => 'nullable|string',
+            'text.x'                  => 'nullable|numeric',
+            'text.y'                  => 'nullable|numeric',
+
         ];
     }
 }

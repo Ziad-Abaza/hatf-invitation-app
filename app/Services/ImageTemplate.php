@@ -67,8 +67,7 @@ class ImageTemplate
 
     public static function processOpening(
         UserInvitation $userInvitation,
-        string $name,
-        array $textSettings
+        string $name
     ): string {
         Log::info("========= بدء معالجة دعوة {$name} =========");
 
@@ -84,6 +83,13 @@ class ImageTemplate
         Log::info("✅ تم تحميل القالب من: {$baseImagePath}");
 
         // font settings
+        $textSettings = $userInvitation->text_settings ?? [
+            'font'  => 'Cairo',
+            'size'  => 30,
+            'color' => '#ffffff',
+            'x'     => 0,
+            'y'     => 0,
+        ];
         $fontPath = public_path("fonts/{$textSettings['font']}.ttf");
         if (!file_exists($fontPath)) {
             Log::error("❌ الخط غير موجود: {$textSettings['font']}");
@@ -119,7 +125,7 @@ class ImageTemplate
                 $font->size($textSettings['size']);
                 $font->color($textSettings['color']);
                 $font->align('center');
-                $font->valign('top');  
+                $font->valign('top');
             }
         );
 

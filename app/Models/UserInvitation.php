@@ -30,7 +30,12 @@ class UserInvitation extends Model implements HasMedia
         'invitation_date',
         'invitation_time',
         'type',
-        'user_package_id'
+        'user_package_id',
+        'text_settings'
+    ];
+
+    protected $casts = [
+        'text_settings' => 'array',
     ];
 
     public function user(): BelongsTo
@@ -54,7 +59,7 @@ class UserInvitation extends Model implements HasMedia
     {
         $this->addMediaCollection('default');
         $this->addMediaCollection('document');
-        $this->addMediaCollection('userInvitation'); 
+        $this->addMediaCollection('userInvitation');
         $this->addMediaCollection('qr');
     }
 

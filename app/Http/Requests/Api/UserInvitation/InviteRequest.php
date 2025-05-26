@@ -28,6 +28,7 @@ class InviteRequest extends BaseFormRequest
             'code'    => 'required|array',
             'qr'      => 'required|array',
             'note'    => 'nullable|array',
+            'invitation_type '=> 'nullable|string|in:standard,opening',
 
             'phone.*' => 'required|numeric',
             'name.*'  => 'required|string',

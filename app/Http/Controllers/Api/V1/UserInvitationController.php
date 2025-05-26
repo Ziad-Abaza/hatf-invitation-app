@@ -68,13 +68,6 @@ class UserInvitationController extends Controller
             return errorResponse('غير مصرح بشراء هذه الباقة', 404);
         }
 
-        $userPackage = UserPackage::where('user_id', auth('api')->id())
-            ->where('invitation_id', $invitation->id)
-            ->whereHas('payment', function ($query) {
-                $query->where('status', '=', 1);
-            })
-            ->first();
-
         try {
             $userInvitation = UserInvitation::create([
                 'state'           => UserInvitation::AVAILABLE,
@@ -83,7 +76,7 @@ class UserInvitationController extends Controller
                 'invitation_id'   => $invitation->getKey(),
                 'invitation_date' => $request->invitation_date,
                 'invitation_time' => $request->invitation_time,
-                'user_package_id' => $userPackage ? $userPackage->id : null,
+                'text_settings'   => $request->text ?? null,
             ]);
             Log::info("تم إنشاء UserInvitation", ['user_invitation_id' => $userInvitation->id]);
 
@@ -181,6 +174,11 @@ class UserInvitationController extends Controller
         $batchSize = min($totalAllowed - $currentCount, count($request->name));
         Log::info("عدد الدعوات التي سيتم معالجتها", ['batchSize' => $batchSize]);
 
+        $invitationType = $request->input('invitation_type', 'standard');
+
+        $jobClass = $invitationType === 'opening' ? SendOpeningInvitationJob::class : SendInvitationJob::class;
+
+
         foreach (range(0, $batchSize - 1) as $index) {
             try {
                 $imageName = ImageTemplate::process(
@@ -188,6 +186,11 @@ class UserInvitationController extends Controller
                     $request->name[$index],
                     $userInvitation
                 );
+
+                $imageUrl = null;
+                if ($invitationType === 'opening') {
+                    $imageUrl = ImageTemplate::processOpening($userInvitation, $request->name[$index]);
+                }
 
                 $invitedUser = InvitedUsers::create([
                     'name' => $request->name[$index],
@@ -200,10 +203,11 @@ class UserInvitationController extends Controller
 
                 Log::info("تم إنشاء دعوة مستخدم", ['invited_user_id' => $invitedUser->id]);
 
-                dispatch(new SendInvitationJob(
-                    $invitedUser->id,
-                    $userInvitation->id
-                ))->onQueue('high');
+                if ($invitationType === 'opening') {
+                    dispatch(new $jobClass($invitedUser->id, $imageUrl))->onQueue('high');
+                } else {
+                    dispatch(new $jobClass($invitedUser->id, $userInvitation->id))->onQueue('high');
+                }
 
                 Log::info("تم إرسال مهمة إرسال الدعوة إلى الطابور", ['invited_user_id' => $invitedUser->id]);
             } catch (\Exception $e) {
@@ -221,165 +225,6 @@ class UserInvitationController extends Controller
             'success' => true
         ]);
     }
-
-    /*
-    |===============================================
-    |addInvite Opening Users
-    |===============================================
-    */
-
-
-    public function addInviteOpeningUsers(InviteOpeningRequest $request, UserInvitation $userInvitation)
-    {
-        Log::info('Start addInviteOpeningUsers', [
-            'user_id' => auth('api')->id(),
-            'user_invitation_id' => $userInvitation->id
-        ]);
-
-        if ($userInvitation->user_id != auth('api')->id()) {
-            Log::warning('Unauthorized access attempt', [
-                'auth_user' => auth('api')->id(),
-                'owner_user_id' => $userInvitation->user_id
-            ]);
-            return errorResponse('You do not have access', 403);
-        }
-
-        // replace phone 966530000000 with 201006403927 for testing
-        if ($request->has('phone')) {
-            $phones = $request->input('phone');
-
-            foreach ($phones as $index => $phone) {
-                if ($phone === '966530000000') {
-                    $phones[$index] = '201006403927';
-                }
-            }
-            $request->merge(['phone' => $phones]);
-        }
-
-
-        if ($userInvitation->userPackage->payment->status == 0) {
-            Log::info('User has not paid yet', [
-                'user_id' => auth('api')->id()
-            ]);
-            return response()->json(['message' => 'not payment'], 400);
-        }
-
-        if ($userInvitation->is_active == 0) {
-            Log::info('Invitation is not active', [
-                'user_invitation_id' => $userInvitation->id
-            ]);
-            return errorResponse('لم يتم الدفع بعد');
-        }
-
-        $totalAllowed = $userInvitation->number_invitees;
-        $currentCount = InvitedUsers::where('user_invitations_id', $userInvitation->id)
-            ->where('send_status', 'send')
-            ->count();
-
-        Log::info('Invitation count check', [
-            'allowed' => $totalAllowed,
-            'current' => $currentCount
-        ]);
-
-        if ($totalAllowed <= $currentCount) {
-            Log::warning('Invitation limit reached', [
-                'user_invitation_id' => $userInvitation->id
-            ]);
-            return errorResponse('تم الوصول للحد الأقصى للدعوات');
-        }
-
-        $errors = [];
-        foreach ($request->name as $index => $name) {
-            if (!isset($request->name[$index], $request->phone[$index], $request->code[$index], $request->qr[$index])) {
-                $errors[] = "بيانات ناقصة في الدعوة رقم " . ($index + 1) . ".";
-                Log::warning('Incomplete data in invite', [
-                    'index' => $index,
-                    'data' => $request->all()
-                ]);
-                continue;
-            }
-
-            // إذا كنت ستفعل التحقق من الرقم:
-            // if (!preg_match('/^9665\d{8}$/', $request->phone[$index])) {
-            //     $errors[] = "رقم الهاتف في الدعوة رقم " . ($index + 1) . " غير صالح.";
-            //     Log::warning('Invalid phone format', ['phone' => $request->phone[$index]]);
-            //     continue;
-            // }
-        }
-
-        if (!empty($errors)) {
-            Log::info('Validation failed', ['errors' => $errors]);
-            return response()->json([
-                'message' => 'خطأ في البيانات.',
-                'errors' => $errors,
-                'success' => false
-            ], 422);
-        }
-
-        $batchSize = min($totalAllowed - $currentCount, count($request->name));
-        Log::info('Batch processing', [
-            'batch_size' => $batchSize,
-            'text_settings' => $request->input('text')
-        ]);
-
-        $textSettings = $request->input('text');
-        $invitedIds = [];
-
-        foreach (range(0, $batchSize - 1) as $index) {
-            try {
-                $imageName = ImageTemplate::process(
-                    $request->qr[$index],
-                    $request->name[$index],
-                    $userInvitation
-                );
-
-                $imageUrl = ImageTemplate::processOpening(
-                    $userInvitation,
-                    $request->name[$index],
-                    $textSettings
-                );
-
-                $invitedUser = InvitedUsers::create([
-                    'name' => $request->name[$index],
-                    'phone' => $request->phone[$index],
-                    'code' => $request->code[$index],
-                    'qr' => $imageName,
-                    'user_invitations_id' => $userInvitation->id,
-                    'send_status' => 'pending'
-                ]);
-
-                dispatch(new SendOpeningInvitationJob(
-                    $invitedUser->id,
-                    $imageUrl
-                ))->onQueue('high');
-
-                Log::info('Invitation queued', [
-                    'invited_user_id' => $invitedUser->id,
-                    'name' => $request->name[$index]
-                ]);
-
-                $invitedIds[] = $invitedUser->id;
-            } catch (\Exception $e) {
-                Log::error('Error creating invited user', [
-                    'error' => $e->getMessage(),
-                    'index' => $index,
-                    'data' => $request->all()
-                ]);
-            }
-        }
-
-        Log::info('Completed invitation processing', [
-            'invited_ids' => $invitedIds,
-            'total_queued' => $batchSize
-        ]);
-
-        return response()->json([
-            'message' => 'جارٍ معالجة الدعوات في الخلفية...',
-            'total_queued' => $batchSize,
-            'success' => true
-        ]);
-    }
-
 
     public function addInviteUsersP(InviteRequestP $request, UserPackage $userPackage)
     {

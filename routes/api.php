@@ -93,11 +93,6 @@ Route::prefix('v1')->group(function () {
         Route::post('user-invitation/{userInvitation}/scan-qr', [UserInvitationController::class, 'scanQr']);
         Route::post('user-invitations/{paymentUserInvitation}/success-payment', [UserInvitationController::class, 'successPaymentUserInvitation']);
 
-        Route::post('user-invitation/{userInvitation}/invite-opening', [
-            UserInvitationController::class,
-            'addInviteOpeningUsers'
-        ]);
-
         //user payment
         Route::post('user-invitations/payment', [UserPaymentController::class, 'payment']);//1
         Route::post('user-invitations/payment-private', [UserPaymentController::class, 'paymentP']);//1//
