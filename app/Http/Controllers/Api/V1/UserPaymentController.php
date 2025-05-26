@@ -124,10 +124,11 @@ class UserPaymentController extends Controller
             ], 500);
         }
     }
-    
+
     public function payment(Request $request)
     {
         Log::info("================= Start Payment Request =================");
+        Log::info("Request Data: ", $request->all());
         // Validate request data
         $validatedData = $request->validate([
             'invitation_id'    => ['required', 'integer', 'exists:invitations,id'],
