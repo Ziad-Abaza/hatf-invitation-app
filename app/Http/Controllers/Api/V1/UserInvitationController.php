@@ -32,9 +32,30 @@ class UserInvitationController extends Controller
 {
     public function index()
     {
-        $userInvitation = UserInvitation::where('user_id', auth('api')->id())->with('invitedUsers', 'invitation', 'userPackage.payment')->get();
-        $userInvitation = UserInvitationResource::collection($userInvitation);
-        return successResponseDataWithMessage($userInvitation);
+        // استرجاع جميع الدعوات مع المستخدمين والبيانات المرتبطة
+        $userInvitations = UserInvitation::where('user_id', auth('api')->id())
+            ->with('invitedUsers', 'invitation', 'userPackage.payment')
+            ->get();
+
+        // دمج الدعوات التي تشترك في invitation_id و invitation_date
+        $grouped = $userInvitations->groupBy(function ($item) {
+            return $item->invitation_id . '-' . $item->invitation_date;
+        });
+
+        // تحويل المجموعات إلى شكل جديد
+        $merged = $grouped->map(function ($group) {
+            $mergedItem = $group->first()->toArray(); // أخذ بيانات الدعوة الأولى
+            $mergedItem['invitedUsers'] = $group->flatMap(function ($invitation) {
+                return $invitation->invitedUsers->toArray();
+            });
+            $mergedItem['number_invitees'] = count($mergedItem['invitedUsers']);
+            return $mergedItem;
+        });
+
+        // استخدام الـ Resource لتوليد الاستجابة
+        $data = UserInvitationResource::collection($merged->values());
+
+        return successResponseDataWithMessage($data);
     }
 
     public function show(UserInvitation $userInvitation)
