@@ -32,103 +32,19 @@ class UserInvitationController extends Controller
 {
     public function index()
     {
-        // استرجاع جميع الدعوات مع المستخدمين والبيانات المرتبطة
-        $userInvitations = UserInvitation::where('user_id', auth('api')->id())
-            ->with('invitedUsers', 'invitation', 'userPackage.payment')
-            ->get();
-
-        // دمج الدعوات التي تشترك في invitation_id و invitation_date و name
-        $grouped = $userInvitations->groupBy(function ($item) {
-            return $item->invitation_id . '-' . $item->invitation_date . '-' . $item->name;
-        });
-
-        // تحويل المجموعات إلى نماذج UserInvitation جديدة
-        $mergedModels = $grouped->map(function ($group) {
-            // أخذ أول نموذج في المجموعة
-            $firstModel = $group->first();
-
-            // دمج invitedUsers من كل نموذج في المجموعة
-            $mergedInvitedUsers = $group->flatMap->invitedUsers;
-
-            // إنشاء نموذج جديد مع البيانات المطلوبة
-            $mergedModel = new UserInvitation();
-            $mergedModel->id = $firstModel->id;
-            $mergedModel->state = $firstModel->state;
-            $mergedModel->name = $firstModel->name;
-            $mergedModel->invitation_id = $firstModel->invitation_id;
-            $mergedModel->invitation_date = $firstModel->invitation_date;
-            $mergedModel->invitation_time = $firstModel->invitation_time;
-            $mergedModel->userPackage = $firstModel->userPackage;
-            $mergedModel->invitation = $firstModel->invitation;
-
-            // تحويل invitedUsers إلى Collection
-            $mergedModel->setRelation('invitedUsers', $mergedInvitedUsers);
-
-            // تحديث عدد المدعوين
-            $mergedModel->number_invitees = $mergedInvitedUsers->count();
-
-            return $mergedModel;
-        });
-
-        // استخدام الـ Resource لتوليد الاستجابة
-        $data = UserInvitationResource::collection($mergedModels->values());
-
-        return successResponseDataWithMessage($data);
+        $userInvitation = UserInvitation::where('user_id', auth('api')->id())->with('invitedUsers', 'invitation', 'userPackage.payment')->get();
+        $userInvitation = UserInvitationResource::collection($userInvitation);
+        return successResponseDataWithMessage($userInvitation);
     }
 
     public function show(UserInvitation $userInvitation)
     {
-        // التأكد من أن المستخدم لديه حق الوصول إلى الدعوة
-        if ($userInvitation->user_id != auth('api')->id()) {
+        if ($userInvitation->user_id != auth('api')->id())
             return errorResponse('You do not have access', 403);
-        }
 
-        // استرجاع جميع الدعوات الخاصة بالمستخدم مع العلاقات المرتبطة
-        $userInvitations = UserInvitation::where('user_id', auth('api')->id())
-            ->with('invitedUsers', 'invitation', 'userPackage.payment')
-            ->get();
-
-        // دمج الدعوات التي تشترك في invitation_id و invitation_date و name
-        $grouped = $userInvitations->groupBy(function ($item) {
-            return $item->invitation_id . '-' . $item->invitation_date . '-' . $item->name;
-        });
-
-        // العثور على المجموعة التي تحتوي على الدعوة المطلوبة
-        $targetGroup = $grouped->first(fn($group) => $group->contains(fn($item) => $item->id === $userInvitation->id));
-
-        if (!$targetGroup) {
-            return errorResponse('Invitation not found', 404);
-        }
-
-        // إنشاء نموذج مُدمج من الدعوة
-        $mergedModel = new UserInvitation();
-        $firstModel = $targetGroup->first();
-
-        // دمج invitedUsers من كل نموذج في المجموعة
-        $mergedInvitedUsers = $targetGroup->flatMap->invitedUsers;
-
-        // تعيين الخصائص الأساسية من أول دعوة في المجموعة
-        $mergedModel->id = $firstModel->id;
-        $mergedModel->state = $firstModel->state;
-        $mergedModel->name = $firstModel->name;
-        $mergedModel->invitation_id = $firstModel->invitation_id;
-        $mergedModel->invitation_date = $firstModel->invitation_date;
-        $mergedModel->invitation_time = $firstModel->invitation_time;
-        $mergedModel->userPackage = $firstModel->userPackage;
-        $mergedModel->invitation = $firstModel->invitation;
-
-        // تعيين العلاقة invitedUsers كـ Collection
-        $mergedModel->setRelation('invitedUsers', $mergedInvitedUsers);
-
-        // تحديث عدد المدعوين
-        $mergedModel->number_invitees = $mergedInvitedUsers->count();
-
-        // استخدام Resource لإرجاع النتيجة
-        $data = UserInvitationResource::make($mergedModel);
-
-        return successResponseDataWithMessage($data);
+        $userInvitation = UserInvitationResource::make($userInvitation);
+        return successResponseDataWithMessage($userInvitation);
     }
-
     public function create(StoreRequest $request)
     {
         Log::info("========== بدء إنشاء UserInvitation ==========");
