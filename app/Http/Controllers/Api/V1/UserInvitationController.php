@@ -37,9 +37,9 @@ class UserInvitationController extends Controller
             ->with('invitedUsers', 'invitation', 'userPackage.payment')
             ->get();
 
-        // دمج الدعوات التي تشترك في invitation_id و invitation_date
+        // دمج الدعوات التي تشترك في invitation_id و invitation_date و name
         $grouped = $userInvitations->groupBy(function ($item) {
-            return $item->invitation_id . '-' . $item->invitation_date;
+            return $item->invitation_id . '-' . $item->invitation_date . '-' . $item->name;
         });
 
         // تحويل المجموعات إلى شكل جديد
