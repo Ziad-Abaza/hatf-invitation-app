@@ -18,6 +18,7 @@ use App\Jobs\SendOpeningInvitationJob;
 use App\Http\Requests\Api\UserInvitation\StoreRequest;
 use App\Http\Requests\Api\UserInvitation\InviteRequest;
 use App\Http\Requests\Api\UserInvitation\InviteOpeningRequest;
+use App\Http\Resources\UserInvitation\GroupedUserInvitationResource;
 use App\Http\Requests\Api\UserInvitation\InviteRequestP;
 use App\Http\Resources\UserInvitation\UserInvitationResource;
 use App\Http\Resources\UserInvitation\UserPrivateInvitationResource;
