@@ -18,7 +18,6 @@ use App\Jobs\SendOpeningInvitationJob;
 use App\Http\Requests\Api\UserInvitation\StoreRequest;
 use App\Http\Requests\Api\UserInvitation\InviteRequest;
 use App\Http\Requests\Api\UserInvitation\InviteOpeningRequest;
-use App\Http\Resources\UserInvitation\GroupedUserInvitationResource;
 use App\Http\Requests\Api\UserInvitation\InviteRequestP;
 use App\Http\Resources\UserInvitation\UserInvitationResource;
 use App\Http\Resources\UserInvitation\UserPrivateInvitationResource;
@@ -33,18 +32,11 @@ class UserInvitationController extends Controller
 {
     public function index()
     {
-        $userInvitations = UserInvitation::where('user_id', auth('api')->id())
-            ->with('invitedUsers', 'invitation', 'userPackage.payment')
-            ->get();
-
-        $grouped = $userInvitations->groupBy('id');
-
-        $groupedResources = $grouped->map(function ($group) {
-            return new GroupedUserInvitationResource($group);
-        });
-
-        // إرجاع النتيجة
-        return successResponseDataWithMessage($groupedResources->values());
+        $userInvitation = UserInvitation::where('user_id', auth('api')->id())->with('invitedUsers', 'invitation', 'userPackage.payment')->get();
+        Log::info("========== بدء استرجاع UserInvitation ==========");
+        Log::info("all User Invitation", $userInvitation->toArray());
+        $userInvitation = UserInvitationResource::collection($userInvitation);
+        return successResponseDataWithMessage($userInvitation);
     }
 
     public function show(UserInvitation $userInvitation)
