@@ -37,7 +37,7 @@ class UserInvitationController extends Controller
             ->with('invitedUsers', 'invitation', 'userPackage.payment')
             ->get();
 
-        $grouped = $userInvitations->groupBy('user_invitation_id');
+        $grouped = $userInvitations->groupBy('id');
 
         $groupedResources = $grouped->map(function ($group) {
             return new GroupedUserInvitationResource($group);
