@@ -32,40 +32,12 @@ class UserInvitationController extends Controller
 {
     public function index()
     {
-        $userInvitations = UserInvitation::where('user_id', auth('api')->id())
-            ->with('invitedUsers', 'invitation', 'userPackage.payment')
-            ->get();
-
+        $userInvitation = UserInvitation::where('user_id', auth('api')->id())->with('invitedUsers', 'invitation', 'userPackage.payment')->get();
         Log::info("========== بدء استرجاع UserInvitation ==========");
-        Log::info("all User Invitation", $userInvitations->toArray());
-
-        // دمج المدعوين حسب user_invitations_id
-        $mergedInvitedUsers = [];
-
-        foreach ($userInvitations as $invitation) {
-            foreach ($invitation->invitedUsers as $user) {
-                $key = $user->user_invitations_id; // المفتاح للتجميع
-
-                if (!isset($mergedInvitedUsers[$key])) {
-                    $mergedInvitedUsers[$key] = [];
-                }
-
-                $mergedInvitedUsers[$key][] = $user;
-            }
-        }
-
-        // الآن دمج الـ UserInvitation مع المستخدمين المدموجين حسب user_invitations_id
-        // بناء كائنات Resource جديدة
-        $result = $userInvitations->map(function ($invitation) use ($mergedInvitedUsers) {
-            // استبدل invitedUsers بقائمة مدموجة حسب user_invitations_id
-            $invitation->setRelation('invitedUsers', collect($mergedInvitedUsers[$invitation->id] ?? []));
-
-            return new UserInvitationResource($invitation);
-        });
-
-        return successResponseDataWithMessage($result);
+        Log::info("all User Invitation", $userInvitation->toArray());
+        $userInvitation = UserInvitationResource::collection($userInvitation);
+        return successResponseDataWithMessage($userInvitation);
     }
-
 
     public function show(UserInvitation $userInvitation)
     {
