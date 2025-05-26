@@ -256,6 +256,7 @@ class UserPaymentService
         $userInvitation = UserInvitation::create([
             'state'           => UserInvitation::AVAILABLE,
             'name'            => $data['name'],
+            'text_settings'    => $data['text'] ?? null,
             'number_invitees' => $data['number_invitees'],
             'user_id'         => $user->id,
             'invitation_id'   => $invitation->id,
