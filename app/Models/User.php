@@ -80,6 +80,11 @@ class User extends Authenticatable implements JWTSubject
         return self::where('referral_id', $referralId)->count();
     }
 
+    public function deviceInvitations()
+    {
+        return $this->hasMany(DeviceInvitation::class);
+    }
+
 
     // public function totalPaymentValue($id,$transfered='0')
     // {
@@ -113,7 +118,7 @@ class User extends Authenticatable implements JWTSubject
     public function totalPaymentValue($id, $transfered = '0')
     {
         $indirectSumUsers = User::where('referral_id', $id)->get();
-            
+
         $sumIndirectSumUsers = [];
 
         foreach ($indirectSumUsers as $indirectSumUser) {

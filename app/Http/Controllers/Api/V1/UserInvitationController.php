@@ -32,18 +32,99 @@ class UserInvitationController extends Controller
 {
     public function index()
     {
-        $userInvitation = UserInvitation::where('user_id', auth('api')->id())->with('invitedUsers', 'invitation', 'userPackage.payment')->get();
-        $userInvitation = UserInvitationResource::collection($userInvitation);
-        return successResponseDataWithMessage($userInvitation);
+        // get all user invitations for the authenticated user
+        $userInvitations = UserInvitation::where('user_id', auth('api')->id())
+            ->with('invitedUsers', 'invitation', 'userPackage.payment')
+            ->get();
+
+        // merge invitations that share the same invitation_id, invitation_date, and name
+        $grouped = $userInvitations->groupBy(function ($item) {
+            return $item->invitation_id . '-' . $item->invitation_date . '-' . $item->name;
+        });
+
+        // convert the grouped invitations into a new collection of merged models
+        $mergedModels = $grouped->map(function ($group) {
+            // get the first model in the group to use its properties
+            $firstModel = $group->first();
+
+            // merge invitedUsers from all models in the group
+            $mergedInvitedUsers = $group->flatMap->invitedUsers;
+
+            // create a new UserInvitation model to hold the merged data
+            $mergedModel = new UserInvitation();
+            $mergedModel->id = $firstModel->id;
+            $mergedModel->state = $firstModel->state;
+            $mergedModel->name = $firstModel->name;
+            $mergedModel->invitation_id = $firstModel->invitation_id;
+            $mergedModel->invitation_date = $firstModel->invitation_date;
+            $mergedModel->invitation_time = $firstModel->invitation_time;
+            $mergedModel->userPackage = $firstModel->userPackage;
+            $mergedModel->invitation = $firstModel->invitation;
+
+            // set the invitedUsers relation to the merged collection
+            $mergedModel->setRelation('invitedUsers', $mergedInvitedUsers);
+
+            // update the number of invitees
+            $mergedModel->number_invitees = $mergedInvitedUsers->count();
+
+            return $mergedModel;
+        });
+
+        $data = UserInvitationResource::collection($mergedModels->values());
+
+        return successResponseDataWithMessage($data);
     }
 
     public function show(UserInvitation $userInvitation)
     {
-        if ($userInvitation->user_id != auth('api')->id())
+        if ($userInvitation->user_id != auth('api')->id()) {
             return errorResponse('You do not have access', 403);
+        }
 
-        $userInvitation = UserInvitationResource::make($userInvitation);
-        return successResponseDataWithMessage($userInvitation);
+        // get all user invitations for the authenticated user
+        $userInvitations = UserInvitation::where('user_id', auth('api')->id())
+            ->with('invitedUsers', 'invitation', 'userPackage.payment')
+            ->get();
+
+        // merge invitations that share the same invitation_id, invitation_date, and name
+        $grouped = $userInvitations->groupBy(function ($item) {
+            return $item->invitation_id . '-' . $item->invitation_date . '-' . $item->name;
+        });
+
+        //  find the group that contains the specific user invitation
+        $targetGroup = $grouped->first(fn($group) => $group->contains(fn($item) => $item->id === $userInvitation->id));
+
+        if (!$targetGroup) {
+            return errorResponse('Invitation not found', 404);
+        }
+
+        // create a new UserInvitation model to hold the merged data
+        $mergedModel = new UserInvitation();
+        $firstModel = $targetGroup->first();
+
+        // merge invitedUsers from all models in the group
+        $mergedInvitedUsers = $targetGroup->flatMap->invitedUsers;
+
+        // set the properties of the merged model from the first model in the group
+        $mergedModel->id = $firstModel->id;
+        $mergedModel->state = $firstModel->state;
+        $mergedModel->name = $firstModel->name;
+        $mergedModel->invitation_id = $firstModel->invitation_id;
+        $mergedModel->invitation_date = $firstModel->invitation_date;
+        $mergedModel->invitation_time = $firstModel->invitation_time;
+        $mergedModel->userPackage = $firstModel->userPackage;
+        $mergedModel->invitation = $firstModel->invitation;
+
+        // set the invitedUsers relation to the merged collection
+        $mergedModel->setRelation('invitedUsers', $mergedInvitedUsers);
+
+        // update the number of invitees
+        $mergedModel->number_invitees = $mergedInvitedUsers->count();
+
+
+        $data = UserInvitationResource::make($mergedModel);
+
+        return successResponseDataWithMessage($data);
     }
     public function create(StoreRequest $request)
     {
