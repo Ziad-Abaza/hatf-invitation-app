@@ -127,8 +127,8 @@ class ImageTemplate
                 $font->file($fontPath);
                 $font->size($textSettings['size']);
                 $font->color($textSettings['color']);
-                // $font->align('center');
-                // $font->valign('top');
+                $font->align('left');
+                $font->valign('top');
             }
         );
 
