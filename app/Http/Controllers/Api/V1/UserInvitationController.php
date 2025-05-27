@@ -37,6 +37,8 @@ class UserInvitationController extends Controller
             ->with('invitedUsers', 'invitation', 'userPackage.payment', 'media')
             ->get();
 
+            Log::info('media: ' . $userInvitations->pluck('media')->toJson());
+
         // merge invitations that share the same invitation_id, invitation_date, and name
         $grouped = $userInvitations->groupBy(function ($item) {
             return $item->invitation_id . '-' . $item->invitation_date . '-' . $item->name;
