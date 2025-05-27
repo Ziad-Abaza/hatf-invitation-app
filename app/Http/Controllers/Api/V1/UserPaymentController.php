@@ -172,7 +172,6 @@ class UserPaymentController extends Controller
                 );
             }
 
-            Log::info("Payment Response: ", $payment->getContent());
 
             return $payment;
         } catch (\Exception $e) {
