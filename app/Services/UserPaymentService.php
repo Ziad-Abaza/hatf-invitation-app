@@ -12,7 +12,7 @@ use App\Models\PaymentUserInvitation;
 class UserPaymentService
 {
     private $MOAZ_PHONE = '966531333006';
-    private $ZIAD_PHONE = '966530000000';
+    private $ZIAD_PHONE = '201006403927';
 
     // public function initiatePayment($requestData, $user)
     // {
@@ -249,7 +249,7 @@ class UserPaymentService
 
     private function calculatePaymentValue($invitation, $user, $invitationValue)
     {
-        if ($user->phone == '966531333006') {
+        if ($user->phone == '966531333006' || $user->phone == '966530000000') {
             return 1;
         }
 
