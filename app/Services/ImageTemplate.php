@@ -102,6 +102,9 @@ class ImageTemplate
 
         if (preg_match('/\p{Arabic}/u', $name)) {
             $name = $arabic->utf8Glyphs($name);
+            $alignText = 'right';
+        }else{
+            $alignText = 'left';
         }
 
         // generate a unique name for the processed image
@@ -123,11 +126,11 @@ class ImageTemplate
             $name,
             $x,
             $y,
-            function ($font) use ($fontPath, $textSettings) {
+            function ($font) use ($fontPath, $textSettings, $alignText) {
                 $font->file($fontPath);
                 $font->size($textSettings['size']);
                 $font->color($textSettings['color']);
-                $font->align('left');
+                $font->align($alignText);
                 $font->valign('top');
             }
         );

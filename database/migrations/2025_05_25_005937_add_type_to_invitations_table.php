@@ -12,8 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('invitations', function (Blueprint $table) {
-            $table->enum('type', ['opening', 'general', 'limited'])
-                ->default('general');
+            $table->enum('type', ['opening', 'standard', 'limited'])
+                ->default('standard');
         });
     }
 

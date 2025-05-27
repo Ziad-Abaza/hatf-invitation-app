@@ -34,7 +34,7 @@ class UserInvitationController extends Controller
     {
         // get all user invitations for the authenticated user
         $userInvitations = UserInvitation::where('user_id', auth('api')->id())
-            ->with('invitedUsers', 'invitation', 'userPackage.payment')
+            ->with('invitedUsers', 'invitation', 'userPackage.payment', 'media')
             ->get();
 
         // merge invitations that share the same invitation_id, invitation_date, and name
@@ -83,7 +83,7 @@ class UserInvitationController extends Controller
 
         // get all user invitations for the authenticated user
         $userInvitations = UserInvitation::where('user_id', auth('api')->id())
-            ->with('invitedUsers', 'invitation', 'userPackage.payment')
+            ->with('invitedUsers', 'invitation', 'userPackage.payment', 'media')
             ->get();
 
         // merge invitations that share the same invitation_id, invitation_date, and name
