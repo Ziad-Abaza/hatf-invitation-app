@@ -61,6 +61,7 @@ class UserInvitationController extends Controller
             $mergedModel->userPackage = $firstModel->userPackage;
             $mergedModel->invitation = $firstModel->invitation;
 
+            $mergedModel->setRelation('media', $firstModel->media);
             // set the invitedUsers relation to the merged collection
             $mergedModel->setRelation('invitedUsers', $mergedInvitedUsers);
 
@@ -115,6 +116,7 @@ class UserInvitationController extends Controller
         $mergedModel->userPackage = $firstModel->userPackage;
         $mergedModel->invitation = $firstModel->invitation;
 
+        $mergedModel->setRelation('media', $firstModel->media);
         // set the invitedUsers relation to the merged collection
         $mergedModel->setRelation('invitedUsers', $mergedInvitedUsers);
 
