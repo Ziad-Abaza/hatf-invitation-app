@@ -90,6 +90,9 @@ class ImageTemplate
             'x'     => 0,
             'y'     => 0,
         ];
+
+        Log::info("📄 إعدادات النص: " . json_encode($textSettings));
+
         $fontPath = public_path("fonts/{$textSettings['font']}.ttf");
         if (!file_exists($fontPath)) {
             Log::error("❌ الخط غير موجود: {$textSettings['font']}");
@@ -124,8 +127,8 @@ class ImageTemplate
                 $font->file($fontPath);
                 $font->size($textSettings['size']);
                 $font->color($textSettings['color']);
-                $font->align('center');
-                $font->valign('top');
+                // $font->align('center');
+                // $font->valign('top');
             }
         );
 
