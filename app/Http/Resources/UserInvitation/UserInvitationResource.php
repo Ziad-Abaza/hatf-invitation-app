@@ -28,9 +28,9 @@ class UserInvitationResource extends JsonResource
             'updated_at'               => $this->updated_at,
             'invitation_date'          => $this->invitation_date,
             'invitation_time'          => $this->invitation_time,
-            'image_default'            => optional($media->firstWhere('collection_name', 'default'))->getFullUrl(),
-            'image_user_invitation'    => optional($media->firstWhere('collection_name', 'userInvitation'))->getFullUrl(),
-            'image_qr'                 => optional($media->firstWhere('collection_name', 'qr'))->getFullUrl(),
+            ' image_default '            => $this->defaultMedia?->getFullUrl(),
+        ' image_user_invitation '    => $this->userInvitationMedia?->getFullUrl(),
+        ' image_qr '                 => $this->qrMedia?->getFullUrl(),
             'invitation'               => InvitationResource::make($this->invitation),
             'invitedUsers'             => $this->invitedUsers->map(function ($user) {
                 return [

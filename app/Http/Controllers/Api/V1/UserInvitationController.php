@@ -37,19 +37,6 @@ class UserInvitationController extends Controller
             ->with('invitedUsers', 'invitation', 'userPackage.payment', 'media')
             ->get();
 
-        // Log media for debugging (optional)
-        Log::info('User Invitations Media:', [
-            'media' => $userInvitations->map(function ($invitation) {
-                return $invitation->media->map(function ($media) {
-                    return [
-                        'id' => $media->id,
-                        'collection_name' => $media->collection_name,
-                        'url' => $media->getFullUrl()
-                    ];
-                });
-            })->toArray()
-        ]);
-
         // merge invitations that share the same invitation_id, invitation_date, and name
         $grouped = $userInvitations->groupBy(function ($item) {
             return $item->invitation_id . '-' . $item->invitation_date . '-' . $item->name;
@@ -57,16 +44,13 @@ class UserInvitationController extends Controller
 
         // convert the grouped invitations into a new collection of merged models
         $mergedModels = $grouped->map(function ($group) {
-            // get the first model in the group to use its properties
             $firstModel = $group->first();
-
-            // merge invitedUsers from all models in the group
             $mergedInvitedUsers = $group->flatMap->invitedUsers;
-
-            // merge media from all models in the group
             $mergedMedia = $group->flatMap->media;
 
-            // create a new UserInvitation model to hold the merged data
+            // Group media by collection name to avoid duplicates
+            $groupedMedia = $mergedMedia->groupBy('collection_name');
+
             $mergedModel = new UserInvitation();
             $mergedModel->id = $firstModel->id;
             $mergedModel->state = $firstModel->state;
@@ -77,30 +61,19 @@ class UserInvitationController extends Controller
             $mergedModel->userPackage = $firstModel->userPackage;
             $mergedModel->invitation = $firstModel->invitation;
 
-            // set the merged media relation
+            // Set the first media of each collection
             $mergedModel->setRelation('media', $mergedMedia);
 
-            // set the invitedUsers relation to the merged collection
-            $mergedModel->setRelation('invitedUsers', $mergedInvitedUsers);
+            // For direct access to specific media types
+            $mergedModel->defaultMedia = $groupedMedia->get('default')?->first();
+            $mergedModel->userInvitationMedia = $groupedMedia->get('userInvitation')?->first();
+            $mergedModel->qrMedia = $groupedMedia->get('qr')?->first();
 
-            // update the number of invitees
+            $mergedModel->setRelation('invitedUsers', $mergedInvitedUsers);
             $mergedModel->number_invitees = $mergedInvitedUsers->count();
 
             return $mergedModel;
         });
-
-        // Log merged media for debugging (optional)
-        Log::info('Merged Models Media:', [
-            'media' => $mergedModels->map(function ($model) {
-                return $model->media->map(function ($media) {
-                    return [
-                        'id' => $media->id,
-                        'collection_name' => $media->collection_name,
-                        'url' => $media->getFullUrl()
-                    ];
-                });
-            })->toArray()
-        ]);
 
         $data = UserInvitationResource::collection($mergedModels->values());
 
