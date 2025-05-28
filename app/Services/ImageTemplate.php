@@ -87,8 +87,8 @@ class ImageTemplate
             'font'  => 'Cairo',
             'size'  => 30,
             'color' => '#ffffff',
-            'x'     => 0,
-            'y'     => 0,
+            'x'     => 0.5,
+            'y'     => 0.5,
         ];
 
         Log::info("📄 إعدادات النص: " . json_encode($textSettings));
@@ -117,9 +117,21 @@ class ImageTemplate
         $img = Image::make($baseImagePath);
         Log::info("🖼️ تم تحميل صورة القالب بنجاح");
 
-        // حساب الإحداثيات بناءً على النسبة او البيكسل
+
+        $box = imagettfbbox($textSettings['size'], 0, $fontPath, $name);
+        $textWidth = abs($box[4] - $box[0]);
+        $textHeight = abs($box[5] - $box[1]);
+        Log::info("📏 أبعاد النص: العرض={$textWidth}, الارتفاع={$textHeight}");
+
         $x = ($textSettings['x'] <= 1) ? $textSettings['x'] * $img->width() : $textSettings['x'];
         $y = ($textSettings['y'] <= 1) ? $textSettings['y'] * $img->height() : $textSettings['y'];
+
+        if ($alignText == 'right') {
+            $x = $x - $textWidth;
+        } elseif ($alignText == 'center') {
+            $x = $x - ($textWidth / 2);
+        }
+        $y = $y + ($textHeight / 2);
 
         Log::info("📏 إحداثيات النص: x={$x}, y={$y} (نسبة أو بيكسل)");
 
