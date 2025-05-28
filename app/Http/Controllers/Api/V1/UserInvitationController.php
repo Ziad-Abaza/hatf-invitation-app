@@ -37,7 +37,18 @@ class UserInvitationController extends Controller
             ->with('invitedUsers', 'invitation', 'userPackage.payment', 'media')
             ->get();
 
-            Log::info('media: ' . $userInvitations->pluck('media')->toJson());
+        // Log media for debugging (optional)
+        Log::info('User Invitations Media:', [
+            'media' => $userInvitations->map(function ($invitation) {
+                return $invitation->media->map(function ($media) {
+                    return [
+                        'id' => $media->id,
+                        'collection_name' => $media->collection_name,
+                        'url' => $media->getFullUrl()
+                    ];
+                });
+            })->toArray()
+        ]);
 
         // merge invitations that share the same invitation_id, invitation_date, and name
         $grouped = $userInvitations->groupBy(function ($item) {
@@ -52,6 +63,9 @@ class UserInvitationController extends Controller
             // merge invitedUsers from all models in the group
             $mergedInvitedUsers = $group->flatMap->invitedUsers;
 
+            // merge media from all models in the group
+            $mergedMedia = $group->flatMap->media;
+
             // create a new UserInvitation model to hold the merged data
             $mergedModel = new UserInvitation();
             $mergedModel->id = $firstModel->id;
@@ -63,7 +77,9 @@ class UserInvitationController extends Controller
             $mergedModel->userPackage = $firstModel->userPackage;
             $mergedModel->invitation = $firstModel->invitation;
 
-            $mergedModel->setRelation('media', $firstModel->media);
+            // set the merged media relation
+            $mergedModel->setRelation('media', $mergedMedia);
+
             // set the invitedUsers relation to the merged collection
             $mergedModel->setRelation('invitedUsers', $mergedInvitedUsers);
 
@@ -72,6 +88,19 @@ class UserInvitationController extends Controller
 
             return $mergedModel;
         });
+
+        // Log merged media for debugging (optional)
+        Log::info('Merged Models Media:', [
+            'media' => $mergedModels->map(function ($model) {
+                return $model->media->map(function ($media) {
+                    return [
+                        'id' => $media->id,
+                        'collection_name' => $media->collection_name,
+                        'url' => $media->getFullUrl()
+                    ];
+                });
+            })->toArray()
+        ]);
 
         $data = UserInvitationResource::collection($mergedModels->values());
 

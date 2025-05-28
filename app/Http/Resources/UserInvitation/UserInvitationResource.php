@@ -27,9 +27,9 @@ class UserInvitationResource extends JsonResource
             'updated_at'               => $this->updated_at,
             'invitation_date'          => $this->invitation_date,
             'invitation_time'          => $this->invitation_time,
-            'image_default' => optional($this->media->where('collection_name', 'default')->first())?->getFullUrl(),
-            'image_user_invitation' => optional($this->media->where('collection_name', 'userInvitation')->first())?->getFullUrl(),
-            'image_qr' => optional($this->media->where('collection_name', 'qr')->first())?->getFullUrl(),
+            'image_default'            => optional($this->getFirstMedia('default'))->getFullUrl(),
+            'image_user_invitation'    => optional($this->getFirstMedia('userInvitation'))->getFullUrl(),
+            'image_qr'                 => optional($this->getFirstMedia('qr'))->getFullUrl(),
             'invitation'               => InvitationResource::make($this->invitation),
             'invitedUsers'             => $this->invitedUsers->map(function ($user) {
                 return [
@@ -54,6 +54,10 @@ class UserInvitationResource extends JsonResource
         ];
     }
 
+
+    // 'image_default'            => optional($this->media->where('collection_name', 'default')->first())?->getFullUrl(),
+    //         'image_user_invitation'    => optional($this->media->where('collection_name', 'userInvitation')->first())?->getFullUrl(),
+    //         'image_qr'                 => optional($this->media->where('collection_name', 'qr')->first())?->getFullUrl(),
     /**
      *  function to get the status of the invitation
      */
