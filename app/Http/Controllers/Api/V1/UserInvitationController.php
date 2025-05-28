@@ -96,7 +96,7 @@ class UserInvitationController extends Controller
             return $item->invitation_id . '-' . $item->invitation_date . '-' . $item->name;
         });
 
-        //  find the group that contains the specific user invitation
+        // find the group that contains the specific user invitation
         $targetGroup = $grouped->first(fn($group) => $group->contains(fn($item) => $item->id === $userInvitation->id));
 
         if (!$targetGroup) {
@@ -110,6 +110,10 @@ class UserInvitationController extends Controller
         // merge invitedUsers from all models in the group
         $mergedInvitedUsers = $targetGroup->flatMap->invitedUsers;
 
+        // merge media from all models in the group and group by collection name
+        $mergedMedia = $targetGroup->flatMap->media;
+        $groupedMedia = $mergedMedia->groupBy('collection_name');
+
         // set the properties of the merged model from the first model in the group
         $mergedModel->id = $firstModel->id;
         $mergedModel->state = $firstModel->state;
@@ -120,18 +124,25 @@ class UserInvitationController extends Controller
         $mergedModel->userPackage = $firstModel->userPackage;
         $mergedModel->invitation = $firstModel->invitation;
 
-        $mergedModel->setRelation('media', $firstModel->media);
+        // Set media relations
+        $mergedModel->setRelation('media', $mergedMedia);
+
+        // For direct access to specific media types
+        $mergedModel->defaultMedia = $groupedMedia->get('default')?->first();
+        $mergedModel->userInvitationMedia = $groupedMedia->get('userInvitation')?->first();
+        $mergedModel->qrMedia = $groupedMedia->get('qr')?->first();
+
         // set the invitedUsers relation to the merged collection
         $mergedModel->setRelation('invitedUsers', $mergedInvitedUsers);
 
         // update the number of invitees
         $mergedModel->number_invitees = $mergedInvitedUsers->count();
 
-
         $data = UserInvitationResource::make($mergedModel);
 
         return successResponseDataWithMessage($data);
     }
+    
     public function create(StoreRequest $request)
     {
         Log::info("========== بدء إنشاء UserInvitation ==========");
