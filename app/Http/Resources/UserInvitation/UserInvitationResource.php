@@ -16,6 +16,7 @@ class UserInvitationResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        $media = $this->media;
         return [
             'id'                       => $this->id,
             'state'                    => $this->state,
@@ -27,9 +28,9 @@ class UserInvitationResource extends JsonResource
             'updated_at'               => $this->updated_at,
             'invitation_date'          => $this->invitation_date,
             'invitation_time'          => $this->invitation_time,
-            'image_default'            => optional($this->getFirstMedia('default'))->getFullUrl(),
-            'image_user_invitation'    => optional($this->getFirstMedia('userInvitation'))->getFullUrl(),
-            'image_qr'                 => optional($this->getFirstMedia('qr'))->getFullUrl(),
+            'image_default'            => optional($media->firstWhere('collection_name', 'default'))->getFullUrl(),
+            'image_user_invitation'    => optional($media->firstWhere('collection_name', 'userInvitation'))->getFullUrl(),
+            'image_qr'                 => optional($media->firstWhere('collection_name', 'qr'))->getFullUrl(),
             'invitation'               => InvitationResource::make($this->invitation),
             'invitedUsers'             => $this->invitedUsers->map(function ($user) {
                 return [
