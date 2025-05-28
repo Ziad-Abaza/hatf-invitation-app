@@ -14,7 +14,7 @@ class InvitationController extends Controller
      */
     public function index()
     {
-        $invitations = Invitation::where('type', '=', 'general')->get();
+        $invitations = Invitation::where('type', '=', 'standard')->get();
         $invitations = InvitationResource::collection($invitations);
         return successResponseDataWithMessage($invitations);
     }

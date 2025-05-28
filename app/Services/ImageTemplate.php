@@ -64,6 +64,7 @@ class ImageTemplate
 
         return $imageName;
     }
+
     public static function processOpening(
         UserInvitation $userInvitation,
         string $name
@@ -72,23 +73,23 @@ class ImageTemplate
 
         $arabic = new Arabic();
 
-        // تحميل صورة القاعدة
+        // upload the base image
         $baseImagePath = $userInvitation->getFirstMediaPath('userInvitation');
         if (!$baseImagePath || !file_exists($baseImagePath)) {
             Log::error("❌ القالب غير موجود: {$baseImagePath}");
+            Log::info("the base image path: {$baseImagePath}");
             throw new \Exception('القالب غير موجود');
         }
         Log::info("✅ تم تحميل القالب من: {$baseImagePath}");
 
-        // إعدادات النص مع قيم افتراضية
-        $textSettings = array_merge([
+        // font settings
+        $textSettings = $userInvitation->text_settings ?? [
             'font'  => 'Cairo',
             'size'  => 30,
             'color' => '#ffffff',
-            'x'     => 0.5, // المركز الافتراضي
-            'y'     => 0.5, // المركز الافتراضي
-            'anchor' => 'center' // نقطة الارتكاز الافتراضية
-        ], $userInvitation->text_settings ?? []);
+            'x'     => 0,
+            'y'     => 0,
+        ];
 
         Log::info("📄 إعدادات النص: " . json_encode($textSettings));
 
@@ -99,90 +100,56 @@ class ImageTemplate
         }
         Log::info("✅ تم تحميل الخط من: {$fontPath}");
 
-        // معالجة النص العربي
         if (preg_match('/\p{Arabic}/u', $name)) {
             $name = $arabic->utf8Glyphs($name);
             $alignText = 'right';
-        } else {
+        }else{
             $alignText = 'left';
         }
 
-        // إنشاء اسم فريد للصورة
+        // generate a unique name for the processed image
         $imageName = md5(uniqid()) . '.jpg';
         $tempPath  = public_path("processed_images/{$imageName}");
         Log::info("📁 سيتم حفظ الصورة المؤقتة باسم: {$imageName}");
 
-        // تحميل صورة القاعدة
+
+        // upload the base image
         $img = Image::make($baseImagePath);
         Log::info("🖼️ تم تحميل صورة القالب بنجاح");
 
-        // حساب الإحداثيات المطلقة
+        // حساب الإحداثيات بناءً على النسبة
         $x = $textSettings['x'] * $img->width();
         $y = $textSettings['y'] * $img->height();
 
-        // حساب صندوق النص لتحديد الأبعاد الدقيقة
-        $textBox = self::calculateTextBox(
-            $textSettings['size'],
-            $fontPath,
-            $name
-        );
-
-        if ($textBox) {
-            // ضبط نقطة الارتكاز (Anchor Point)
-            switch ($textSettings['anchor'] ?? 'center') {
-                case 'top':
-                    $y += $textBox['ascent'];
-                    break;
-                case 'bottom':
-                    $y -= $textBox['descent'];
-                    break;
-                case 'center':
-                default:
-                    // لا حاجة لتعديل المركز (الإعداد الافتراضي)
-                    break;
+        // إضافة النص
+        $img->text(
+            $name,
+            $x,
+            $y,
+            function ($font) use ($fontPath, $textSettings, $alignText) {
+                $font->file($fontPath);
+                $font->size($textSettings['size']);
+                $font->color($textSettings['color']);
+                $font->align($alignText);
+                $font->valign('top');
             }
-        }
-
-        // إضافة النص مع ضبط المحاذاة
-        $img->text($name, $x, $y, function ($font) use ($fontPath, $textSettings, $alignText) {
-            $font->file($fontPath);
-            $font->size($textSettings['size']);
-            $font->color($textSettings['color']);
-            $font->align($alignText);
-            $font->valign('top'); // ثابت للتحكم الدقيق
-        });
+        );
 
         Log::info("👤 تم إضافة اسم المدعو: {$name}");
 
-        // حفظ الصورة المؤقتة
+        // save the processed image to a temporary path
         $img->save($tempPath);
         Log::info("💾 تم حفظ الصورة المؤقتة في: {$tempPath}");
 
-        // رفع الصورة إلى Media
+        // add the processed image to the media collection
         $media = $userInvitation->addMedia($tempPath)
             ->toMediaCollection('userInvitation');
         Log::info("☁️ تم رفع الصورة إلى ميديا: {$media->getUrl()}");
 
-        // حذف الملف المؤقت
-        @unlink($tempPath);
+        @unlink($tempPath); // delete the temporary file
         Log::info("🗑️ تم حذف الصورة المؤقتة من المسار: {$tempPath}");
 
         Log::info("========= انتهاء معالجة دعوة {$name} =========");
         return $media->getUrl();
-    }
-
-    // دالة مساعدة لحساب أبعاد النص بدقة
-    private static function calculateTextBox($fontSize, $fontPath, $text): ?array
-    {
-        $box = imagettfbbox($fontSize, 0, $fontPath, $text);
-
-        if (!$box) return null;
-
-        return [
-            'width'   => abs($box[2] - $box[0]),
-            'height'  => abs($box[7] - $box[1]),
-            'ascent'  => abs($box[7]), // المسافة من القاعدة إلى أعلى الحرف
-            'descent' => abs($box[1]), // المسافة من القاعدة إلى أسفل الحرف
-        ];
     }
 }
