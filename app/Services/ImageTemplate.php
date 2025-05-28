@@ -117,9 +117,11 @@ class ImageTemplate
         $img = Image::make($baseImagePath);
         Log::info("🖼️ تم تحميل صورة القالب بنجاح");
 
-        // حساب الإحداثيات بناءً على النسبة
-        $x = $textSettings['x'] * $img->width();
-        $y = $textSettings['y'] * $img->height();
+        // حساب الإحداثيات بناءً على النسبة او البيكسل
+        $x = ($textSettings['x'] <= 1) ? $textSettings['x'] * $img->width() : $textSettings['x'];
+        $y = ($textSettings['y'] <= 1) ? $textSettings['y'] * $img->height() : $textSettings['y'];
+
+        Log::info("📏 إحداثيات النص: x={$x}, y={$y} (نسبة أو بيكسل)");
 
         // إضافة النص
         $img->text(
