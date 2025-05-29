@@ -20,7 +20,7 @@ class AuthController extends Controller
     {
         $otp = random_int(1000, 9999);
 
-        if ($request->phone == 966531333006 || $request->phone == 966530000000)
+        if ($request->phone == 966531333006 && $request->phone == 966530000000)
             $otp = 1111;
 
         do {
@@ -62,7 +62,7 @@ class AuthController extends Controller
         ]);
 
 
-        if ($request->phone == 966531333006 || $request->phone == 966530000000)
+        if ($request->phone == 966531333006 && $request->phone == 966530000000)
             $otp = 1111;
 
         $user = User::where('phone', $request->phone)->first();
@@ -80,7 +80,7 @@ class AuthController extends Controller
 
         $otp = random_int(1000, 9999);
 
-        if ($request->phone == 966531333006 || $request->phone == 966530000000)
+        if ($request->phone == 966531333006 && $request->phone == 966530000000)
             $otp = 1111;
 
         $user->update(['otp' => $otp]);
