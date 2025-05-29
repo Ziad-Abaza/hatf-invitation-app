@@ -20,8 +20,9 @@ class AuthController extends Controller
     {
         $otp = random_int(1000, 9999);
 
-        if ($request->phone == 966531333006 && $request->phone == 966530000000)
+        if ($this->isTestPhone($request->phone))
             $otp = 1111;
+
 
         do {
             $code   = Str::random(5);
@@ -62,8 +63,9 @@ class AuthController extends Controller
         ]);
 
 
-        if ($request->phone == 966531333006 && $request->phone == 966530000000)
+        if ($this->isTestPhone($request->phone))
             $otp = 1111;
+
 
         $user = User::where('phone', $request->phone)->first();
         $user->update(['otp' => $otp]);
@@ -80,8 +82,9 @@ class AuthController extends Controller
 
         $otp = random_int(1000, 9999);
 
-        if ($request->phone == 966531333006 && $request->phone == 966530000000)
+        if ($this->isTestPhone($request->phone))
             $otp = 1111;
+
 
         $user->update(['otp' => $otp]);
 
@@ -164,5 +167,10 @@ class AuthController extends Controller
         ]);
 
         return successResponseDataWithMessage(UserResource::make($user));
+    }
+
+    private function isTestPhone($phone): bool
+    {
+        return in_array($phone, [966531333006, 966530000000]);
     }
 }
