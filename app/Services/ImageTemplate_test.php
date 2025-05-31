@@ -10,7 +10,7 @@ use Intervention\Image\Drivers\Gd\Driver;
 use ArPHP\I18N\Arabic;
 use Illuminate\Support\Facades\Log;
 
-class ImageTemplateسس
+class ImageTemplate_test
 {
     public static function process($image, $name, $userInvitation)
     {

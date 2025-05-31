@@ -34,7 +34,8 @@ class StoreRequest extends BaseFormRequest
             'text.font'               => 'nullable|string',
             'text.x'                  => 'nullable|numeric',
             'text.y'                  => 'nullable|numeric',
-
+            'text.width'              => 'nullable|numeric',
+            'text.height'             => 'nullable|numeric',
         ];
     }
 }

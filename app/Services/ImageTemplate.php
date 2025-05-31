@@ -96,7 +96,12 @@ class ImageTemplate
         $fontPath = public_path("fonts/{$textSettings['font']}.ttf");
         if (!file_exists($fontPath)) {
             Log::error("❌ الخط غير موجود: {$textSettings['font']}");
-            throw new \Exception("الخط {$textSettings['font']} غير موجود");
+            $fallbackFont = public_path("fonts/Cairo.ttf");
+            if (file_exists($fallbackFont)) {
+                $fontPath = $fallbackFont;
+            }else{
+                throw new \Exception("الخط {$textSettings['font']} غير موجود");
+            }
         }
         Log::info("✅ تم تحميل الخط من: {$fontPath}");
 
@@ -117,14 +122,20 @@ class ImageTemplate
         $img = Image::make($baseImagePath);
         Log::info("🖼️ تم تحميل صورة القالب بنجاح");
 
-        // show image width, height and other settings
-        Log::info("📏 أبعاد الصورة: العرض={$img->width()}, الارتفاع={$img->height()}");
+        // أبعاد الصورة الأصلية
+        $originalWidth  = $img->width();
+        $originalHeight = $img->height();
+        Log::info("📏 أبعاد الصورة الأصلية: العرض={$originalWidth}, الارتفاع={$originalHeight}");
 
-        $x = ($textSettings['x'] <= 1) ? $textSettings['x'] * $img->width() : $textSettings['x'];
-        $y = ($textSettings['y'] <= 1) ? $textSettings['y'] * $img->height() : $textSettings['y'];
+        // استخدام الأبعاد القادمة من إعدادات النص إذا وُجدت
+        $renderWidth  = $textSettings['width'] ?? $originalWidth;
+        $renderHeight = $textSettings['height'] ?? $originalHeight;
+        Log::info("📐 سيتم الحساب بناءً على الأبعاد: العرض={$renderWidth}, الارتفاع={$renderHeight}");
 
-
-        Log::info("📏 إحداثيات النص: x={$x}, y={$y} (نسبة أو بيكسل)");
+        // حساب إحداثيات x و y
+        $x = ($textSettings['x'] <= 1) ? $textSettings['x'] * $renderWidth : $textSettings['x'];
+        $y = ($textSettings['y'] <= 1) ? $textSettings['y'] * $renderHeight : $textSettings['y'];
+        Log::info("📏 إحداثيات النص النهائية: x={$x}, y={$y}");
 
         // إضافة النص
         $img->text(
@@ -135,8 +146,8 @@ class ImageTemplate
                 $font->file($fontPath);
                 $font->size($textSettings['size']);
                 $font->color($textSettings['color']);
-                // $font->align($alignText);
-                // $font->valign('top');
+                $font->align($alignText);
+                $font->valign('top');
             }
         );
 
