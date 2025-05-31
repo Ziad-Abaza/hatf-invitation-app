@@ -157,6 +157,15 @@ class UserPaymentController extends Controller
             ], 422);
         }
 
+        if (!isset($validatedData['text']) && !empty($validatedData['user_invitation_id'])) {
+            $previousInvitation = UserInvitation::find($validatedData['user_invitation_id']);
+
+            if ($previousInvitation && $previousInvitation->text_settings) {
+                $validatedData['text'] = $previousInvitation->text_settings;
+                Log::info('Text settings inherited from previous invitation:', $validatedData['text']);
+            }
+        }
+
         Log::info("Validated Data: ", $validatedData);
 
 
