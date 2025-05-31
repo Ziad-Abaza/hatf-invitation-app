@@ -10,7 +10,7 @@ use Intervention\Image\Drivers\Gd\Driver;
 use ArPHP\I18N\Arabic;
 use Illuminate\Support\Facades\Log;
 
-class ImageTemplate
+class ImageTemplateسس
 {
     public static function process($image, $name, $userInvitation)
     {
@@ -103,7 +103,7 @@ class ImageTemplate
         if (preg_match('/\p{Arabic}/u', $name)) {
             $name = $arabic->utf8Glyphs($name);
             $alignText = 'right';
-        }else{
+        } else {
             $alignText = 'left';
         }
 
@@ -117,12 +117,21 @@ class ImageTemplate
         $img = Image::make($baseImagePath);
         Log::info("🖼️ تم تحميل صورة القالب بنجاح");
 
-        // show image width, height and other settings
-        Log::info("📏 أبعاد الصورة: العرض={$img->width()}, الارتفاع={$img->height()}");
+
+        $box = imagettfbbox($textSettings['size'], 0, $fontPath, $name);
+        $textWidth = abs($box[4] - $box[0]);
+        $textHeight = abs($box[5] - $box[1]);
+        Log::info("📏 أبعاد النص: العرض={$textWidth}, الارتفاع={$textHeight}");
 
         $x = ($textSettings['x'] <= 1) ? $textSettings['x'] * $img->width() : $textSettings['x'];
         $y = ($textSettings['y'] <= 1) ? $textSettings['y'] * $img->height() : $textSettings['y'];
 
+        if ($alignText == 'right') {
+            $x = $x - $textWidth;
+        } elseif ($alignText == 'center') {
+            $x = $x - ($textWidth / 2);
+        }
+        $y = $y + ($textHeight / 2);
 
         Log::info("📏 إحداثيات النص: x={$x}, y={$y} (نسبة أو بيكسل)");
 
@@ -135,8 +144,8 @@ class ImageTemplate
                 $font->file($fontPath);
                 $font->size($textSettings['size']);
                 $font->color($textSettings['color']);
-                // $font->align($alignText);
-                // $font->valign('top');
+                $font->align($alignText);
+                $font->valign('top');
             }
         );
 
