@@ -81,11 +81,11 @@ class UserInvitationResource extends JsonResource
     private function getStatusAr($user)
     {
         $statusMap = [
-            'rejected'  => 'مرفوضة',
-            'accepted'  => 'مقبولة',
-            'failed'    => 'فشلت',
-            'sent'      => 'تم الإرسال',
-            'attended'  => 'تم الحضور',
+            'rejected'  => 'اعتُذِر',
+            'accepted'  => 'أُكِّد',
+            'failed'    => 'فشل',
+            'sent'      => 'أُرسلت',
+            'attended'  => 'حُضِر',
             'pending'   => 'قيد الانتظار',
         ];
 
