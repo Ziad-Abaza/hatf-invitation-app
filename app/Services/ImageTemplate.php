@@ -3,11 +3,10 @@
 namespace App\Services;
 
 use Illuminate\Http\Request;
-// use Intervention\Image\ImageManagerStatic as Image;
+use Intervention\Image\ImageManagerStatic as Image;
 use App\Models\UserInvitation;
 use Intervention\Image\ImageManager;
 use Intervention\Image\Drivers\Gd\Driver;
-use Intervention\Image\Facades\Image;
 use ArPHP\I18N\Arabic;
 use Illuminate\Support\Facades\Log;
 
@@ -120,7 +119,8 @@ class ImageTemplate
 
 
         // upload the base image
-        $img = Image::make($baseImagePath);
+        $manager = new ImageManager(['driver' => 'gd']);
+        $img = $manager->make($baseImagePath);
         Log::info("🖼️ تم تحميل صورة القالب بنجاح");
 
         // أبعاد الصورة الأصلية
