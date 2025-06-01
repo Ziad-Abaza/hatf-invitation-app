@@ -32,40 +32,36 @@ class UserInvitationResource extends JsonResource
             'image_user_invitation'    => $this->userInvitationMedia?->getFullUrl()?? optional($this->getFirstMedia('userInvitation'))->getFullUrl(),
             'image_qr'                 => $this->qrMedia?->getFullUrl() ?? optional($this->getFirstMedia('qr'))->getFullUrl(),
             'invitation'               => InvitationResource::make($this->invitation),
-            'invitedUsers' => $this->invitedUsers
-                ->sortBy(function ($user) {
-                    $statusOrder = [
-                        'attended' => 0,
-                        'accepted' => 1,
-                        'sent'     => 2,
-                        'rejected' => 3,
-                        'pending'  => 4,
-                        'failed'   => 5,
-                    ];
-
-                    $status = $this->getInvitationStatus($user);
-                    return $statusOrder[$status] ?? 999;
-                })
-                ->values()
-                ->map(function ($user) {
-                    return [
-                        'id'                    => $user->id,
-                        'name'                  => $user->name,
-                        'phone'                 => $user->phone,
-                        'code'                  => $user->code,
-                        'qr'                    => $user->qr,
-                        'user_invitations_id'   => $user->user_invitations_id,
-                        'note'                  => $user->note,
-                        'error_message'         => $user->error_message,
-                        'created_at'            => $user->created_at,
-                        'updated_at'            => $user->updated_at,
-                        'status'                => $this->getInvitationStatus($user),
-                        'status_ar'             => $this->getStatusAr($user),
-                        'description_en'        => $this->getDescriptionEn($user),
-                        'description_ar'        => $this->getDescriptionAr($user),
-                        'color'                 => $this->getColor($user),
-                    ];
-                }),
+            'invitedUsers'             => $this->invitedUsers->map(function ($user) {
+                return [
+                    'id'                    => $user->id,
+                    'name'                  => $user->name,
+                    'phone'                 => $user->phone,
+                    'code'                  => $user->code,
+                    'qr'                    => $user->qr,
+                    'user_invitations_id'   => $user->user_invitations_id,
+                    'note'                  => $user->note,
+                    'error_message'         => $user->error_message,
+                    'created_at'            => $user->created_at,
+                    'updated_at'            => $user->updated_at,
+                    'status'                => $this->getInvitationStatus($user),
+                    'status_ar'             => $this->getStatusAr($user),
+                    'description_en'        => $this->getDescriptionEn($user),
+                    'description_ar'        => $this->getDescriptionAr($user),
+                    'color'                 => $this->getColor($user),
+                ];
+            })->sortBy(function ($user) {
+                $order = [
+                    'attended' => 0,
+                    'accepted' => 1,
+                    'sent'     => 2,
+                    'rejected' => 3,
+                    'pending'  => 4,
+                    'failed'   => 5,
+                ];
+                return $order[$user['status']] ?? 999;
+            })
+                ->values(),
             'payment_user_invitations' => $this->userPackage->payment,
         ];
     }
