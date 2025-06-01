@@ -119,6 +119,7 @@ class ImageTemplate
 
 
         // upload the base image
+        // $img = Image::make($baseImagePath);
         $manager = new ImageManager(['driver' => 'gd']);
         $img = $manager->make($baseImagePath);
         Log::info("🖼️ تم تحميل صورة القالب بنجاح");
