@@ -3,15 +3,14 @@
 namespace App\Services;
 
 use Illuminate\Http\Request;
-// use Intervention\Image\ImageManagerStatic as Image;
+use Intervention\Image\ImageManagerStatic as Image;
 use App\Models\UserInvitation;
 use Intervention\Image\ImageManager;
 use Intervention\Image\Drivers\Gd\Driver;
-use Intervention\Image\Facades\Image;
 use ArPHP\I18N\Arabic;
 use Illuminate\Support\Facades\Log;
 
-class ImageTemplate
+class ImageTemplate_text2
 {
     public static function process($image, $name, $userInvitation)
     {
