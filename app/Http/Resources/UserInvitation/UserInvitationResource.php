@@ -50,7 +50,18 @@ class UserInvitationResource extends JsonResource
                     'description_ar'        => $this->getDescriptionAr($user),
                     'color'                 => $this->getColor($user),
                 ];
-            }),
+            })->sortBy(function ($user) {
+                $order = [
+                    'attended' => 0,
+                    'accepted' => 1,
+                    'sent'     => 2,
+                    'rejected' => 3,
+                    'pending'  => 4,
+                    'failed'   => 5,
+                ];
+                return $order[$user['status']] ?? 999;
+            })
+                ->values(),
             'payment_user_invitations' => $this->userPackage->payment,
         ];
     }
