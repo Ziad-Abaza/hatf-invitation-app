@@ -196,7 +196,7 @@ class UserPaymentController extends Controller
             ], 500);
         }
     }
-
+    
     public function paymentP(Request $request)
     {
         Log::info("================= Start Payment Request P =================");

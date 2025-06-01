@@ -153,7 +153,6 @@ class UserPaymentService
             'id_payment'          => null, // will set after pay in success
         ]);
 
-
         $UserPackage = UserPackage::create([
             'payment_user_invitation_id' =>  $paymentUserInvitation->id,
             'invitation_id' => $invitation->id,

@@ -275,7 +275,6 @@ class UserInvitationController extends Controller
 
         $jobClass = $invitationType === 'opening' ? SendOpeningInvitationJob::class : SendInvitationJob::class;
 
-
         foreach (range(0, $batchSize - 1) as $index) {
             try {
                 $imageName = ImageTemplate::process(
