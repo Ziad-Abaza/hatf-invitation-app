@@ -33,7 +33,7 @@ class ImageTemplate
         $isArabic = (bool) preg_match('/\p{Arabic}/u', $name);
         if ($isArabic) {
             $fontFile  = public_path('fonts/Cairo.ttf');
-            $fontSize  =  22;
+            $fontSize  =  30;
             $alignH    = 'right';
             $xPosition = $originalWidth - 10;
 
