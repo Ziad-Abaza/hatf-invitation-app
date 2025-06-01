@@ -58,6 +58,7 @@ class UserInvitationController extends Controller
             $mergedModel->invitation_id = $firstModel->invitation_id;
             $mergedModel->invitation_date = $firstModel->invitation_date;
             $mergedModel->invitation_time = $firstModel->invitation_time;
+            $mergedModel->text_settings = $firstModel->text_settings;
             $mergedModel->userPackage = $firstModel->userPackage;
             $mergedModel->invitation = $firstModel->invitation;
 
@@ -142,7 +143,7 @@ class UserInvitationController extends Controller
 
         return successResponseDataWithMessage($data);
     }
-    
+
     public function create(StoreRequest $request)
     {
         Log::info("========== بدء إنشاء UserInvitation ==========");

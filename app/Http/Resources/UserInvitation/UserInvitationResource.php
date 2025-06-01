@@ -16,13 +16,11 @@ class UserInvitationResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        $media = $this->media;
         return [
             'id'                       => $this->id,
             'state'                    => $this->state,
             'name'                     => $this->name,
             'invitation_type'          => $this->invitation?->type,
-            'text'                     => $this->text_settings,
             'number_invitees'          => $this->number_invitees,
             'attendance_number'        => $this->invitedUsers->where('status', 1)->count(),
             'created_at'               => $this->created_at,
