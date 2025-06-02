@@ -124,6 +124,7 @@ class UserInvitationController extends Controller
         $mergedModel->invitation_time = $firstModel->invitation_time;
         $mergedModel->userPackage = $firstModel->userPackage;
         $mergedModel->invitation = $firstModel->invitation;
+        $mergedModel->text_settings = $firstModel->text_settings;
 
         // Set media relations
         $mergedModel->setRelation('media', $mergedMedia);
