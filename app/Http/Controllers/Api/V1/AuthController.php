@@ -16,10 +16,6 @@ use App\Http\Requests\Api\Auth\UserVerifiedRequest;
 
 class AuthController extends Controller
 {
-    private const TEST_PHONES = [
-        '966531333006',
-        '966530000000',
-    ];
     public function register(RegisterRequest $request): JsonResponse
     {
         $otp = random_int(1000, 9999);
@@ -177,26 +173,6 @@ class AuthController extends Controller
 
     private function isTestPhone($phone): bool
     {
-        // توحيد الرقم إلى صيغة دولية بدون "+" وبشكل نظيف
-        $normalized = $this->normalizePhone($phone);
-        return in_array($normalized, self::TEST_PHONES, true);
-    }
-
-    private function normalizePhone(string $phone): string
-    {
-        // إزالة أي مسافات أو رموز زائدة
-        $phone = preg_replace('/[^0-9]/', '', $phone);
-
-        // إذا بدأ بـ 00 بدل + نحوله أيضاً
-        if (Str::startsWith($phone, '00')) {
-            $phone = substr($phone, 2);
-        }
-
-        // إذا كان يبدأ بـ 0 (محلي)، نفترض أنك بالسعودية ونضيف 966
-        if (Str::startsWith($phone, '0')) {
-            $phone = '966' . substr($phone, 1);
-        }
-
-        return $phone;
+        return in_array((string) $phone, ['966531333006', '966530000000']);
     }
 }
