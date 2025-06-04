@@ -148,7 +148,7 @@ class ImageTemplate
                 $font->file($fontPath);
                 $font->size($textSettings['size']);
                 $font->color($textSettings['color']);
-                $font->align($alignText);
+                // $font->align($alignText);
                 $font->valign('bottom');
             }
         );
