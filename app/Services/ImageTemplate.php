@@ -135,8 +135,8 @@ class ImageTemplate
         Log::info("📐 سيتم الحساب بناءً على الأبعاد: العرض={$renderWidth}, الارتفاع={$renderHeight}");
 
         // حساب إحداثيات x و y
-        $x = ($textSettings['x'] <= 1) ? $textSettings['x'] * $renderWidth : $textSettings['x'];
-        $y = (($textSettings['y'] <= 1) ? $textSettings['y'] * $renderHeight : $textSettings['y']) + 40;
+        $x = (($textSettings['x'] <= 1) ? $textSettings['x'] * $renderWidth : $textSettings['x'])+120;
+        $y = ($textSettings['y'] <= 1) ? $textSettings['y'] * $renderHeight : $textSettings['y'];
         Log::info("📏 إحداثيات النص النهائية: x={$x}, y={$y}");
 
         // إضافة النص
