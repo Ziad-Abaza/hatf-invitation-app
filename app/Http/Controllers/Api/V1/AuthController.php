@@ -20,8 +20,9 @@ class AuthController extends Controller
     {
         $otp = random_int(1000, 9999);
 
-        if ($this->isTestPhone($request->phone))
+        if ($this->isTestPhone($request->phone)) {
             $otp = 1111;
+        }
 
 
         do {
@@ -63,8 +64,9 @@ class AuthController extends Controller
         ]);
 
 
-        if ($this->isTestPhone($request->phone))
+        if ($this->isTestPhone($request->phone)) {
             $otp = 1111;
+        }
 
 
         $user = User::where('phone', $request->phone)->first();
@@ -82,9 +84,9 @@ class AuthController extends Controller
 
         $otp = random_int(1000, 9999);
 
-        if ($this->isTestPhone($request->phone))
+        if ($this->isTestPhone($request->phone)){
             $otp = 1111;
-
+        }
 
         $user->update(['otp' => $otp]);
 

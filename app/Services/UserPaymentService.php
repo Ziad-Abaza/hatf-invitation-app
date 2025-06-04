@@ -11,8 +11,12 @@ use App\Models\PaymentUserInvitation;
 
 class UserPaymentService
 {
-    private $MOAZ_PHONE = '966531333006';
-    private $ZIAD_PHONE = '966530000000';
+
+    private function isTestPhone($phone): bool
+    {
+        return in_array($phone, [966531333006, 966530000000]);
+    }
+
 
     // public function initiatePayment($requestData, $user)
     // {
@@ -79,7 +83,7 @@ class UserPaymentService
         Log::info('Invitation found:', ['invitation_id' => $requestData['invitation_id']]);
 
         // Check payment and handle potential errors
-        if ($user->phone !== $this->MOAZ_PHONE && $user->phone !== $this->ZIAD_PHONE) {
+        if ($this->isTestPhone($user->phone)) {
             // Determine expected price based on invitation type
             $expectedPrice = $invitation->prise * ($requestData['number_invitees'] ?? 1);
             // Check if the total price matches the expected price
@@ -134,7 +138,7 @@ class UserPaymentService
         $invitation = Invitation::find($requestData['invitation_id']);
 
         // Check payment and handle potential errors
-        if ($user->phone !== $this->MOAZ_PHONE && $user->phone !== $this->ZIAD_PHONE) {
+        if ($this->isTestPhone($user->phone)) {
             // Determine expected price based on invitation type
             $expectedPrice =  $invitation->prise;
             // Check if the total price matches the expected price
