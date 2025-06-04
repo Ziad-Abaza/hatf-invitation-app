@@ -173,6 +173,6 @@ class AuthController extends Controller
 
     private function isTestPhone($phone): bool
     {
-        return in_array($phone, [966531333006, 966530000000]);
+        return in_array((string) $phone, ['966531333006', '966530000000']);
     }
 }
