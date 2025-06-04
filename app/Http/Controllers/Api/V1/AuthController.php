@@ -16,6 +16,10 @@ use App\Http\Requests\Api\Auth\UserVerifiedRequest;
 
 class AuthController extends Controller
 {
+    private const TEST_PHONES = [
+        '966531333006',
+        '966530000000',
+    ];
     public function register(RegisterRequest $request): JsonResponse
     {
         $otp = random_int(1000, 9999);
@@ -173,6 +177,6 @@ class AuthController extends Controller
 
     private function isTestPhone($phone): bool
     {
-        return in_array((string) $phone, ['966531333006', '966530000000']);
+        return in_array((string) trim($phone), self::TEST_PHONES, true);
     }
 }
