@@ -14,9 +14,8 @@ class UserPaymentService
 
     private function isTestPhone($phone): bool
     {
-        return in_array((string) $phone, ['966531333006', '966530000000']);
+        return in_array((string) $phone, ['966531333006', '966530000000', '966595191981']);
     }
-
 
 
     // public function initiatePayment($requestData, $user)
@@ -84,7 +83,7 @@ class UserPaymentService
         Log::info('Invitation found:', ['invitation_id' => $requestData['invitation_id']]);
 
         // Check payment and handle potential errors
-        if ($this->isTestPhone($user->phone)) {
+        if (!$this->isTestPhone($user->phone)) {
             // Determine expected price based on invitation type
             $expectedPrice = $invitation->prise * ($requestData['number_invitees'] ?? 1);
             // Check if the total price matches the expected price
@@ -139,7 +138,7 @@ class UserPaymentService
         $invitation = Invitation::find($requestData['invitation_id']);
 
         // Check payment and handle potential errors
-        if ($this->isTestPhone($user->phone)) {
+        if (!$this->isTestPhone($user->phone)) {
             // Determine expected price based on invitation type
             $expectedPrice =  $invitation->prise;
             // Check if the total price matches the expected price
