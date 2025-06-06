@@ -125,7 +125,7 @@ class InvitationWebhookController extends Controller
                 );
 
                 Log::info("QR code sent to invited user {$invited->phone}");
-                Log::info("============> QR path: {$invited->getFirstMediaUrl('qr')}<=============");
+                Log::info("============> QR path: {$qrMediaUrl}<=============");
             }
         }
 
