@@ -47,7 +47,7 @@ class SendOpeningInvitationJob implements ShouldQueue
                 $invitedUser->name ?? 'غير متوفر',
                 $invitedUser->userInvitation->invitation_date ?? 'غير متوفر',
                 $invitedUser->userInvitation->invitation_time ?? 'غير متوفر',
-                $qr
+                // $qr
             );
 
             if (!$sent) {

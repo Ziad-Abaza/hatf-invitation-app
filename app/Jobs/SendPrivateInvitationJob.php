@@ -48,7 +48,7 @@ class SendPrivateInvitationJob implements ShouldQueue
                     $this->userInvitation->user->name ?? 'غير متوفر',
                     $this->userInvitation->invitation_date ?? 'غير متوفر',
                     $this->userInvitation->invitation_time ?? 'غير متوفر',
-                    $this->userInvitation->getFirstMediaUrl('qr')
+                    // $this->userInvitation->getFirstMediaUrl('qr')
                 );
 
 
