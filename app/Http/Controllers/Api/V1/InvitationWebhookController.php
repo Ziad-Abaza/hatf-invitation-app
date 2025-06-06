@@ -93,11 +93,6 @@ class InvitationWebhookController extends Controller
 
         if ($newStatus === 'accepted') {
             Log::info("Invited user ===={$invited->phone}==== accepted the invitation");
-            // send QR code to the invited user
-            $invited = InvitedUsers::whereIn('phone', $searchPhones)
-                ->where('send_status', 'sent')
-                ->latest()
-                ->first();
 
             Log::info('found invited user', $invited->toArray());
 
