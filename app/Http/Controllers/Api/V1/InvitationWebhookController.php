@@ -91,39 +91,6 @@ class InvitationWebhookController extends Controller
             'send_status' => $newStatus
         ]);
 
-        if ($newStatus === 'accepted') {
-            Log::info("Invited user ===={$invited->phone}==== accepted the invitation");
-
-            Log::info('found invited user', $invited->toArray());
-
-            if ($invited && $invited->qr) {
-                $userInvitation = $invited->userInvitation;
-                if (!$userInvitation) {
-                    Log::error("لا يوجد user_invitation مرتبط");
-                    return response()->json(['error' => 'No user invitation found'], Response::HTTP_NOT_FOUND);
-                }
-                $qrMediaUrl = $userInvitation->getFirstMediaUrl('qr');
-
-                if (!$qrMediaUrl) {
-                    Log::error("لا يوجد QR متاح في user_invitation");
-                    return response()->json(['error' => 'No QR code available'], Response::HTTP_NOT_FOUND);
-                }
-
-                sendWhatsappQR(
-                    $invited->phone,
-                    $qrMediaUrl,
-                    $userInvitation->name,
-                    $userInvitation->user->name,
-                    $userInvitation->user->phone,
-                    $userInvitation->invitation_date,
-                    $userInvitation->invitation_time
-                );
-
-                Log::info("QR code sent to invited user {$invited->phone}");
-                Log::info("============> QR path: {$qrMediaUrl}<=============");
-            }
-        }
-
         Log::info("Updated InvitedUsers#{$invited->id} to {$newStatus}");
         Log::info("======================\ End Invitation webhook payload /======================");
         return response()->json(['success' => true], Response::HTTP_OK);
