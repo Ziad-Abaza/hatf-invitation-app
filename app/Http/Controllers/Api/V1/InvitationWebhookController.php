@@ -91,6 +91,33 @@ class InvitationWebhookController extends Controller
             'send_status' => $newStatus
         ]);
 
+        if ($newStatus === 'accepted') {
+            Log::info("Invited user ===={$invited->phone}==== accepted the invitation");
+            // send QR code to the invited user
+            $invited = InvitedUsers::whereIn('phone', $searchPhones)
+                ->where('send_status', 'sent')
+                ->latest()
+                ->first();
+
+            Log::info('found invited user', $invited->toArray());
+
+            if ($invited && $invited->qr) {
+                $userInvitation = $invited->userInvitation;
+                sendWhatsappQR(
+                    $invited->phone,
+                    $invited->getFirstMediaUrl('qr'),
+                    $userInvitation->name,
+                    $userInvitation->user->name,
+                    $userInvitation->user->phone,
+                    $userInvitation->invitation_date,
+                    $userInvitation->invitation_time
+                );
+
+                Log::info("QR code sent to invited user {$invited->phone}");
+                Log::info("============> QR path: {$invited->getFirstMediaUrl('qr')}<=============");
+            }
+        }
+
         Log::info("Updated InvitedUsers#{$invited->id} to {$newStatus}");
         Log::info("======================\ End Invitation webhook payload /======================");
         return response()->json(['success' => true], Response::HTTP_OK);

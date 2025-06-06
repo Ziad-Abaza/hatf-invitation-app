@@ -42,7 +42,7 @@ class SendInvitationJob implements ShouldQueue
                 $userInvitation->user->name ?? 'غير متوفر',
                 $userInvitation->invitation_date ?? 'غير متوفر',
                 $userInvitation->invitation_time ?? 'غير متوفر',
-                $userInvitation->getFirstMediaUrl('qr')
+                // $userInvitation->getFirstMediaUrl('qr')
             );
 
             if ($sent) {
