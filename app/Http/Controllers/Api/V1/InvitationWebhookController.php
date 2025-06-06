@@ -103,9 +103,20 @@ class InvitationWebhookController extends Controller
 
             if ($invited && $invited->qr) {
                 $userInvitation = $invited->userInvitation;
+                if (!$userInvitation) {
+                    Log::error("لا يوجد user_invitation مرتبط");
+                    return response()->json(['error' => 'No user invitation found'], Response::HTTP_NOT_FOUND);
+                }
+                $qrMediaUrl = $userInvitation->getFirstMediaUrl('qr');
+
+                if (!$qrMediaUrl) {
+                    Log::error("لا يوجد QR متاح في user_invitation");
+                    return response()->json(['error' => 'No QR code available'], Response::HTTP_NOT_FOUND);
+                }
+
                 sendWhatsappQR(
                     $invited->phone,
-                    $invited->getFirstMediaUrl('qr'),
+                    $qrMediaUrl,
                     $userInvitation->name,
                     $userInvitation->user->name,
                     $userInvitation->user->phone,
