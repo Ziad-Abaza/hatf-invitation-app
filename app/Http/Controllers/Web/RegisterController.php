@@ -17,27 +17,14 @@ class RegisterController extends Controller
 
     public function createOTP(User $user, $phone)
     {
-        $fullPhone = '966' . $phone;
-
-        // إذا كان رقم المسوق هو 966531333006
-        if ($fullPhone === '966531333006') {
-            $otp = 1111;
-        } else {
-            $otp = random_int(1000, 9999);
-        }
-
-        $marketerCode = MarketerCode::firstOrCreate(
-            ['phone' => $fullPhone],
-            ['code'  => $otp]
-        );
-
-        $marketerCode->code = $otp;
-        $marketerCode->save();
+        $otp = random_int(1000, 9999);
+        $marketerCode = MarketerCode::firstOrCreate([
+            'phone' => '966' . $phone,
+        ], ['code'  => $otp]);
 
         sendWhatsappOTP($marketerCode->phone, $marketerCode->code);
         return view('web.otp', compact('phone', 'user'));
     }
-
 
     public function registerStore(Request $request, User $user)
     {
