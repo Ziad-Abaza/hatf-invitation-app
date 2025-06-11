@@ -17,64 +17,6 @@ class UserPaymentService
         return in_array((string) $phone, ['966531333006', '966530000000', '966595191981']);
     }
 
-
-    // public function initiatePayment($requestData, $user)
-    // {
-    //     $cart_id = Str::uuid();
-    //     $invitation_id = $requestData['invitation_id'];
-    //     $invitation = Invitation::find($invitation_id);
-    //     $cart_desc = $invitation->name;
-    //     $requestData['user_invitation_id'] = $requestData['user_invitation_id'] ?? null;
-
-    //     $value = $this->calculatePaymentValue($invitation, $user, $requestData['invitation_value']);
-
-    //     $userInvitation = $this->createUserInvitation($requestData, $user, $invitation);
-
-    //     if ($requestData['user_invitation_id']) {
-    //         $paymentUserInvitation =  PaymentUserInvitation::where([
-    //             'user_invitation_id' => $requestData['user_invitation_id'],
-    //             'status'             => 1,
-    //         ])->update([
-    //             'value'              => $value,
-    //             'payment_uuid'       => $cart_id,
-    //         ]);
-    //     } else {
-    //         $paymentUserInvitation = PaymentUserInvitation::create([
-    //             'user_invitation_id' => $userInvitation->id,
-    //             'value'              => $value,
-    //             'payment_uuid'       => $cart_id,
-    //         ]);
-    //     }
-
-    //     $return_url = route('paymentreturn'); // this route wiil return after done payment
-    //     $callback = null; // this action done  after  payment
-
-    //     $pay = Paypage::sendPaymentCode('all')
-    //         ->sendTransaction('sale')
-    //         ->sendCart($cart_id, $value, $cart_desc)
-    //         ->sendHideShipping(true)
-    //         ->sendFramed(true)
-    //         ->sendCustomerDetails(
-    //             null,
-    //             $user->email,
-    //             $user->phone,
-    //             'address',
-    //             'Riyadh',
-    //             'Riyadh',
-    //             'SA',
-    //             '12345',
-    //             '10.0.0.10'
-    //         )
-    //         ->sendURLs($return_url, $callback)
-    //         ->sendLanguage('ar')
-    //         ->create_pay_page();
-    //     return [
-    //         'pay' => $pay,
-    //         'cart_id' => $cart_id,
-    //         'userInvitation' => $userInvitation
-    //     ];
-    // }
-
     public function initiatePayment($requestData, $user)
     {
         Log::info('=========================== Start Initiating Payment ===========================');
