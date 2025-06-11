@@ -124,21 +124,21 @@ class ImageTemplate
         $img = $manager->make($baseImagePath);
         Log::info("🖼️ تم تحميل صورة القالب بنجاح");
 
-        // أبعاد الصورة الحقيقية
-        $actualWidth  = $img->width();
-        $actualHeight = $img->height();
+        // أبعاد الصورة الأصلية
+        $originalWidth  = $img->width();
+        $originalHeight = $img->height();
+        Log::info("📏 أبعاد الصورة الأصلية: العرض={$originalWidth}, الارتفاع={$originalHeight}");
 
-        // الأبعاد الافتراضية المرسلة من التطبيق
-        $virtualWidth  = $textSettings['width'] ?? $actualWidth;
-        $virtualHeight = $textSettings['height'] ?? $actualHeight;
+        // استخدام الأبعاد القادمة من إعدادات النص إذا وُجدت
+        $renderWidth  = $textSettings['width'] ?? $originalWidth;
+        $renderHeight = $textSettings['height'] ?? $originalHeight;
+        Log::info("📐 سيتم الحساب بناءً على الأبعاد: العرض={$renderWidth}, الارتفاع={$renderHeight}");
 
-        // تحويل النسب المئوية إلى إحداثيات على الصورة الفعلية
-        $xRatio = $actualWidth / $virtualWidth;
-        $yRatio = $actualHeight / $virtualHeight;
-
-        $x = (($textSettings['x'] <= 1) ? $textSettings['x'] * $virtualWidth : $textSettings['x']) * $xRatio;
-        $y = (($textSettings['y'] <= 1) ? $textSettings['y'] * $virtualHeight : $textSettings['y']) * $yRatio;
-
+        $img->resize($renderWidth, $renderHeight);
+        Log::info("📐 تم تعديل أبعاد الصورة إلى: العرض={$renderWidth}, الارتفاع={$renderHeight}");
+        // حساب إحداثيات x و y
+        $x = (($textSettings['x'] <= 1) ? $textSettings['x'] * $renderWidth : $textSettings['x']) - ($renderWidth * 0.1);
+        $y = (($textSettings['y'] <= 1) ? $textSettings['y'] * $renderHeight : $textSettings['y']) + ($renderHeight * 0.123);
         Log::info("📏 إحداثيات النص النهائية: x={$x}, y={$y}");
 
         // إضافة النص
