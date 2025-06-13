@@ -146,6 +146,8 @@ class UserPaymentController extends Controller
             'text.font'          => ['nullable', 'string'],
             'text.x'             => ['nullable', 'numeric'],
             'text.y'             => ['nullable', 'numeric'],
+            'text.width'         => ['nullable'],
+            'text.height'         => ['nullable'],
         ]);
 
         // Check if file is uploaded and valid
@@ -196,7 +198,7 @@ class UserPaymentController extends Controller
             ], 500);
         }
     }
-    
+
     public function paymentP(Request $request)
     {
         Log::info("================= Start Payment Request P =================");
