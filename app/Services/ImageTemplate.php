@@ -150,7 +150,7 @@ class ImageTemplate
         Log::info("📏 إحداثيات النص النهائية: x={$x}, y={$y}");
 
         // الحجم النسبي للخط بناءً على ارتفاع الصورة
-        $baseFontSize = max(1, ($renderHeight * 0.2)); // 20% من الارتفاع كحجم مرجعي
+        $baseFontSize = max(1, ($renderHeight * 0.2)); // 5% من الارتفاع كحجم مرجعي
 
         // إذا كان المستخدم أرسل الحجم كنسبة، نستخدمه. وإن لم يرسل، نستخدم الحجم المرجعي مباشرة
         $relativeFontSize = $baseFontSize * $textSettings['size'] / 100;
@@ -165,7 +165,7 @@ class ImageTemplate
                 $font->file($fontPath);
                 $font->size((int) $relativeFontSize); // ← حجم الخط بعد المعايرة
                 $font->color($textSettings['color']);
-                $font->align($alignText);
+                // $font->align($alignText);
                 $font->valign('bottom');
             }
         );
