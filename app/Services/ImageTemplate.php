@@ -144,51 +144,35 @@ class ImageTemplate
         $canvas->insert($original, 'top-left', $offsetX, $offsetY);
         Log::info("🖼️ تم إدراج الصورة الأصلية داخل الـ Canvas بدون تغيير حجمها");
 
-        // حساب إحداثيات النص النهائية
-        $x = (($textSettings['x'] <= 1) ? $textSettings['x'] * $renderWidth : $textSettings['x']) - ($renderWidth * 0.05);
-        $y = (($textSettings['y'] <= 1) ? $textSettings['y'] * $renderHeight : $textSettings['y']) + ($renderHeight * 0.09);
-        Log::info("📏 إحداثيات النص النهائية: x={$x}, y={$y}");
+        // Log::info("📏 إحداثيات النص النهائية: x={$x}, y={$y}");
 
-        // حساب حجم الخط بالنسبة للارتفاع
-        $baseFontSize = max(1, ($renderHeight * 0.05));
-        $relativeFontSize = isset($textSettings['size']) && $textSettings['size'] <= 1
-            ? $baseFontSize * $textSettings['size']
-            : (int)$textSettings['size'];
+        // الحجم النسبي للخط بناءً على ارتفاع الصورة
+        $baseFontSize = max(1, ($renderHeight * 0.2)); // 5% من الارتفاع كحجم مرجعي
 
-        // حساب أبعاد النص باستخدام imagettfbbox
-        $bbox = imagettfbbox((int)$relativeFontSize, 0, $fontPath, $name);
-        $textWidth  = abs($bbox[4] - $bbox[0]);
-        $textHeight = abs($bbox[5] - $bbox[1]);
+        // إذا كان المستخدم أرسل الحجم كنسبة، نستخدمه. وإن لم يرسل، نستخدم الحجم المرجعي مباشرة
+        $relativeFontSize = $baseFontSize * $textSettings['size'] / 100;
+        Log::info("📏 حجم الخط بعد المعايرة: {$relativeFontSize}");
+        Log::info("📏 إعدادات النص النهائية: " . json_encode($textSettings));
 
-        // حساب إحداثيات النص النسبية
-        $xRaw = ($textSettings['x'] <= 1) ? $textSettings['x'] * $renderWidth : $textSettings['x'];
-        $yRaw = ($textSettings['y'] <= 1) ? $textSettings['y'] * $renderHeight : $textSettings['y'];
+        $fontOffsetX = $relativeFontSize * 0.4; // ← الإزاحة الأفقية كنسبة من حجم الخط
+        $fontOffsetY = $relativeFontSize * 0.8; // ← الإزاحة الرأسية كنسبة من حجم الخط
 
-        // ضبط الاحداثيات حسب المحاذاة (مثلاً Right)
-        if ($alignText === 'right') {
-            $x = $xRaw - $textWidth; // نحسب إزاحة النص لليمين
-        } elseif ($alignText === 'center') {
-            $x = $xRaw - ($textWidth / 2);
-        } else { // left
-            $x = $xRaw;
-        }
+        $x = (($textSettings['x'] <= 1) ? $textSettings['x'] * $renderWidth : $textSettings['x']) - $fontOffsetX;
+        $y = (($textSettings['y'] <= 1) ? $textSettings['y'] * $renderHeight : $textSettings['y']) + $fontOffsetY;
 
-        $y = $yRaw + $textHeight; // ضبط y حسب ارتفاع النص لمحاذاة القاع
-
-        // رسم النص
+        // إضافة النص إلى الكانفاس
         $canvas->text(
             $name,
             $x,
             $y,
             function ($font) use ($fontPath, $relativeFontSize, $textSettings, $alignText) {
                 $font->file($fontPath);
-                $font->size((int)$relativeFontSize);
+                $font->size((int) $relativeFontSize); // ← حجم الخط بعد المعايرة
                 $font->color($textSettings['color']);
                 $font->align($alignText);
                 $font->valign('bottom');
             }
         );
-
 
 
         Log::info("👤 تم إضافة اسم المدعو: {$name}");
