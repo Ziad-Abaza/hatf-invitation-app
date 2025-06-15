@@ -137,10 +137,8 @@ class ImageTemplate
         $img->resize($renderWidth, $renderHeight);
         Log::info("📐 تم تعديل أبعاد الصورة إلى: العرض={$renderWidth}, الارتفاع={$renderHeight}");
         // حساب إحداثيات x و y
-        // $x = (($textSettings['x'] <= 1) ? $textSettings['x'] * $renderWidth : $textSettings['x']) - ($renderWidth * 0.1);
-        // $y = (($textSettings['y'] <= 1) ? $textSettings['y'] * $renderHeight : $textSettings['y']) + ($renderHeight * 0.123);
-        $x = ($textSettings['x'] <= 1) ? $textSettings['x'] * $renderWidth : $textSettings['x'];
-        $y = ($textSettings['y'] <= 1) ? $textSettings['y'] * $renderHeight : $textSettings['y'];
+        $x = (($textSettings['x'] <= 1) ? $textSettings['x'] * $renderWidth : $textSettings['x']) - ($renderWidth * 0.1);
+        $y = (($textSettings['y'] <= 1) ? $textSettings['y'] * $renderHeight : $textSettings['y']) + ($renderHeight * 0.123);
         Log::info("📏 إحداثيات النص النهائية: x={$x}, y={$y}");
 
         // إضافة النص
@@ -150,7 +148,7 @@ class ImageTemplate
             $y,
             function ($font) use ($fontPath, $textSettings, $alignText) {
                 $font->file($fontPath);
-                $font->size($textSettings['size']);
+                $font->size((int) $textSettings['size']);
                 $font->color($textSettings['color']);
                 // $font->align($alignText);
                 $font->valign('bottom');
