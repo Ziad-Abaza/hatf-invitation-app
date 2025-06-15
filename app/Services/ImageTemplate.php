@@ -154,8 +154,8 @@ class ImageTemplate
         Log::info("📏 حجم الخط بعد المعايرة: {$relativeFontSize}");
         Log::info("📏 إعدادات النص النهائية: " . json_encode($textSettings));
 
-        $fontOffsetX = $relativeFontSize * 0.4; // ← الإزاحة الأفقية كنسبة من حجم الخط
-        $fontOffsetY = $relativeFontSize * 0.8; // ← الإزاحة الرأسية كنسبة من حجم الخط
+        $fontOffsetX = $relativeFontSize * 0.04; // ← الإزاحة الأفقية كنسبة من حجم الخط
+        $fontOffsetY = $relativeFontSize * 0.08; // ← الإزاحة الرأسية كنسبة من حجم الخط
 
         $x = (($textSettings['x'] <= 1) ? $textSettings['x'] * $renderWidth : $textSettings['x']) - $fontOffsetX;
         $y = (($textSettings['y'] <= 1) ? $textSettings['y'] * $renderHeight : $textSettings['y']) + $fontOffsetY;
