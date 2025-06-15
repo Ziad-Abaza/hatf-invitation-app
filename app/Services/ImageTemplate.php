@@ -144,7 +144,10 @@ class ImageTemplate
         $canvas->insert($original, 'top-left', $offsetX, $offsetY);
         Log::info("🖼️ تم إدراج الصورة الأصلية داخل الـ Canvas بدون تغيير حجمها");
 
-        // Log::info("📏 إحداثيات النص النهائية: x={$x}, y={$y}");
+        // حساب إحداثيات النص النهائية
+        $x = (($textSettings['x'] <= 1) ? $textSettings['x'] * $renderWidth : $textSettings['x']) - ($renderWidth * 0.05);
+        $y = (($textSettings['y'] <= 1) ? $textSettings['y'] * $renderHeight : $textSettings['y']) + ($renderHeight * 0.09);
+        Log::info("📏 إحداثيات النص النهائية: x={$x}, y={$y}");
 
         // الحجم النسبي للخط بناءً على ارتفاع الصورة
         $baseFontSize = max(1, ($renderHeight * 0.2)); // 5% من الارتفاع كحجم مرجعي
@@ -153,13 +156,6 @@ class ImageTemplate
         $relativeFontSize = $baseFontSize * $textSettings['size'] / 100;
         Log::info("📏 حجم الخط بعد المعايرة: {$relativeFontSize}");
         Log::info("📏 إعدادات النص النهائية: " . json_encode($textSettings));
-
-        $fontOffsetX = $relativeFontSize * 0.04; // ← الإزاحة الأفقية كنسبة من حجم الخط
-        $fontOffsetY = $relativeFontSize * 0.08; // ← الإزاحة الرأسية كنسبة من حجم الخط
-
-        $x = (($textSettings['x'] <= 1) ? $textSettings['x'] * $renderWidth : $textSettings['x']) - $fontOffsetX;
-        $y = (($textSettings['y'] <= 1) ? $textSettings['y'] * $renderHeight : $textSettings['y']) + $fontOffsetY;
-
         // إضافة النص إلى الكانفاس
         $canvas->text(
             $name,
