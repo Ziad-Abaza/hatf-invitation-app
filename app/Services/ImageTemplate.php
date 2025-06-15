@@ -129,33 +129,43 @@ class ImageTemplate
         $originalHeight = $img->height();
         Log::info("📏 أبعاد الصورة الأصلية: العرض={$originalWidth}, الارتفاع={$originalHeight}");
 
-        // استخدام الأبعاد القادمة من إعدادات النص إذا وُجدت
-        $renderWidth  = $textSettings['width'] ?? $originalWidth;
-        $renderHeight = $textSettings['height'] ?? $originalHeight;
-        Log::info("📐 سيتم الحساب بناءً على الأبعاد: العرض={$renderWidth}, الارتفاع={$renderHeight}");
+        // استخدم الأبعاد التي صمم بها النص
+        $renderWidth  = isset($textSettings['width']) ? (int) $textSettings['width'] : $originalWidth;
+        $renderHeight = isset($textSettings['height']) ? (int) $textSettings['height'] : $originalHeight;
 
+        Log::info("📐 الأبعاد المعتمدة لتعديل الصورة: العرض={$renderWidth}, الارتفاع={$renderHeight}");
+
+        // نغير حجم الصورة لتتناسب مع التصميم في فلاتر
         $img->resize($renderWidth, $renderHeight);
-        Log::info("📐 تم تعديل أبعاد الصورة إلى: العرض={$renderWidth}, الارتفاع={$renderHeight}");
-        // حساب إحداثيات x و y
-        $x = (($textSettings['x'] <= 1) ? $textSettings['x'] * $renderWidth : $textSettings['x']) - ($renderWidth * 0.1);
-        $y = (($textSettings['y'] <= 1) ? $textSettings['y'] * $renderHeight : $textSettings['y']) + ($renderHeight * 0.123);
-        Log::info("📏 إحداثيات النص النهائية: x={$x}, y={$y}");
+        Log::info("📐 تم تغيير حجم الصورة إلى: العرض={$renderWidth}, الارتفاع={$renderHeight}");
 
-        // إضافة النص
+        // نحسب الموضع المطلق للنص بناءً على النسبة
+        $x = (float) $textSettings['x'] * $renderWidth;
+        $y = (float) $textSettings['y'] * $renderHeight;
+        Log::info("📏 إحداثيات النص: x={$x}, y={$y}");
+
+        // حجم الخط
+        $fontSize = isset($textSettings['size']) ? (int) $textSettings['size'] : 30;
+
+        // ألوان النص
+        $color = $textSettings['color'] ?? '#ffffff';
+
+        // رسم النص
         $img->text(
             $name,
             $x,
             $y,
-            function ($font) use ($fontPath, $textSettings, $alignText) {
+            function ($font) use ($fontPath, $fontSize, $color, $alignText) {
                 $font->file($fontPath);
-                $font->size($textSettings['size']);
-                $font->color($textSettings['color']);
-                // $font->align($alignText);
-                $font->valign('bottom');
+                $font->size($fontSize);
+                $font->color($color);
+                $font->align($alignText); // ضع هذا إن أردت ضبط المحاذاة
+                $font->valign('top');     // بدل bottom بـ top إن كنت تريد الضبط من الأعلى
             }
         );
 
-        Log::info("👤 تم إضافة اسم المدعو: {$name}");
+        Log::info("👤 تم رسم النص بنجاح في المكان المناسب");
+
 
         // save the processed image to a temporary path
         $img->save($tempPath);
