@@ -84,7 +84,7 @@ class UserPaymentController extends Controller
                 'invitation_time' => $request->input('invitation_time'),
                 'is_active' => 1,
                 'number_invitees' => $request->input('number_invitees'),
-                'user_package_id' => $userPackage->id // ربط الباقة هنا
+                'user_package_id' => $userPackage->id 
             ]);
 
             // إنشاء دفع افتراضي ناجح
