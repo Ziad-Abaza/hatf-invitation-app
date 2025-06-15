@@ -153,7 +153,7 @@ class ImageTemplate
         $baseFontSize = max(1, ($renderHeight * 0.2)); // 5% من الارتفاع كحجم مرجعي
 
         // إذا كان المستخدم أرسل الحجم كنسبة، نستخدمه. وإن لم يرسل، نستخدم الحجم المرجعي مباشرة
-        $relativeFontSize = $baseFontSize * $textSettings['size'];
+        $relativeFontSize = $baseFontSize * $textSettings['size'] / 100;
         Log::info("📏 حجم الخط بعد المعايرة: {$relativeFontSize}");
         Log::info("📏 إعدادات النص النهائية: " . json_encode($textSettings));
         // إضافة النص إلى الكانفاس
