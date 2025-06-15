@@ -117,16 +117,14 @@ class ImageTemplate
         $tempPath  = public_path("processed_images/{$imageName}");
         Log::info("📁 سيتم حفظ الصورة المؤقتة باسم: {$imageName}");
 
-
-        // upload the base image
-        // $img = Image::make($baseImagePath);
+        // Image Manager
         $manager = new ImageManager(['driver' => 'gd']);
-        $img = $manager->make($baseImagePath);
+        $original = $manager->make($baseImagePath);
         Log::info("🖼️ تم تحميل صورة القالب بنجاح");
 
         // أبعاد الصورة الأصلية
-        $originalWidth  = $img->width();
-        $originalHeight = $img->height();
+        $originalWidth  = $original->width();
+        $originalHeight = $original->height();
         Log::info("📏 أبعاد الصورة الأصلية: العرض={$originalWidth}, الارتفاع={$originalHeight}");
 
         // استخدام الأبعاد القادمة من إعدادات النص إذا وُجدت
@@ -134,15 +132,25 @@ class ImageTemplate
         $renderHeight = $textSettings['height'] ?? $originalHeight;
         Log::info("📐 سيتم الحساب بناءً على الأبعاد: العرض={$renderWidth}, الارتفاع={$renderHeight}");
 
-        $img->resize($renderWidth, $renderHeight);
-        Log::info("📐 تم تعديل أبعاد الصورة إلى: العرض={$renderWidth}, الارتفاع={$renderHeight}");
-        // حساب إحداثيات x و y
-        $x = (($textSettings['x'] <= 1) ? $textSettings['x'] * $renderWidth : $textSettings['x']) + ($renderWidth * 0.13);
-        $y = (($textSettings['y'] <= 1) ? $textSettings['y'] * $renderHeight : $textSettings['y']) + ($renderHeight * 0.06);
+        // إنشاء Canvas بحجم التطبيق
+        $canvas = $manager->canvas($renderWidth, $renderHeight);
+        Log::info("📄 تم إنشاء Canvas بحجم التطبيق");
+
+        // حساب موقع إدراج الصورة داخل الكانفاس
+        $offsetX = intval(($renderWidth - $originalWidth) / 2);
+        $offsetY = intval(($renderHeight - $originalHeight) / 2);
+
+        // إدراج الصورة الأصلية داخل الكانفاس
+        $canvas->insert($original, 'top-left', $offsetX, $offsetY);
+        Log::info("🖼️ تم إدراج الصورة الأصلية داخل الـ Canvas بدون تغيير حجمها");
+
+        // حساب إحداثيات النص النهائية
+        $x = (($textSettings['x'] <= 1) ? $textSettings['x'] * $renderWidth : $textSettings['x']) - ($renderWidth * 0.1);
+        $y = (($textSettings['y'] <= 1) ? $textSettings['y'] * $renderHeight : $textSettings['y']) + ($renderHeight * 0.123);
         Log::info("📏 إحداثيات النص النهائية: x={$x}, y={$y}");
 
-        // إضافة النص
-        $img->text(
+        // إضافة النص إلى الكانفاس
+        $canvas->text(
             $name,
             $x,
             $y,
@@ -154,23 +162,19 @@ class ImageTemplate
                 $font->valign('bottom');
             }
         );
-        Log::info("Text Settings: {
-        $fontPath} - {$textSettings['size']} -
-        {$textSettings['color']} -
-        {$alignText}");
 
         Log::info("👤 تم إضافة اسم المدعو: {$name}");
 
-        // save the processed image to a temporary path
-        $img->save($tempPath);
+        // حفظ الصورة المؤقتة
+        $canvas->save($tempPath);
         Log::info("💾 تم حفظ الصورة المؤقتة في: {$tempPath}");
 
-        // add the processed image to the media collection
+        // رفع الصورة في media
         $media = $userInvitation->addMedia($tempPath)
             ->toMediaCollection('userInvitation');
         Log::info("☁️ تم رفع الصورة إلى ميديا: {$media->getUrl()}");
 
-        @unlink($tempPath); // delete the temporary file
+        @unlink($tempPath);
         Log::info("🗑️ تم حذف الصورة المؤقتة من المسار: {$tempPath}");
 
         Log::info("========= انتهاء معالجة دعوة {$name} =========");
