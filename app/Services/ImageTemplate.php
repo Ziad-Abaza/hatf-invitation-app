@@ -148,7 +148,7 @@ class ImageTemplate
             $y,
             function ($font) use ($fontPath, $textSettings, $alignText) {
                 $font->file($fontPath);
-                $font->size((int) $textSettings['size']);
+                $font->size($textSettings['size']);
                 $font->color($textSettings['color']);
                 // $font->align($alignText);
                 $font->valign('bottom');
