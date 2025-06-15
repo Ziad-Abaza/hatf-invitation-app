@@ -149,19 +149,29 @@ class ImageTemplate
         $y = (($textSettings['y'] <= 1) ? $textSettings['y'] * $renderHeight : $textSettings['y']) + ($renderHeight * 0.06);
         Log::info("📏 إحداثيات النص النهائية: x={$x}, y={$y}");
 
+        // الحجم النسبي للخط بناءً على ارتفاع الصورة
+        $baseFontSize = max(1, ($renderHeight * 0.05)); // 5% من الارتفاع كحجم مرجعي
+
+        // إذا كان المستخدم أرسل الحجم كنسبة، نستخدمه. وإن لم يرسل، نستخدم الحجم المرجعي مباشرة
+        $relativeFontSize = isset($textSettings['size']) && $textSettings['size'] <= 1
+            ? $baseFontSize * $textSettings['size']
+            : (int) $textSettings['size']; // الحجم المطلق إن وُجد
+        Log::info("📏 حجم الخط بعد المعايرة: {$relativeFontSize}");
+        Log::info("📏 إعدادات النص النهائية: " . json_encode($textSettings));
         // إضافة النص إلى الكانفاس
         $canvas->text(
             $name,
             $x,
             $y,
-            function ($font) use ($fontPath, $textSettings, $alignText) {
+            function ($font) use ($fontPath, $relativeFontSize, $textSettings, $alignText) {
                 $font->file($fontPath);
-                $font->size($textSettings['size']);
+                $font->size((int) $relativeFontSize); // ← حجم الخط بعد المعايرة
                 $font->color($textSettings['color']);
                 // $font->align($alignText);
                 $font->valign('bottom');
             }
         );
+
 
         Log::info("👤 تم إضافة اسم المدعو: {$name}");
 
