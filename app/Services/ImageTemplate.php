@@ -145,7 +145,7 @@ class ImageTemplate
         Log::info("🖼️ تم إدراج الصورة الأصلية داخل الـ Canvas بدون تغيير حجمها");
 
         // حساب إحداثيات النص النهائية
-        $x = (($textSettings['x'] <= 1) ? $textSettings['x'] * $renderWidth : $textSettings['x']) - ($renderWidth * 0.12);
+        $x = (($textSettings['x'] <= 1) ? $textSettings['x'] * $renderWidth : $textSettings['x']) - ($renderWidth * 0.17);
         $y = (($textSettings['y'] <= 1) ? $textSettings['y'] * $renderHeight : $textSettings['y']) + ($renderHeight * 0.09);
         Log::info("📏 إحداثيات النص النهائية: x={$x}, y={$y}");
 
