@@ -149,26 +149,46 @@ class ImageTemplate
         $y = (($textSettings['y'] <= 1) ? $textSettings['y'] * $renderHeight : $textSettings['y']) + ($renderHeight * 0.09);
         Log::info("📏 إحداثيات النص النهائية: x={$x}, y={$y}");
 
-        // الحجم النسبي للخط بناءً على ارتفاع الصورة
-        $baseFontSize = max(1, ($renderHeight * 0.2)); // 5% من الارتفاع كحجم مرجعي
+        // حساب حجم الخط بالنسبة للارتفاع
+        $baseFontSize = max(1, ($renderHeight * 0.05));
+        $relativeFontSize = isset($textSettings['size']) && $textSettings['size'] <= 1
+            ? $baseFontSize * $textSettings['size']
+            : (int)$textSettings['size'];
 
-        // إذا كان المستخدم أرسل الحجم كنسبة، نستخدمه. وإن لم يرسل، نستخدم الحجم المرجعي مباشرة
-        $relativeFontSize = $baseFontSize * $textSettings['size'] / 100;
-        Log::info("📏 حجم الخط بعد المعايرة: {$relativeFontSize}");
-        Log::info("📏 إعدادات النص النهائية: " . json_encode($textSettings));
-        // إضافة النص إلى الكانفاس
+        // حساب أبعاد النص باستخدام imagettfbbox
+        $bbox = imagettfbbox((int)$relativeFontSize, 0, $fontPath, $name);
+        $textWidth  = abs($bbox[4] - $bbox[0]);
+        $textHeight = abs($bbox[5] - $bbox[1]);
+
+        // حساب إحداثيات النص النسبية
+        $xRaw = ($textSettings['x'] <= 1) ? $textSettings['x'] * $renderWidth : $textSettings['x'];
+        $yRaw = ($textSettings['y'] <= 1) ? $textSettings['y'] * $renderHeight : $textSettings['y'];
+
+        // ضبط الاحداثيات حسب المحاذاة (مثلاً Right)
+        if ($alignText === 'right') {
+            $x = $xRaw - $textWidth; // نحسب إزاحة النص لليمين
+        } elseif ($alignText === 'center') {
+            $x = $xRaw - ($textWidth / 2);
+        } else { // left
+            $x = $xRaw;
+        }
+
+        $y = $yRaw + $textHeight; // ضبط y حسب ارتفاع النص لمحاذاة القاع
+
+        // رسم النص
         $canvas->text(
             $name,
             $x,
             $y,
             function ($font) use ($fontPath, $relativeFontSize, $textSettings, $alignText) {
                 $font->file($fontPath);
-                $font->size((int) $relativeFontSize); // ← حجم الخط بعد المعايرة
+                $font->size((int)$relativeFontSize);
                 $font->color($textSettings['color']);
-                // $font->align($alignText);
+                $font->align($alignText);
                 $font->valign('bottom');
             }
         );
+
 
 
         Log::info("👤 تم إضافة اسم المدعو: {$name}");
