@@ -145,8 +145,8 @@ class ImageTemplate
         Log::info("🖼️ تم إدراج الصورة الأصلية داخل الـ Canvas بدون تغيير حجمها");
 
         // حساب إحداثيات النص النهائية
-        $x = (($textSettings['x'] <= 1) ? $textSettings['x'] * $renderWidth : $textSettings['x']) - ($renderWidth * 0.1);
-        $y = (($textSettings['y'] <= 1) ? $textSettings['y'] * $renderHeight : $textSettings['y']) + ($renderHeight * 0.07);
+        $x = (($textSettings['x'] <= 1) ? $textSettings['x'] * $renderWidth : $textSettings['x']) - ($renderWidth * 0.9);
+        $y = (($textSettings['y'] <= 1) ? $textSettings['y'] * $renderHeight : $textSettings['y']) + ($renderHeight * 0.09);
         Log::info("📏 إحداثيات النص النهائية: x={$x}, y={$y}");
 
         // الحجم النسبي للخط بناءً على ارتفاع الصورة
