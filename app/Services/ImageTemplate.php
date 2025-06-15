@@ -154,6 +154,10 @@ class ImageTemplate
                 $font->valign('bottom');
             }
         );
+        Log::info("Text Settings: {
+        $fontPath} - {$textSettings['size']} -
+        {$textSettings['color']} -
+        {$alignText}");
 
         Log::info("👤 تم إضافة اسم المدعو: {$name}");
 
