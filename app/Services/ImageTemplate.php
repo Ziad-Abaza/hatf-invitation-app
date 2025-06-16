@@ -156,7 +156,7 @@ class ImageTemplate
         $yRatio = ($textSettings['y'] <= 1) ? $textSettings['y'] : $textSettings['y'] / $renderHeight;
 
         if ($yRatio < 0.5) {
-            $y = $yRatio * $renderHeight + ($renderHeight * $yRatio * ($yOffsetRatio - 0.1));  ;
+            $y = $yRatio * $renderHeight + ($renderHeight * $yRatio * ($yOffsetRatio - 0.3));  ;
             $valign = 'top';
         } else {
             $y = $yRatio * $renderHeight + ($renderHeight * (1 - $yRatio) * $yOffsetRatio);
