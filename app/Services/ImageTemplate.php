@@ -147,7 +147,7 @@ class ImageTemplate
         // حساب إحداثيات النص النهائية
         // النسب المحسوبة بناء على الحالة المثالية
         $xOffsetRatio = 0.16;
-        $yOffsetRatio = 0.11;
+        $yOffsetRatio = 0.1;
 
         // تعويض الإحداثيات بناء على النسب
         $x = (($textSettings['x'] <= 1) ? $textSettings['x'] * $renderWidth : $textSettings['x']) - ($renderWidth * $textSettings['x'] * $xOffsetRatio);
