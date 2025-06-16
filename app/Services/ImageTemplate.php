@@ -145,8 +145,14 @@ class ImageTemplate
         Log::info("🖼️ تم إدراج الصورة الأصلية داخل الـ Canvas بدون تغيير حجمها");
 
         // حساب إحداثيات النص النهائية
-        $x = (($textSettings['x'] <= 1) ? $textSettings['x'] * $renderWidth : $textSettings['x']) - ($renderWidth * 0.05);
-        $y = (($textSettings['y'] <= 1) ? $textSettings['y'] * $renderHeight : $textSettings['y']) + ($renderHeight * 0.09);
+        // النسب المحسوبة بناء على الحالة المثالية
+        $xOffsetRatio = 0.16;
+        $yOffsetRatio = 0.423;
+
+        // تعويض الإحداثيات بناء على النسب
+        $x = (($textSettings['x'] <= 1) ? $textSettings['x'] * $renderWidth : $textSettings['x']) - ($renderWidth * $textSettings['x'] * $xOffsetRatio);
+        $y = (($textSettings['y'] <= 1) ? $textSettings['y'] * $renderHeight : $textSettings['y']) + ($renderHeight * (1 - $textSettings['y']) * $yOffsetRatio);
+
         Log::info("📏 إحداثيات النص النهائية: x={$x}, y={$y}");
 
         // الحجم النسبي للخط بناءً على ارتفاع الصورة
@@ -165,7 +171,7 @@ class ImageTemplate
                 $font->file($fontPath);
                 $font->size((int) $relativeFontSize); // ← حجم الخط بعد المعايرة
                 $font->color($textSettings['color']);
-                // $font->align('center'); 
+                // $font->align('center');
                 $font->valign('bottom');
             }
         );
