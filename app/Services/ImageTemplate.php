@@ -165,7 +165,7 @@ class ImageTemplate
                 $font->file($fontPath);
                 $font->size((int) $relativeFontSize); // ← حجم الخط بعد المعايرة
                 $font->color($textSettings['color']);
-                $font->align('center'); 
+                // $font->align('center'); 
                 $font->valign('bottom');
             }
         );
