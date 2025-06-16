@@ -151,7 +151,18 @@ class ImageTemplate
 
         // تعويض الإحداثيات بناء على النسب
         $x = (($textSettings['x'] <= 1) ? $textSettings['x'] * $renderWidth : $textSettings['x']) - ($renderWidth * $textSettings['x'] * $xOffsetRatio);
-        $y = (($textSettings['y'] <= 1) ? $textSettings['y'] * $renderHeight : $textSettings['y']) + ($renderHeight * (1 - $textSettings['y']) * $yOffsetRatio);
+        $y = 0;
+        $valign = 'bottom'; // القيمة الافتراضية
+        $yRatio = ($textSettings['y'] <= 1) ? $textSettings['y'] : $textSettings['y'] / $renderHeight;
+
+        if ($yRatio < 0.5) {
+            $y = $yRatio * $renderHeight + ($renderHeight * $yRatio * $yOffsetRatio);
+            $valign = 'top';
+        } else {
+            $y = $yRatio * $renderHeight + ($renderHeight * (1 - $yRatio) * $yOffsetRatio);
+            $valign = 'bottom';
+        }
+
 
         Log::info("📏 إحداثيات النص النهائية: x={$x}, y={$y}");
 
@@ -167,12 +178,12 @@ class ImageTemplate
             $name,
             $x,
             $y,
-            function ($font) use ($fontPath, $relativeFontSize, $textSettings, $alignText) {
+            function ($font) use ($fontPath, $relativeFontSize, $textSettings, $alignText, $valign) {
                 $font->file($fontPath);
                 $font->size((int) $relativeFontSize); // ← حجم الخط بعد المعايرة
                 $font->color($textSettings['color']);
                 // $font->align('center');
-                $font->valign('bottom');
+                $font->valign($valign);
             }
         );
 
