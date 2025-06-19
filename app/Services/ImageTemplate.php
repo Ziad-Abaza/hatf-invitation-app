@@ -144,9 +144,24 @@ class ImageTemplate
         $canvas->insert($original, 'top-left', $offsetX, $offsetY);
         Log::info("🖼️ تم إدراج الصورة الأصلية داخل الـ Canvas بدون تغيير حجمها");
 
-        $x = $textSettings['x'] * $renderWidth;
-        $y = $textSettings['y'] * $renderHeight;
-        $valign = 'bottom'; // افتراضياً نستخدم محاذاة عمودية وسطية
+        // حساب إحداثيات النص النهائية
+        // النسب المحسوبة بناء على الحالة المثالية
+        $xOffsetRatio = 0.16;
+        $yOffsetRatio = 0.423;
+
+        // تعويض الإحداثيات بناء على النسب
+        $x = (($textSettings['x'] <= 1) ? $textSettings['x'] * $renderWidth : $textSettings['x']) - ($renderWidth * $textSettings['x'] * $xOffsetRatio);
+        $y = 0;
+        $valign = 'bottom'; // القيمة الافتراضية
+        $yRatio = ($textSettings['y'] <= 1) ? $textSettings['y'] : $textSettings['y'] / $renderHeight;
+
+        if ($yRatio < 0.5) {
+            $y = $yRatio * $renderHeight + ($renderHeight * $yRatio * ($yOffsetRatio - 0.3));;
+            $valign = 'top';
+        } else {
+            $y = $yRatio * $renderHeight + ($renderHeight * (1 - $yRatio) * $yOffsetRatio);
+            $valign = 'bottom';
+        }
 
 
         Log::info("📏 إحداثيات النص النهائية: x={$x}, y={$y}");
