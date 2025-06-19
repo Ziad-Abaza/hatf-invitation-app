@@ -144,15 +144,30 @@ class ImageTemplate
         $canvas->insert($original, 'top-left', $offsetX, $offsetY);
         Log::info("🖼️ تم إدراج الصورة الأصلية داخل الـ Canvas بدون تغيير حجمها");
 
+        // حساب إحداثيات النص النهائية
+        // النسب المحسوبة بناء على الحالة المثالية
+        $xOffsetRatio = 0.16;
+        $yOffsetRatio = 0.423;
+
         // تعويض الإحداثيات بناء على النسب
-        $x = intval($textSettings['x']) * $renderWidth;
-        $y = intval($textSettings['y']) * $renderHeight;
-        $valign = 'bottom';
+        $x = (($textSettings['x'] <= 1) ? $textSettings['x'] * $renderWidth : $textSettings['x']) - ($renderWidth * $textSettings['x'] * $xOffsetRatio);
+        $y = 0;
+        $valign = 'bottom'; // القيمة الافتراضية
+        $yRatio = ($textSettings['y'] <= 1) ? $textSettings['y'] : $textSettings['y'] / $renderHeight;
+
+        if ($yRatio < 0.5) {
+            $y = $yRatio * $renderHeight + ($renderHeight * $yRatio * ($yOffsetRatio - 0.3));;
+            $valign = 'top';
+        } else {
+            $y = $yRatio * $renderHeight + ($renderHeight * (1 - $yRatio) * $yOffsetRatio);
+            $valign = 'bottom';
+        }
+
 
         Log::info("📏 إحداثيات النص النهائية: x={$x}, y={$y}");
 
         // الحجم النسبي للخط بناءً على ارتفاع الصورة
-        $baseFontSize = max(1, ($renderHeight * 0.12)); // 5% من الارتفاع كحجم مرجعي
+        $baseFontSize = max(1, ($renderHeight * 0.2)); // 5% من الارتفاع كحجم مرجعي
 
         // إذا كان المستخدم أرسل الحجم كنسبة، نستخدمه. وإن لم يرسل، نستخدم الحجم المرجعي مباشرة
         $relativeFontSize = $baseFontSize * $textSettings['size'] / 100;
@@ -165,8 +180,9 @@ class ImageTemplate
             $y,
             function ($font) use ($fontPath, $relativeFontSize, $textSettings, $alignText, $valign) {
                 $font->file($fontPath);
-                $font->size((int) $relativeFontSize); 
+                $font->size((int) $relativeFontSize); // ← حجم الخط بعد المعايرة
                 $font->color($textSettings['color']);
+                // $font->align('center');
                 $font->valign($valign);
             }
         );
