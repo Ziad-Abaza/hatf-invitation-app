@@ -17,7 +17,10 @@ class AuthController extends Controller
 
     public function loginPost(LoginRequest $request): RedirectResponse
     {
-        if (! Auth::guard('admin')->attempt(['email' => $request->email, 'password' => $request->password])) {
+        $credentials = $request->only('email', 'password');
+        $remember = $request->filled('remember');
+
+        if (! Auth::guard('admin')->attempt($credentials, $remember)) {
             return redirect()->back()->with('error', 'The email and password do not match');
         }
 

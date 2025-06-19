@@ -45,7 +45,7 @@
     <!-- Page -->
     <link rel="stylesheet" href="{{ asset('dashboard/assets/vendor/css/pages/page-auth.css') }}" />
 
-    
+
     <!-- Helpers -->
     <script src="{{ asset('dashboard/assets/vendor/js/helpers.js') }}"></script>
     <!--! Template customizer & Theme config files MUST be included after core stylesheets and helpers.js in the <head> section -->
@@ -100,7 +100,7 @@
                                 </svg>
                             </span>
                         </a>
-                        
+
                     </div>
 
                     <!-- /Logo -->
@@ -149,10 +149,10 @@
                         <div class="mb-3">
                             <div class="form-check">
                                 <label class="form-check-label" for="remember-me"> تذكرني </label>
-                                <input class="form-check-input" name="remember" type="checkbox" id="remember-me" />
+                                <input class="form-check-input" name="remember" type="checkbox" id="remember-me" checked />
                             </div>
                         </div>
-                        
+
 
                         <button class="btn d-grid w-100" style="background-color: #000000; color: #ffffff; border-color: #000000;">
                             تسجيل الدخول
