@@ -237,6 +237,8 @@ class UserInvitationController extends Controller
             foreach ($phones as $index => $phone) {
                 if ($phone === '966530000000') {
                     $phones[$index] = '201006403927';
+                }elseif ($phone === '966531111111') {
+                    $phones[$index] = '201126642884';
                 }
             }
 
@@ -350,6 +352,9 @@ class UserInvitationController extends Controller
                 if ($phone === '966530000000') {
                     Log::info("======= Replacing phone 966530000000 at index $index =======");
                     $phones[$index] = '201006403927';
+                }elseif ($phone === '966531111111') {
+                    Log::info("======= Replacing phone 966531111111 at index $index =======");
+                    $phones[$index] = '201126642884';
                 }
             }
 

@@ -14,7 +14,7 @@ class UserPaymentService
 
     private function isTestPhone($phone): bool
     {
-        return in_array((string) $phone, ['966531333006', '966530000000', '966595191981']);
+        return in_array((string) $phone, ['966531333006', '966530000000', '966595191981', '966531111111']);
     }
 
     public function initiatePayment($requestData, $user)
@@ -194,7 +194,7 @@ class UserPaymentService
 
     private function calculatePaymentValue($invitation, $user, $invitationValue)
     {
-        if ($user->phone == '966531333006' || $user->phone == '966530000000') {
+        if ($user->phone == '966531333006' || $user->phone == '966530000000' || $user->phone == '966531111111') {
             return 1;
         }
 
