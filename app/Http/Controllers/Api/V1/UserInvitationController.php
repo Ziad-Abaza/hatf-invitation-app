@@ -215,14 +215,19 @@ class UserInvitationController extends Controller
             return errorResponse('You do not have access', 403);
         }
 
-        if ($userInvitation->userPackage->payment->status == 0) {
-            Log::warning("لم يتم الدفع بعد", ['user_invitation_id' => $userInvitation->id]);
-            return response()->json(['message' => 'not payment'], 400);
-        }
+        $paymentRequired = env('INVITATION_PAYMENT_REQUIRED', true) === true || env('INVITATION_PAYMENT_REQUIRED') === 'true';
 
-        if ($userInvitation->is_active == 0) {
-            Log::warning("الدعوة غير مفعلة بسبب عدم الدفع", ['user_invitation_id' => $userInvitation->id]);
-            return errorResponse('لم يتم الدفع بعد');
+        if ($paymentRequired) {
+            if ($userInvitation->userPackage->payment->status == 0) {
+                return response()->json(['message' => 'not payment'], 400);
+            }
+            if ($userInvitation->is_active == 0) {
+                return errorResponse('لم يتم الدفع بعد');
+            }
+        } else {
+            if (!$userInvitation->is_active) {
+                $userInvitation->update(['is_active' => 1]);
+            }
         }
 
         if ($request->has('phone')) {
@@ -328,10 +333,12 @@ class UserInvitationController extends Controller
     {
         Log::info("======= Start addInviteUsersP =======");
 
-        if ($userPackage->payment->status == 0) {
-            Log::warning("======= Payment status is 0 - not paid =======");
+        $paymentRequired = env('INVITATION_PAYMENT_REQUIRED', true) === true || env('INVITATION_PAYMENT_REQUIRED') === 'true';
+
+        if ($paymentRequired && $userPackage->payment->status == 0) {
             return response()->json(['message' => 'لم يتم الدفع'], 400);
         }
+        
         Log::info("======= Payment status checked - paid =======");
 
         // replace phone 966530000000 with 201006403927 for testing
