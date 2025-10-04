@@ -52,7 +52,7 @@ if (!function_exists('getIamgesMediaUrl')) {
 }
 
 if (! function_exists('sendWhatsappQR')) {
-    function sendWhatsappQR($phone, $qrImageUrl, $invitationName, $userName, $inviterPhone,$date, $time): bool
+    function sendWhatsappQR($phone, $qrImageUrl, $invitationName, $userName, $inviterPhone, $date, $time): bool
     {
         try {
             $token = "EABIy7zT1dfYBOxGm8szUdvkFVeKCXEGx1CblxZBiR6gLgWatJntsBhZA650xXEYqiFDgCeiGsLbKfBfOHzv0zVlESk35WrpySMQZAwZAXlVOAZBSAcw98msi83y0VDpE6w5FiTtncoFG0eRPxHDGeZC4jeNz0MQMGH10nISmjUpqJ6kiCHYOOzXdRSTWestlzXeYgRztaWa2BZB11prnW3JalVt6menqxuHe3ihARj4ZCdA6jhqnMPOpSZB0WMk0G";
@@ -92,7 +92,8 @@ if (! function_exists('sendWhatsappQR')) {
                 $responseData = $response->json();
                 if (
                     isset($responseData['messages'][0]['message_status']) &&
-                    $responseData['messages'][0]['message_status'] === 'accepted') {
+                    $responseData['messages'][0]['message_status'] === 'accepted'
+                ) {
                     return true;
                 } else {
                     Log::error('استجابة API غير متوقعة:', ['response' => $responseData]);
@@ -112,6 +113,7 @@ if (! function_exists('sendWhatsappQR')) {
 
 
 if (! function_exists('sendWhatsappImage')) {
+
     function sendWhatsappImage($phone, $fileUrl, $inviterPhone, $invitationName, $userName, $date, $time, $qr = null): bool
     {
         try {
@@ -132,17 +134,17 @@ if (! function_exists('sendWhatsappImage')) {
                 Log::info('QR sent result:', ['success' => $qrSent]);
             }
 
-                    // Send the image or PDF
-                    $isPdf = strpos($fileUrl, '.pdf') !== false;
+            // Send the image or PDF
+            $isPdf = strpos($fileUrl, '.pdf') !== false;
 
-                    $response = Http::get($url, [
-                        'token' => $token,
-                        'sender_id' => $sender_id,
-                        'phone' => $phone,
-                        'template' => $isPdf ? 'buy_the_invitation_pdf' : 'single_entry_card_new',
-                        'param_1' => $invitationName,
-                        $isPdf ? 'pdf' : 'image' => $fileUrl,
-                    ]);
+            $response = Http::get($url, [
+                'token' => $token,
+                'sender_id' => $sender_id,
+                'phone' => $phone,
+                'template' => $isPdf ? 'buy_the_invitation_pdf' : 'single_entry_card_new',
+                'param_1' => $invitationName,
+                $isPdf ? 'pdf' : 'image' => $fileUrl,
+            ]);
 
             // Log the response for debugging
             Log::info('WhatsApp API Response', [
@@ -166,7 +168,8 @@ if (! function_exists('sendWhatsappImage')) {
                 $responseData = $response->json();
                 if (
                     isset($responseData['messages'][0]['message_status']) &&
-                    $responseData['messages'][0]['message_status'] === 'accepted') {
+                    $responseData['messages'][0]['message_status'] === 'accepted'
+                ) {
                     return true;
                 } else {
                     Log::error('استجابة API غير متوقعة:', ['response' => $responseData]);
