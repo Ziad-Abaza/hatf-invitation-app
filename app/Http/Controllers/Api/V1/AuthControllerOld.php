@@ -13,8 +13,9 @@ use App\Http\Requests\Api\Auth\UpdateUserRequest;
 use App\Http\Requests\Api\User\UpdateBankRequest;
 use App\Http\Requests\Api\Auth\CreateTokenRequest;
 use App\Http\Requests\Api\Auth\UserVerifiedRequest;
+use Illuminate\Support\Facades\Log;
 
-class AuthControllerسس extends Controller
+class AuthControllerOld extends Controller
 {
     public function register(RegisterRequest $request): JsonResponse
     {
@@ -23,7 +24,6 @@ class AuthControllerسس extends Controller
         if ($this->isTestPhone($request->phone)) {
             $otp = 1111;
         }
-
 
         do {
             $code   = Str::random(5);
@@ -41,7 +41,7 @@ class AuthControllerسس extends Controller
             'user_verified' => now(),
         ]);
 
-        // Send Otp number
+        // Send otp number
         sendWhatsappOTP($user->phone, $otp);
 
         return successResponseDataWithMessage(UserResource::make($user->refresh()));
@@ -67,7 +67,6 @@ class AuthControllerسس extends Controller
             $otp = 1111;
         }
 
-
         $user = User::where('phone', $request->phone)->first();
         $user->update(['otp' => $otp]);
 
@@ -83,7 +82,7 @@ class AuthControllerسس extends Controller
 
         $otp = random_int(1000, 9999);
 
-        if ($this->isTestPhone($request->phone)){
+        if ($this->isTestPhone($request->phone)) {
             $otp = 1111;
         }
 
@@ -98,6 +97,8 @@ class AuthControllerسس extends Controller
 
     public function createToken(CreateTokenRequest $request): JsonResponse
     {
+        Log::info('=========== start createToken ===========');
+
         $user = User::wherePhone($request->phone)->whereOtp($request->otp)->first();
 
         if (! $user)

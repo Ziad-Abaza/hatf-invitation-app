@@ -121,24 +121,23 @@ if (! function_exists('sendWhatsappImage')) {
             $sender_id = "595577366971724";
             $url = "https://api.karzoun.app/CloudApi.php";
 
+            // Log the parameters for debugging
             Log::info('sendWhatsappImage called', [
                 'phone' => $phone,
                 'fileUrl' => $fileUrl,
                 'qr' => $qr
             ]);
 
-            // إرسال كود QR إن وجد
+            // Check if the QR code is provided and send it
             if (!empty($qr)) {
                 $qrSent = sendWhatsappQR($phone, $qr, $invitationName, $userName, $inviterPhone, $date, $time);
                 Log::info('QR sent result:', ['success' => $qrSent]);
-                sleep(2); // تأخير بسيط بعد إرسال QR
             }
 
-            // تحديد نوع الملف (صورة أو PDF)
+            // Send the image or PDF
             $isPdf = strpos($fileUrl, '.pdf') !== false;
 
-            // استخدام POST بدلاً من GET
-            $response = Http::asForm()->post($url, [
+            $response = Http::get($url, [
                 'token' => $token,
                 'sender_id' => $sender_id,
                 'phone' => $phone,
@@ -147,15 +146,13 @@ if (! function_exists('sendWhatsappImage')) {
                 $isPdf ? 'pdf' : 'image' => $fileUrl,
             ]);
 
-            // تأخير قبل الإرسال التالي (لتجنب rate limiting)
-            sleep(2);
-
-            // تسجيل الرد في اللوج
+            // Log the response for debugging
             Log::info('WhatsApp API Response', [
                 'status_code' => $response->status(),
                 'response_body' => $response->body(),
                 'response_json' => $response->json(),
                 'template' => $isPdf ? 'buy_the_invitation_pdf' : 'initial_invitation',
+
                 'phone' => $phone,
                 'fileUrl' => $fileUrl,
                 'params' => [
@@ -167,10 +164,9 @@ if (! function_exists('sendWhatsappImage')) {
                 ],
             ]);
 
-            // التحقق من نجاح الطلب
+            // Check if the response is JSON
             if ($response->successful()) {
                 $responseData = $response->json();
-
                 if (
                     isset($responseData['messages'][0]['message_status']) &&
                     $responseData['messages'][0]['message_status'] === 'accepted'
@@ -182,11 +178,7 @@ if (! function_exists('sendWhatsappImage')) {
                 }
             }
 
-            Log::error('فشل الاتصال بواجهة WhatsApp API', [
-                'status' => $response->status(),
-                'body' => $response->body(),
-            ]);
-
+            // If the response is not successful, log the error
             return false;
         } catch (\Exception $e) {
             Log::error('Exception in sendWhatsappImage', [
