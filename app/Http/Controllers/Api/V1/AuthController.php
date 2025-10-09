@@ -113,7 +113,7 @@ class AuthController extends Controller
     public function createToken(CreateTokenRequest $request): JsonResponse
     {
         // تسجيل البيانات الأصلية القادمة من الواجهة
-        \Log::info('OTP Verification Request Received', [
+        Log::info('OTP Verification Request Received', [
             'original_phone' => $request->phone,
             'otp' => $request->otp,
         ]);
@@ -123,14 +123,14 @@ class AuthController extends Controller
         $otp   = $request->otp;
 
         // تسجيل الرقم بعد التحويل
-        \Log::info('Normalized Phone', ['normalized_phone' => $phone]);
+        Log::info('Normalized Phone', ['normalized_phone' => $phone]);
 
         // محاولة إيجاد المستخدم في قاعدة البيانات
         $user = User::where('phone', $phone)->where('otp', $otp)->first();
 
         // تسجيل النتيجة سواء تم العثور على المستخدم أو لا
         if (!$user) {
-            \Log::warning('OTP verification failed', [
+            Log::warning('OTP verification failed', [
                 'searched_phone' => $phone,
                 'searched_otp' => $otp,
                 'user_found' => false,
@@ -141,7 +141,7 @@ class AuthController extends Controller
         }
 
         // تسجيل عند النجاح
-        \Log::info('OTP verification succeeded', [
+        Log::info('OTP verification succeeded', [
             'user_id' => $user->id,
             'user_phone' => $user->phone,
             'matched_otp' => $otp,
