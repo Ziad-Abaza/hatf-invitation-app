@@ -13,6 +13,8 @@ use App\Http\Requests\Api\Auth\UpdateUserRequest;
 use App\Http\Requests\Api\User\UpdateBankRequest;
 use App\Http\Requests\Api\Auth\CreateTokenRequest;
 use App\Http\Requests\Api\Auth\UserVerifiedRequest;
+// log
+use Illuminate\Support\Facades\Log;
 
 class AuthController extends Controller
 {
@@ -105,6 +107,7 @@ class AuthController extends Controller
 
     public function createToken(CreateTokenRequest $request): JsonResponse
     {
+        Log::info('=========== start createToken ===========');
         if (env('OTP_BYPASS', false)) {
             $user = User::wherePhone($request->phone)->first();
         } else {
