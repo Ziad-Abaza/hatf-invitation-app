@@ -210,6 +210,16 @@ if (! function_exists('sendWhatsappOTP')) {
                 'url_button' => $url_button,
             ]);
 
+            Log::info('WhatsApp OTP API Response', [
+                'status_code' => $response->status(),
+                'response_body' => $response->body(),
+                'response_json' => $response->json(),
+                'template' => $template,
+                'phone' => $phone,
+                'param_1' => $param_1,
+                'url_button' => $url_button,
+            ]);
+
             // Check if the response is JSON
             if ($response->successful()) {
                 return true;
