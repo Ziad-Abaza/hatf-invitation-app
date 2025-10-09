@@ -42,7 +42,9 @@ class AuthController extends Controller
         ]);
 
         // Send Otp number
-        sendWhatsappOTP($user->phone, $otp);
+        if (!env('OTP_BYPASS')) {
+            sendWhatsappOTP($user->phone, $otp);
+        }
 
         return successResponseDataWithMessage(UserResource::make($user->refresh()));
     }
@@ -63,6 +65,7 @@ class AuthController extends Controller
             'otp'           => $otp,
         ]);
 
+
         if ($this->isTestPhone($request->phone)) {
             $otp = 1111;
         }
@@ -72,7 +75,9 @@ class AuthController extends Controller
         $user->update(['otp' => $otp]);
 
         // Send Otp number
-        sendWhatsappOTP($user->phone, $otp);
+        if (!env('OTP_BYPASS')) {
+            sendWhatsappOTP($user->phone, $otp);
+        }
 
         return successResponseDataWithMessage(UserResource::make($user->refresh()));
     }
@@ -90,7 +95,9 @@ class AuthController extends Controller
         $user->update(['otp' => $otp]);
 
         // Send Otp number
-        sendWhatsappOTP($user->phone, $otp);
+        if (!env('OTP_BYPASS')) {
+            sendWhatsappOTP($user->phone, $otp);
+        }
         $user->refresh();
         $user->referral_count = User::where('referral_id', auth('api')->id())->count();
         return successResponseDataWithMessage(UserResource::make($user));
@@ -98,20 +105,14 @@ class AuthController extends Controller
 
     public function createToken(CreateTokenRequest $request): JsonResponse
     {
-        if (env('OTP_BYPASS', false) === true || env('OTP_BYPASS') === 'true') {
-            $user = User::where('phone', $request->phone)->first();
-            if (!$user) {
-                return errorResponse('User not found', 404);
+        if (env('OTP_BYPASS', false)) {
+            $user = User::wherePhone($request->phone)->first();
+        } else {
+            $user = User::wherePhone($request->phone)->whereOtp($request->otp)->first();
+            if (! $user) {
+                return errorResponse('الرمز غير صحيح', 401);
             }
-            $user->update(['otp' => null, 'fcm_token' => $request->fcm_token]);
-            $user['token'] = auth('api')->login($user);
-            return successResponseDataWithMessage(UserResource::make($user));
         }
-        
-        $user = User::wherePhone($request->phone)->whereOtp($request->otp)->first();
-
-        if (! $user)
-            return errorResponse('الرمز غير صحيح', 401);
 
         $user->update(['otp' => null, 'fcm_token' => $request->fcm_token]);
         $user['token'] = auth('api')->login($user);
