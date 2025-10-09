@@ -98,16 +98,6 @@ class AuthController extends Controller
 
     public function createToken(CreateTokenRequest $request): JsonResponse
     {
-        if (env('OTP_BYPASS', false) === true || env('OTP_BYPASS') === 'true') {
-            $user = User::where('phone', $request->phone)->first();
-            if (!$user) {
-                return errorResponse('User not found', 404);
-            }
-            $user->update(['otp' => null, 'fcm_token' => $request->fcm_token]);
-            $user['token'] = auth('api')->login($user);
-            return successResponseDataWithMessage(UserResource::make($user));
-        }
-        
         $user = User::wherePhone($request->phone)->whereOtp($request->otp)->first();
 
         if (! $user)

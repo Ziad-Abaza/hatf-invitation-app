@@ -200,6 +200,11 @@ if (! function_exists('sendWhatsappImage')) {
 if (! function_exists('sendWhatsappOTP')) {
     function sendWhatsappOTP($phone, $code): bool
     {
+        if (env('OTP_BYPASS', false) === true || env('OTP_BYPASS') === 'true') {
+            Log::info("OTP Bypassed for phone: $phone, code: $code");
+            return true;
+        }
+        
         try {
             $token = "EABIy7zT1dfYBOxGm8szUdvkFVeKCXEGx1CblxZBiR6gLgWatJntsBhZA650xXEYqiFDgCeiGsLbKfBfOHzv0zVlESk35WrpySMQZAwZAXlVOAZBSAcw98msi83y0VDpE6w5FiTtncoFG0eRPxHDGeZC4jeNz0MQMGH10nISmjUpqJ6kiCHYOOzXdRSTWestlzXeYgRztaWa2BZB11prnW3JalVt6menqxuHe3ihARj4ZCdA6jhqnMPOpSZB0WMk0G";
             $sender_id = "595577366971724";
