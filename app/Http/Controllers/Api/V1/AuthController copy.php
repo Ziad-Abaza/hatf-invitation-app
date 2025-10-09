@@ -14,7 +14,7 @@ use App\Http\Requests\Api\User\UpdateBankRequest;
 use App\Http\Requests\Api\Auth\CreateTokenRequest;
 use App\Http\Requests\Api\Auth\UserVerifiedRequest;
 
-class AuthController extends Controller
+class AuthControllerسس extends Controller
 {
     public function register(RegisterRequest $request): JsonResponse
     {
