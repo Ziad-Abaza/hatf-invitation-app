@@ -91,7 +91,7 @@ class AuthController extends Controller
         $request->merge([
             'phone' => $this->normalizePhone($request->phone),
         ]);
-        
+
         $user = User::where('phone', $request->phone)->first();
 
         $otp = random_int(1000, 9999);
@@ -185,7 +185,7 @@ class AuthController extends Controller
 
     private function isTestPhone($phone): bool
     {
-        return in_array((string) $phone, ['966531333006', '966530000000', '966531111111']);
+        return in_array((string) $phone, ['966531333006', '966530000000', '966531111111', '201006403927']);
     }
 
     private function normalizePhone($phone)
