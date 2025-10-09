@@ -111,11 +111,10 @@ class AuthController extends Controller
 
     public function createToken(CreateTokenRequest $request): JsonResponse
     {
-        $request->merge([
-            'phone' => $this->normalizePhone($request->phone),
-        ]);
+        $phone = $this->normalizePhone($request->phone);
+        $otp   = $request->otp;
 
-        $user = User::wherePhone($request->phone)->whereOtp($request->otp)->first();
+        $user = User::where('phone', $phone)->where('otp', $otp)->first();
 
         if (! $user)
             return errorResponse('الرمز غير صحيح', 401);
@@ -125,6 +124,7 @@ class AuthController extends Controller
 
         return successResponseDataWithMessage(UserResource::make($user));
     }
+
 
     public function logout(): JsonResponse
     {
@@ -200,7 +200,7 @@ class AuthController extends Controller
 
     private function isTestPhone($phone): bool
     {
-        return in_array((string) $phone, ['966531333006', '966530000000', '966531111111', '201006403927']);
+        return in_array((string) $phone, ['966531333006', '966530000000', '966531111111', '201006403927', '966500079915']);
     }
 
     private function normalizePhone($phone)
