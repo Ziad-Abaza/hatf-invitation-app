@@ -292,6 +292,17 @@ if (!function_exists('sendInvoiceViaWhatsapp')) {
                 'param_1' => $param_1,
             ]);
 
+            // Log response details for troubleshooting
+            Log::info('WhatsApp Invoice API Response', [
+                'status_code' => $response->status(),
+                'response_body' => $response->body(),
+                'response_json' => $response->json(),
+                'template' => 'qr_invitation_app_invoice_pdf',
+                'phone' => $phone,
+                'invoiceFilePath' => $invoiceFilePath,
+                'param_1' => $param_1,
+            ]);
+
             if ($response->successful()) {
                 Log::info('PDF sent successfully via WhatsApp', ['response' => $response->json()]);
                 return true;
