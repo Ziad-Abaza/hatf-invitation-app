@@ -111,6 +111,7 @@ if (! function_exists('sendWhatsappQR')) {
     }
 }
 
+
 if (! function_exists('sendWhatsappImage')) {
 
     function sendWhatsappImage($phone, $fileUrl, $inviterPhone, $invitationName, $userName, $date, $time, $qr = null): bool
@@ -120,82 +121,68 @@ if (! function_exists('sendWhatsappImage')) {
             $sender_id = "595577366971724";
             $url = "https://api.karzoun.app/CloudApi.php";
 
-            // Log call start
-            Log::info("================ Start sendWhatsappImage ================");
-            Log::info('Function Parameters', [
+            // Log the parameters for debugging
+            Log::info('sendWhatsappImage called', [
                 'phone' => $phone,
                 'fileUrl' => $fileUrl,
-                'inviterPhone' => $inviterPhone,
-                'invitationName' => $invitationName,
-                'userName' => $userName,
-                'date' => $date,
-                'time' => $time,
-                'qr' => $qr,
+                'qr' => $qr
             ]);
 
+            // Check if the QR code is provided and send it
             if (!empty($qr)) {
                 $qrSent = sendWhatsappQR($phone, $qr, $invitationName, $userName, $inviterPhone, $date, $time);
-                Log::info('QR Sent Result', ['success' => $qrSent]);
+                Log::info('QR sent result:', ['success' => $qrSent]);
             }
 
-            $isPdf = str_ends_with(strtolower($fileUrl), '.pdf');
-            $template = $isPdf ? 'buy_the_invitation_pdf' : 'single_entry_card_new';
+            // Send the image or PDF
+            $isPdf = strpos($fileUrl, '.pdf') !== false;
 
-            $queryParams = [
+            $response = Http::get($url, [
                 'token' => $token,
                 'sender_id' => $sender_id,
                 'phone' => $phone,
-                'template' => $template,
+                'template' => $isPdf ? 'buy_the_invitation_pdf' : 'initial_invitation',
                 'param_1' => $invitationName,
                 $isPdf ? 'pdf' : 'image' => $fileUrl,
-            ];
-
-            // Log exact request (before sending)
-            Log::info('WhatsApp API Request', [
-                'url' => $url,
-                'method' => 'GET',
-                'query_params' => $queryParams,
-                'full_url' => $url . '?' . http_build_query($queryParams),
             ]);
 
-            // Send request
-            $response = Http::get($url, $queryParams);
-
-            // Log exact raw response (full)
-            Log::info('WhatsApp API Raw Response', [
+            // Log the response for debugging
+            Log::info('WhatsApp API Response', [
                 'status_code' => $response->status(),
-                'headers' => $response->headers(),
-                'body_raw' => $response->body(),
+                'response_body' => $response->body(),
+                'response_json' => $response->json(),
+                'template' => $isPdf ? 'buy_the_invitation_pdf' : 'initial_invitation',
+                'phone' => $phone,
+                'fileUrl' => $fileUrl,
+                'params' => [
+                    $invitationName,
+                    $userName,
+                    $inviterPhone,
+                    $date,
+                    $time,
+                ],
             ]);
 
-            // Try decode JSON
-            $json = null;
-            try {
-                $json = $response->json();
-            } catch (\Exception $e) {
-                Log::warning('Failed to decode JSON response', ['exception' => $e->getMessage()]);
+            // Check if the response is JSON
+            if ($response->successful()) {
+                $responseData = $response->json();
+                if (
+                    isset($responseData['messages'][0]['message_status']) &&
+                    $responseData['messages'][0]['message_status'] === 'accepted'
+                ) {
+                    return true;
+                } else {
+                    Log::error('استجابة API غير متوقعة:', ['response' => $responseData]);
+                    return false;
+                }
             }
 
-            Log::info('WhatsApp API Parsed Response', [
-                'json' => $json,
-            ]);
-
-            // Check success condition
-            if ($response->successful() && isset($json['messages'][0]['message_status']) && $json['messages'][0]['message_status'] === 'accepted') {
-                Log::info('✅ Message successfully accepted by WhatsApp API');
-                Log::info("================ End sendWhatsappImage (Success) ================");
-                return true;
-            }
-
-            Log::error('❌ Unexpected WhatsApp API Response', ['response' => $json]);
-            Log::info("================ End sendWhatsappImage (Failed) ================");
+            // If the response is not successful, log the error
             return false;
         } catch (\Exception $e) {
-            Log::error('💥 Exception in sendWhatsappImage', [
+            Log::error('Exception in sendWhatsappImage', [
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
             ]);
-            Log::info("================ End sendWhatsappImage (Exception) ================");
             return false;
         }
     }
