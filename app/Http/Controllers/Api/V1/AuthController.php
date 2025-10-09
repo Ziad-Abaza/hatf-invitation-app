@@ -13,6 +13,7 @@ use App\Http\Requests\Api\Auth\UpdateUserRequest;
 use App\Http\Requests\Api\User\UpdateBankRequest;
 use App\Http\Requests\Api\Auth\CreateTokenRequest;
 use App\Http\Requests\Api\Auth\UserVerifiedRequest;
+use Illuminate\Support\Facades\Log;
 
 class AuthController extends Controller
 {
@@ -111,19 +112,48 @@ class AuthController extends Controller
 
     public function createToken(CreateTokenRequest $request): JsonResponse
     {
+        // تسجيل البيانات الأصلية القادمة من الواجهة
+        \Log::info('OTP Verification Request Received', [
+            'original_phone' => $request->phone,
+            'otp' => $request->otp,
+        ]);
+
+        // تحويل الرقم إن لزم الأمر
         $phone = $this->normalizePhone($request->phone);
         $otp   = $request->otp;
 
+        // تسجيل الرقم بعد التحويل
+        \Log::info('Normalized Phone', ['normalized_phone' => $phone]);
+
+        // محاولة إيجاد المستخدم في قاعدة البيانات
         $user = User::where('phone', $phone)->where('otp', $otp)->first();
 
-        if (! $user)
-            return errorResponse('الرمز غير صحيح', 401);
+        // تسجيل النتيجة سواء تم العثور على المستخدم أو لا
+        if (!$user) {
+            \Log::warning('OTP verification failed', [
+                'searched_phone' => $phone,
+                'searched_otp' => $otp,
+                'user_found' => false,
+                'all_matching_users' => User::where('phone', $phone)->pluck('otp'), // لمعرفة الأكواد الموجودة
+            ]);
 
+            return errorResponse('الرمز غير صحيح', 401);
+        }
+
+        // تسجيل عند النجاح
+        \Log::info('OTP verification succeeded', [
+            'user_id' => $user->id,
+            'user_phone' => $user->phone,
+            'matched_otp' => $otp,
+        ]);
+
+        // تحديث المستخدم
         $user->update(['otp' => null, 'fcm_token' => $request->fcm_token]);
         $user['token'] = auth('api')->login($user);
 
         return successResponseDataWithMessage(UserResource::make($user));
     }
+
 
 
     public function logout(): JsonResponse
