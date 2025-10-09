@@ -152,6 +152,7 @@ if (! function_exists('sendWhatsappImage')) {
                 'response_body' => $response->body(),
                 'response_json' => $response->json(),
                 'template' => $isPdf ? 'buy_the_invitation_pdf' : 'initial_invitation',
+                
                 'phone' => $phone,
                 'fileUrl' => $fileUrl,
                 'params' => [
