@@ -255,8 +255,7 @@ class UserPaymentController extends Controller
     public function returnAction(Request $request)
     {
         Log::info("================= Start Return Action =================");
-        // try {
-        // Validate request
+
         $validatedData = $request->validate([
             'data' => 'required|array',
             'data.payment_uuid' => 'required|exists:payment_user_invitations,payment_uuid',
@@ -268,18 +267,21 @@ class UserPaymentController extends Controller
 
         $data = $validatedData['data'];
 
-        // Extract necessary fields
         $payment_uuid = $data['payment_uuid'] ?? null;
         $id_payment = $data['id_payment'] ?? null;
         $message = $data['message'] ?? 'Unknown error';
         $status = $data['status'] ?? 500;
-        $payment_return_response = $data['payment_return_response'] ?? ''; // for backend debug only
+        $payment_return_response = $data['payment_return_response'] ?? ''; // debug info
 
         Log::info("Return Action Data: ", $data);
 
-        // Handle success case
+        //  تحقق من إعداد الفواتير من ملف .env
+        $paymentRequired = filter_var(env('INVITATION_PAYMENT_REQUIRED', true), FILTER_VALIDATE_BOOLEAN);
+
         if ($status == 200 && $payment_uuid && $id_payment) {
+
             $request->validate(['data.id_payment' => 'required|string']);
+
             $payment = PaymentUserInvitation::where('payment_uuid', $payment_uuid)->first();
             $payment->update([
                 'status' => 1,
@@ -289,64 +291,65 @@ class UserPaymentController extends Controller
             ]);
 
             Log::info("Payment Updated: ", $payment->toArray());
-            //    $userPackage= UserPackage::where('payment_user_invitation_id',$payment->id)->first();
-            $user = User::where('id', $payment->user_id)->first();
 
+            $user = User::where('id', $payment->user_id)->first();
             Log::info("User Found: ", $user->toArray());
 
             $userPackage = UserPackage::where('payment_user_invitation_id', $payment->id)->first();
             if ($userPackage) {
-                // Update UserInvitation records related to the user package
-                UserInvitation::where('user_package_id', $userPackage->id)->update([
-                    'is_active' => 1,
-                ]);
-
+                UserInvitation::where('user_package_id', $userPackage->id)->update(['is_active' => 1]);
                 $invitationData = Invitation::where('id', $userPackage->invitation_id)->first();
             }
-            $paymentData = PaymentUserInvitation::where('payment_uuid', $payment_uuid)->first();
-            $pdfPath = generateInvoicePDF($paymentData, $user, $userPackage, $invitationData);
-            Log::info("PDF Path: ", ['pdf_path' => $pdfPath]);
-            
-            if ($pdfPath) {
-                $isPaymentRequired = filter_var(env('INVITATION_PAYMENT_REQUIRED', true), FILTER_VALIDATE_BOOLEAN);
 
-                if ($isPaymentRequired) {
+            // في حالة الدعوات المجانية لا تنشئ أو ترسل فاتورة
+            if (!$paymentRequired) {
+                Log::info("Payment not required - skipping invoice generation and sending.");
+            } else {
+                // إنشاء وإرسال الفاتورة فقط إذا كانت مطلوبة
+                $paymentData = PaymentUserInvitation::where('payment_uuid', $payment_uuid)->first();
+                $pdfPath = generateInvoicePDF($paymentData, $user, $userPackage, $invitationData);
+
+                Log::info("PDF Path: ", ['pdf_path' => $pdfPath]);
+
+                if ($pdfPath) {
                     $sent = sendInvoiceViaWhatsapp($user->phone, $pdfPath, $invitationData);
-
                     if ($sent) {
                         Log::info('Invoice sent successfully to user phone: ' . $user->phone);
                     } else {
                         Log::error('Failed to send invoice to user phone: ' . $user->phone);
                     }
                 } else {
-                    Log::info('Skipping invoice sending because INVITATION_PAYMENT_REQUIRED=false');
+                    Log::error('Failed to generate invoice PDF for payment ID: ' . $payment->id);
                 }
-            } else {
-                Log::error('Failed to generate invoice PDF for payment ID: ' . $payment->id);
             }
+
             return response()->json([
                 'data' => [
-                    'payment' => PaymentUserInvitation::where('payment_uuid', $payment_uuid)->first(),
+                    'payment' => $payment,
                     'user' => $user,
                     'user_package' => $userPackage,
-                    'invitation' => $invitationData,
+                    'invitation' => $invitationData ?? null,
                 ],
                 'message' => 'تم الدفع بنجاح',
                 'status' => $status,
             ], 200);
         }
+
         // Handle failure case
         elseif ($status == 400) {
             $payment = PaymentUserInvitation::where('payment_uuid', $payment_uuid)->first();
-            Log::info("payment error: ", $payment->toArray());
-            $payment->delete();
-            Log::info("Payment Deleted: ", ['payment_uuid' => $payment_uuid]);
+            Log::info("Payment error: ", $payment ? $payment->toArray() : []);
+            if ($payment) {
+                $payment->delete();
+                Log::info("Payment Deleted: ", ['payment_uuid' => $payment_uuid]);
+            }
             return response()->json([
                 'message' => 'فشل الدفع',
                 'status' => $status,
             ], 400);
         }
     }
+
 
 
     private function handlePaymentResponse($payment, $payment_uuid, $userInvitation)
