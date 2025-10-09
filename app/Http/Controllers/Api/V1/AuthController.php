@@ -111,6 +111,10 @@ class AuthController extends Controller
 
     public function createToken(CreateTokenRequest $request): JsonResponse
     {
+        $request->merge([
+            'phone' => $this->normalizePhone($request->phone),
+        ]);
+
         $user = User::wherePhone($request->phone)->whereOtp($request->otp)->first();
 
         if (! $user)
@@ -139,6 +143,9 @@ class AuthController extends Controller
 
     public function update(UpdateUserRequest $request): JsonResponse
     {
+        $request->merge([
+            'phone' => $this->normalizePhone($request->phone),
+        ]);
         User::find(auth('api')->id())->update($request->validated());
         return successResponse(__('Update profile Successfully'));
     }
@@ -153,6 +160,10 @@ class AuthController extends Controller
 
     public function userVerified(UserVerifiedRequest $request)
     {
+        $request->merge([
+            'phone' => $this->normalizePhone($request->phone),
+        ]);
+
         do {
             $code   = Str::random(5);
             $exists = User::where('code', $code)->exists();
@@ -173,6 +184,10 @@ class AuthController extends Controller
 
     public function updateBank(UpdateBankRequest $request)
     {
+        $request->merge([
+            'phone' => $this->normalizePhone($request->phone),
+        ]);
+        
         $user = User::find(auth('api')->id());
 
         $user->update([
