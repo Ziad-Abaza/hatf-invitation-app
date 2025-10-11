@@ -297,7 +297,6 @@ class AuthController extends Controller
         }
     }
 
-
     public function delete()
     {
         try {

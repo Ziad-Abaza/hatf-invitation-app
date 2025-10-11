@@ -61,7 +61,7 @@ if (! function_exists('sendWhatsappQR')) {
 
             Log::info('QR Image URL before sending:', ['qrImageUrl' => $qrImageUrl]);
 
-            $response = Http::post($url, [
+            $response = Http::get($url, [
                 'token' => $token,
                 'sender_id' => $sender_id,
                 'phone' => $phone,
@@ -137,7 +137,7 @@ if (! function_exists('sendWhatsappImage')) {
             // Send the image or PDF
             $isPdf = strpos($fileUrl, '.pdf') !== false;
 
-            $response = Http::post($url, [
+            $response = Http::get($url, [
                 'token' => $token,
                 'sender_id' => $sender_id,
                 'phone' => $phone,
@@ -201,7 +201,7 @@ if (! function_exists('sendWhatsappOTP')) {
 
             $url = "https://api.karzoun.app/CloudApi.php";
 
-            $response = Http::post($url, [
+            $response = Http::get($url, [
                 'token' => $token,
                 'sender_id' => $sender_id,
                 'phone' => $phone,
@@ -283,7 +283,7 @@ if (!function_exists('sendInvoiceViaWhatsapp')) {
             $invitationName = $nameData ? $nameData->name_ar : 'دعوة';
             $param_1 = 'باقة ' . $invitationName . ' - عدد ' . $invitationData['number_of_users'] . ' دعوة';
 
-            $response = Http::post($url, [
+            $response = Http::get($url, [
                 'token' => $token,
                 'sender_id' => $sender_id,
                 'phone' => $phone,
